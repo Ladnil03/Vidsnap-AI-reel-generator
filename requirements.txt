@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+motor
+cloudinary
+groq
+python-dotenv
+aiofiles
+pydantic
+pydantic-settings

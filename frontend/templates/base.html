@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="VidSnap-AI — Turn images into stunning AI-powered Instagram Reels with voiceover narration in seconds.">
+  <title>{% block title %}VidSnap-AI — AI Reel Generator{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <nav class="navbar" id="navbar">
+    <a class="nav-brand" href="{{ url_for('main.index') }}">
+      <div class="nav-brand-icon"><i class="fas fa-clapperboard"></i></div>
+      <span>VidSnap<span class="dot">-AI</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="{{ url_for('main.index') }}"   class="{% if active_page=='home'    %}active{% endif %}"><i class="fas fa-house"></i> Home</a></li>
+      <li><a href="{{ url_for('main.create') }}"  class="{% if active_page=='create'  %}active{% endif %}"><i class="fas fa-wand-magic-sparkles"></i> Create</a></li>
+      <li><a href="{{ url_for('main.gallery') }}" class="{% if active_page=='gallery' %}active{% endif %}"><i class="fas fa-photo-film"></i> Gallery</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" title="Toggle theme" onclick="toggleTheme()">
+        <i class="fas fa-moon theme-toggle-icon moon"></i>
+        <i class="fas fa-sun theme-toggle-icon sun"></i>
+      </button>
+      <a href="{{ url_for('main.create') }}" class="btn-cta-nav">
+        <i class="fas fa-plus"></i> Create Reel
+      </a>
+      <button class="hamburger" id="hamburger" onclick="toggleDrawer()">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+  </nav>
+
+  <div class="nav-drawer" id="nav-drawer">
+    <a href="{{ url_for('main.index') }}"   class="{% if active_page=='home'    %}active{% endif %}" onclick="closeDrawer()"><i class="fas fa-house"></i> Home</a>
+    <a href="{{ url_for('main.create') }}"  class="{% if active_page=='create'  %}active{% endif %}" onclick="closeDrawer()"><i class="fas fa-wand-magic-sparkles"></i> Create Reel</a>
+    <a href="{{ url_for('main.gallery') }}" class="{% if active_page=='gallery' %}active{% endif %}" onclick="closeDrawer()"><i class="fas fa-photo-film"></i> Gallery</a>
+  </div>
+
+  <div class="flash-stack" id="flash-stack">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">
+            <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-circle-exclamation{% endif %} flash-icon"></i>
+            <span>{{ message }}</span>
+            <button class="flash-close" onclick="this.parentElement.remove()"><i class="fas fa-xmark"></i></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <div class="lightbox-inner">
+      <button class="lightbox-close" onclick="closeLightbox()"><i class="fas fa-xmark"></i></button>
+      <video class="lightbox-video" id="lightbox-video" controls></video>
+      <div class="lightbox-meta">
+        <span class="lightbox-title" id="lightbox-title">Reel</span>
+        <a class="lightbox-download" id="lightbox-download" download>
+          <i class="fas fa-download"></i> Download MP4
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+
+</body>
+</html>

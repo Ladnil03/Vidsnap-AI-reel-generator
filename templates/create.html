@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% set active_page = "create" %}
+
+{% block title %}
+Create Reel — VidSnap-AI
+{% endblock %}
+
+{% block content %}
+
+<h1>Create Your Reel</h1>
+
+<p>
+Upload images & describe the narration — AI does the rest.
+</p>
+
+<form>
+
+    <h3>Upload Images</h3>
+
+    <input type="file" multiple>
+
+    <br><br>
+
+    <h3>Voiceover Text</h3>
+
+    <textarea rows="6"></textarea>
+
+    <br><br>
+
+    <button type="submit">
+        Generate Reel
+    </button>
+
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

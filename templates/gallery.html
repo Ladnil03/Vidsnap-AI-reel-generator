@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% set active_page = "gallery" %}
+
+{% block title %}
+Gallery — VidSnap-AI
+{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+
+<section class="gallery-page">
+
+    <h1>Your Gallery</h1>
+
+    <p>
+        Browse, play, and download your generated reels.
+    </p>
+
+    <!-- Search + Actions -->
+    <div class="gallery-controls">
+
+        <input
+            type="text"
+            placeholder="Search reels..."
+        >
+
+        <a href="/create">
+            Create Reel
+        </a>
+
+    </div>
+
+    <!-- Reel Grid -->
+    <div class="gallery-grid">
+
+        {% if reels %}
+
+            {% for reel in reels %}
+
+                <div class="reel-card">
+
+                    {% if reel.thumbnail %}
+
+                        <img
+                            src="{{ reel.thumbnail }}"
+                            alt="{{ reel.title }}"
+                            width="250"
+                        >
+
+                    {% else %}
+
+                        <div class="placeholder-thumbnail">
+                            🎬
+                        </div>
+
+                    {% endif %}
+
+                    <h3>
+                        {{ reel.title }}
+                    </h3>
+
+                    <p>
+                        {{ reel.created_at.strftime('%b %d, %Y') }}
+                    </p>
+
+                    {% if reel.status == "ready" %}
+
+                        <video width="250" controls>
+                            <source
+                                src="{{ reel.video_url }}"
+                                type="video/mp4"
+                            >
+                        </video>
+
+                        <br><br>
+
+                        <a href="{{ reel.video_url }}" download>
+                            Download MP4
+                        </a>
+
+                    {% else %}
+
+                        <p>
+                            ⏳ Processing...
+                        </p>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="empty-gallery">
+
+                <h2>No reels yet</h2>
+
+                <p>
+                    Create your first reel and it will appear here.
+                </p>
+
+                <a href="/create">
+                    Create Reel
+                </a>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

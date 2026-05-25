@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +8,12 @@
         {% block title %}VidSnap-AI{% endblock %}
     </title>
 
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
     <!-- CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
 
     {% block styles %}
     {% endblock %}
@@ -18,51 +22,72 @@
 <body>
 
     <!-- Navbar -->
-    <nav>
-        <a href="/">VidSnap-AI</a>
+    <nav class="navbar">
 
-        <ul>
+        <a href="/" class="nav-brand">
+            <div class="nav-brand-icon">🎬</div>
+            <span>VidSnap<span class="dot">.</span>AI</span>
+        </a>
+
+        <ul class="nav-links">
             <li>
-                <a href="/">Home</a>
+                <a href="/" class="{% if active_page == 'home' %}active{% endif %}">
+                    Home
+                </a>
             </li>
-
             <li>
-                <a href="/create">Create</a>
+                <a href="/create" class="{% if active_page == 'create' %}active{% endif %}">
+                    Create
+                </a>
             </li>
-
             <li>
-                <a href="/gallery">Gallery</a>
+                <a href="/gallery" class="{% if active_page == 'gallery' %}active{% endif %}">
+                    Gallery
+                </a>
             </li>
         </ul>
+
+        <div class="nav-right">
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <span class="theme-toggle-icon moon">🌙</span>
+                <span class="theme-toggle-icon sun">☀️</span>
+            </button>
+            <a href="/create" class="btn-cta-nav">+ Create Reel</a>
+            <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
+        </div>
+
     </nav>
+
+    <!-- Mobile Drawer -->
+    <div class="nav-drawer" id="navDrawer">
+        <a href="/" class="{% if active_page == 'home' %}active{% endif %}">🏠 Home</a>
+        <a href="/create" class="{% if active_page == 'create' %}active{% endif %}">✨ Create</a>
+        <a href="/gallery" class="{% if active_page == 'gallery' %}active{% endif %}">🎬 Gallery</a>
+    </div>
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
-
         {% if messages %}
-
-            {% for category, message in messages %}
-
-                <div class="flash-message {{ category }}">
-                    {{ message }}
-                </div>
-
-            {% endfor %}
-
+            <div class="flash-stack">
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">
+                        <span class="flash-icon">{% if category == 'success' %}✓{% else %}✕{% endif %}</span>
+                        {{ message }}
+                        <button class="flash-close" onclick="this.parentElement.remove()">✕</button>
+                    </div>
+                {% endfor %}
+            </div>
         {% endif %}
-
     {% endwith %}
 
     <!-- Main Content -->
     <main>
-
         {% block content %}
         {% endblock %}
-
     </main>
 
     <!-- JS -->
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
     {% block scripts %}
     {% endblock %}

@@ -61,6 +61,7 @@ def load_user(user_id):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
 # ── ROUTES ──
 
 @app.route('/')
@@ -114,9 +115,8 @@ def login():
 
         if user and bcrypt.check_password_hash(user.password, password):
             login_user(user, remember=remember)
-            next_page = request.args.get('next')
             flash(f'Welcome back, {user.username}!', 'success')
-            return redirect(next_page or url_for('home'))
+            return redirect(url_for('home'))
         else:
             flash('Invalid email or password.', 'error')
 
@@ -187,9 +187,9 @@ def create():
 
             return jsonify({'success': True, 'reel_id': reel.id})
 
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            return jsonify({'success': False, 'error': str(e)}), 500
+            return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
     return render_template('create.html')
 
@@ -244,9 +244,9 @@ def delete_reel(reel_id):
         db.session.delete(reel)
         db.session.commit()
         return '', 200
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An internal error occurred'}), 500
     
 
 @app.errorhandler(404)
@@ -267,4 +267,4 @@ with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=os.getenv('FLASK_DEBUG', '').lower() == 'true')

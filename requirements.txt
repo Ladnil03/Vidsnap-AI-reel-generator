@@ -1,3 +1,5 @@
-Flask
-python-dotenv
-Werkzeug
+flask
+flask-sqlalchemy
+flask-login
+flask-bcrypt
+flask-wtf

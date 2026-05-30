@@ -23,28 +23,18 @@
 
     <!-- Navbar -->
     <nav class="navbar">
-
         <a href="/" class="nav-brand">
             <div class="nav-brand-icon">🎬</div>
             <span>VidSnap<span class="dot">.</span>AI</span>
         </a>
 
         <ul class="nav-links">
-            <li>
-                <a href="/" class="{% if active_page == 'home' %}active{% endif %}">
-                    Home
-                </a>
-            </li>
-            <li>
-                <a href="/create" class="{% if active_page == 'create' %}active{% endif %}">
-                    Create
-                </a>
-            </li>
-            <li>
-                <a href="/gallery" class="{% if active_page == 'gallery' %}active{% endif %}">
-                    Gallery
-                </a>
-            </li>
+            <li><a href="/" class="{% if active_page == 'home' %}active{% endif %}">🏠 Home</a></li>
+            <li><a href="/create" class="{% if active_page == 'create' %}active{% endif %}">✨ Create</a></li>
+            <li><a href="/gallery" class="{% if active_page == 'gallery' %}active{% endif %}">🎬 Gallery</a></li>
+            {% if current_user.is_authenticated %}
+            <li><a href="/feedback" class="{% if active_page == 'feedback' %}active{% endif %}">💬 Feedback</a></li>
+            {% endif %}
         </ul>
 
         <div class="nav-right">
@@ -52,10 +42,17 @@
                 <span class="theme-toggle-icon moon">🌙</span>
                 <span class="theme-toggle-icon sun">☀️</span>
             </button>
-            <a href="/create" class="btn-cta-nav">+ Create Reel</a>
-            <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
+            {% if current_user.is_authenticated %}
+                <a href="/profile" style="font-size:0.85rem; color:var(--text2); display:flex; align-items:center; gap:5px;">
+                    👤 {{ current_user.username }}
+                </a>
+                <a href="/logout" class="btn-secondary" style="padding:8px 16px; font-size:0.85rem;">Logout</a>
+            {% else %}
+                <a href="/login" class="btn-secondary" style="padding:8px 16px; font-size:0.85rem;">Login</a>
+                <a href="/register" class="btn-cta-nav">+ Sign Up</a>
+            {% endif %}
+            <button class="hamburger" id="hamburger">☰</button>
         </div>
-
     </nav>
 
     <!-- Mobile Drawer -->
@@ -63,6 +60,14 @@
         <a href="/" class="{% if active_page == 'home' %}active{% endif %}">🏠 Home</a>
         <a href="/create" class="{% if active_page == 'create' %}active{% endif %}">✨ Create</a>
         <a href="/gallery" class="{% if active_page == 'gallery' %}active{% endif %}">🎬 Gallery</a>
+        {% if current_user.is_authenticated %}
+            <a href="/feedback" class="{% if active_page == 'feedback' %}active{% endif %}">💬 Feedback</a>
+            <a href="/profile"  class="{% if active_page == 'profile'  %}active{% endif %}">👤 Profile</a>
+            <a href="/logout">🚪 Logout</a>
+        {% else %}
+            <a href="/login">🔑 Login</a>
+            <a href="/register">✨ Sign Up</a>
+        {% endif %}
     </div>
 
     <!-- Flash Messages -->

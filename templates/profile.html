@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% set active_page = "profile" %}
+
+{% block title %}Profile — VidSnap-AI{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-page" style="align-items: flex-start; padding-top: 4rem;">
+  <div class="auth-card" style="max-width: 560px;">
+
+    <div class="auth-header">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">👤</div>
+      <h1>{{ current_user.username }}</h1>
+      <p>{{ current_user.email }}</p>
+      <p style="font-size:0.78rem; color:var(--text3); margin-top:0.4rem;">
+        Member since {{ current_user.created_at.strftime('%B %Y') }}
+      </p>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:2rem;">
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-md); padding:1.2rem; text-align:center;">
+        <div class="stat-num" style="font-size:2rem;">{{ current_user.reels|length }}</div>
+        <div style="font-size:0.78rem; color:var(--text3); margin-top:4px;">Reels Created</div>
+      </div>
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-md); padding:1.2rem; text-align:center;">
+        <div class="stat-num" style="font-size:2rem;">{{ current_user.feedbacks|length }}</div>
+        <div style="font-size:0.78rem; color:var(--text3); margin-top:4px;">Feedbacks Given</div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <a href="/create"   class="btn-primary"    style="justify-content:center; text-align:center;">✨ Create New Reel</a>
+      <a href="/gallery"  class="btn-secondary"  style="justify-content:center; text-align:center;">🎬 View My Gallery</a>
+      <a href="/feedback" class="btn-secondary"  style="justify-content:center; text-align:center;">💬 Give Feedback</a>
+      <a href="/logout"   class="btn-secondary"  style="justify-content:center; text-align:center; border-color:var(--accent); color:var(--accent);">🚪 Logout</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

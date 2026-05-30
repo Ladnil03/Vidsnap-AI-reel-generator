@@ -14,11 +14,12 @@ from pathlib import Path
 from typing import Annotated
 
 import aiofiles
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from backend.config import settings
 from backend.database import get_db
 from backend.models import JobCreatedResponse, JobStatusResponse
+from backend.utils.dependencies import get_current_user
 from backend.utils.file_handler import validate_image_list
 
 logger = logging.getLogger(__name__)
@@ -43,6 +44,7 @@ def _build_job_document(
     voiceover_text: str,
     tmp_dir: Path,
     image_filenames: list[str],
+    user_id: str,
 ) -> dict:
     """
     Build the MongoDB job document for a new reel job.
@@ -55,6 +57,7 @@ def _build_job_document(
         voiceover_text: The narration script for the reel.
         tmp_dir: Path to temporary directory where images are stored.
         image_filenames: List of saved image filenames (without directory).
+        user_id: ID of the user who created this job.
 
     Returns:
         dict: A complete job document ready for insertion into MongoDB.
@@ -62,6 +65,7 @@ def _build_job_document(
     now = datetime.now(timezone.utc)
     return {
         "job_id": job_id,
+        "user_id": user_id,
         "status": "queued",
         "voiceover_text": voiceover_text,
         "image_count": len(image_filenames),
@@ -79,6 +83,7 @@ def _build_job_document(
 async def create_job(
     voiceover_text: Annotated[str, Form()],
     images: Annotated[list[UploadFile], File()],
+    current_user: dict = Depends(get_current_user),
 ) -> JobCreatedResponse:
     """
     Create a new reel generation job.
@@ -91,15 +96,24 @@ async def create_job(
     Args:
         voiceover_text: The narration script to convert to speech.
         images: One to 10 image files (JPEG, PNG, or WEBP).
+        current_user: Authenticated user (injected by dependency).
 
     Returns:
         JobCreatedResponse with job_id and status='queued'.
 
     Raises:
         HTTPException: 400 if images are invalid or file sizes exceed limit.
+        HTTPException: 402 if user has no tokens remaining.
     """
     # Validate images
     validate_image_list(images)
+
+    # Check token balance
+    if current_user["tokens_remaining"] <= 0:
+        raise HTTPException(
+            status_code=402,
+            detail="You have no tokens remaining. Contact admin to get more tokens.",
+        )
 
     # Generate job ID and temporary directory
     job_id = _generate_job_id()
@@ -141,11 +155,22 @@ async def create_job(
         logger.debug("[%s] Saved %s (%d bytes)", job_id, filename, len(file_bytes))
 
     # Create job document
-    doc = _build_job_document(job_id, voiceover_text, tmp_dir, image_filenames)
+    doc = _build_job_document(job_id, voiceover_text, tmp_dir, image_filenames, current_user["user_id"])
 
     # Insert into MongoDB
     await get_db().jobs.insert_one(doc)
     logger.info("[%s] Job queued — %d image(s)", job_id, len(images))
+
+    # Deduct one token from user
+    await get_db().users.update_one(
+        {"user_id": current_user["user_id"]},
+        {"$inc": {"tokens_remaining": -1}},
+    )
+    logger.info(
+        "[%s] Token consumed — %d remaining",
+        job_id,
+        current_user["tokens_remaining"] - 1,
+    )
 
     # Return response
     return JobCreatedResponse(
@@ -156,7 +181,9 @@ async def create_job(
 
 
 @router.get("/{job_id}", response_model=JobStatusResponse)
-async def get_job_status(job_id: str) -> JobStatusResponse:
+async def get_job_status(
+    job_id: str, current_user: dict = Depends(get_current_user)
+) -> JobStatusResponse:
     """
     Return the current status of a reel generation job.
 
@@ -165,11 +192,13 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
 
     Args:
         job_id: The UUID returned by POST /api/jobs.
+        current_user: Authenticated user (injected by dependency).
 
     Returns:
         JobStatusResponse with current status and reel_url or error_msg.
 
     Raises:
+        HTTPException: 403 if user does not own the job and is not admin.
         HTTPException: 404 if job_id does not exist.
     """
     job = await get_db().jobs.find_one({"job_id": job_id})
@@ -177,6 +206,12 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
     if job is None:
         logger.warning("Job '%s' not found", job_id)
         raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
+
+    # Check ownership — allow job creator or admin
+    if job["user_id"] != current_user["user_id"] and not current_user.get("is_admin"):
+        raise HTTPException(
+            status_code=403, detail="You do not have access to this job."
+        )
 
     logger.debug("[%s] Status query — current status: %s", job_id, job.get("status"))
 

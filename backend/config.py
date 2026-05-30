@@ -2,7 +2,8 @@
 Configuration module for VidSnap AI backend.
 
 Loads all application settings from environment variables using Pydantic BaseSettings.
-Provides validated configuration for MongoDB, Cloudinary, Groq TTS, and app behavior.
+Provides validated configuration for MongoDB, Cloudinary, and app behavior.
+Text-to-speech uses edge-tts (free, no API key required).
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -21,10 +22,17 @@ class Settings(BaseSettings):
     cloudinary_api_secret: str  # API secret from Cloudinary dashboard
     cloudinary_folder: str = "vidsnap-reels"  # Folder inside Cloudinary to store reels
 
-    # Groq TTS
-    groq_api_key: str  # API key from Groq console
-    groq_tts_model: str = "playai-tts"  # TTS model name
-    groq_tts_voice: str = "Fritz-PlayAI"  # Voice to use for narration
+    # Auth
+    jwt_secret_key: str          # Secret key for signing JWT tokens — make it long and random
+    jwt_algorithm: str = "HS256" # JWT signing algorithm
+    jwt_expire_minutes: int = 60 # How long a JWT token stays valid (in minutes)
+
+    # Resend email service (free tier — for forgot password)
+    resend_api_key: str          # API key from resend.com dashboard
+    email_from: str              # Sender email e.g. noreply@yourdomain.com
+
+    # Token system
+    free_tokens_on_signup: int = 5  # Tokens given to every new user on registration
 
     # App behaviour
     allowed_origins: str = "http://localhost:5173"  # Comma-separated frontend URLs

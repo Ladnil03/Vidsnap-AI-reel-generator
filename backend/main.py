@@ -6,6 +6,7 @@ route registration, and logging configuration. Handles MongoDB connection
 lifecycle and provides a health check endpoint.
 """
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -15,7 +16,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import settings
 from backend.database import connect_db, disconnect_db
-from backend.routes import jobs, reels
+from backend.routes.admin import router as admin_router
+from backend.routes.auth import router as auth_router
+from backend.routes.feedback import router as feedback_router
+from backend.routes.jobs import router as jobs_router
+from backend.routes.reels import router as reels_router
+from backend.routes.users import router as users_router
+from backend.worker import run_worker
 
 # ============================================================================
 # LOGGING SETUP
@@ -39,15 +46,34 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     Manage application startup and shutdown.
 
-    Startup: connect to MongoDB, create indexes.
-    Shutdown: disconnect from MongoDB cleanly.
-    Note: Background worker is added in Day 3.
+    Startup:
+      1. Connect to MongoDB and create indexes
+      2. Start the background worker as an asyncio task
+    Shutdown:
+      1. Cancel the worker task gracefully
+      2. Disconnect from MongoDB
     """
     # STARTUP
     await connect_db()
+
+    # Start worker as a background asyncio task
+    # daemon=True equivalent — task is cancelled on shutdown
+    worker_task = asyncio.create_task(
+        run_worker(),
+        name="reel-worker",
+    )
+    logger.info("Background worker started")
     logger.info("VidSnap AI is ready")
+
     yield
+
     # SHUTDOWN
+    worker_task.cancel()
+    try:
+        await worker_task
+    except asyncio.CancelledError:
+        logger.info("Background worker stopped")
+
     await disconnect_db()
     logger.info("VidSnap AI shut down cleanly")
 
@@ -79,8 +105,12 @@ app.add_middleware(
 # ROUTER REGISTRATION
 # ============================================================================
 
-app.include_router(jobs.router)
-app.include_router(reels.router)
+app.include_router(auth_router)
+app.include_router(users_router)
+app.include_router(jobs_router)
+app.include_router(reels_router)
+app.include_router(feedback_router)
+app.include_router(admin_router)
 
 # ============================================================================
 # HEALTH CHECK

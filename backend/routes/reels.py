@@ -6,10 +6,12 @@ Handles reel gallery listing and deletion. Routes perform HTTP operations only.
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from backend.database import get_db
 from backend.models import DeleteResponse, ReelItem
+from backend.services.storage_service import delete_reel as delete_reel_from_cloudinary
+from backend.utils.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -17,22 +19,26 @@ router = APIRouter(prefix="/api/reels", tags=["Reels"])
 
 
 @router.get("", response_model=list[ReelItem])
-async def list_reels() -> list[ReelItem]:
+async def list_reels(current_user: dict = Depends(get_current_user)) -> list[ReelItem]:
     """
-    Return all completed reels, newest first.
+    Return all completed reels for the current user, newest first.
 
-    Queries MongoDB for jobs where status='done' and reel_url is not null.
-    Used by the frontend Gallery page to display all generated reels.
+    Queries MongoDB for jobs where status='done', reel_url is not null,
+    and user_id matches the authenticated user.
+    Used by the frontend Gallery page to display generated reels.
+
+    Args:
+        current_user: Authenticated user (injected by dependency).
 
     Returns:
-        List of ReelItem, sorted by created_at descending.
-        Returns an empty list if no reels exist yet.
+        List of ReelItem for this user, sorted by created_at descending.
+        Returns an empty list if user has no completed reels.
     """
     db = get_db()
     reels: list[ReelItem] = []
 
     cursor = db.jobs.find(
-        {"status": "done", "reel_url": {"$ne": None}},
+        {"user_id": current_user["user_id"], "status": "done", "reel_url": {"$ne": None}},
         sort=[("created_at", -1)],
     )
 
@@ -44,25 +50,30 @@ async def list_reels() -> list[ReelItem]:
         )
         reels.append(reel)
 
-    logger.info("Retrieved %d reels from gallery", len(reels))
+    logger.info("Retrieved %d reels from gallery for user %s", len(reels), current_user["user_id"])
     return reels
 
 
 @router.delete("/{job_id}", response_model=DeleteResponse)
-async def delete_reel(job_id: str) -> DeleteResponse:
+async def delete_reel(
+    job_id: str, current_user: dict = Depends(get_current_user)
+) -> DeleteResponse:
     """
-    Delete a reel and its job record.
+    Delete a reel from Cloudinary and remove its job record from MongoDB.
 
-    Removes the job document from MongoDB.
-    Cloudinary deletion is wired in Day 4 when the storage service is added.
+    Verifies user owns the reel (or is admin). Cloudinary deletion is attempted
+    first. If it fails, the error is logged but MongoDB deletion still proceeds
+    so the gallery stays clean.
 
     Args:
         job_id: The UUID of the job to delete.
+        current_user: Authenticated user (injected by dependency).
 
     Returns:
         DeleteResponse confirming deletion.
 
     Raises:
+        HTTPException: 403 if user does not own the reel and is not admin.
         HTTPException: 404 if job_id does not exist.
     """
     db = get_db()
@@ -72,9 +83,25 @@ async def delete_reel(job_id: str) -> DeleteResponse:
         logger.warning("Job '%s' not found for deletion", job_id)
         raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
 
-    # TODO Day 4: await storage_service.delete_reel(job["cloudinary_id"])
+    # Check ownership — allow job creator or admin
+    if job["user_id"] != current_user["user_id"] and not current_user.get("is_admin"):
+        raise HTTPException(
+            status_code=403, detail="You do not have access to delete this reel."
+        )
 
+    # Attempt Cloudinary deletion if cloudinary_id exists
+    if job.get("cloudinary_id") is not None:
+        try:
+            await delete_reel_from_cloudinary(job["cloudinary_id"])
+        except Exception as error:
+            logger.error(
+                "[%s] Cloudinary deletion failed: %s — proceeding with MongoDB cleanup",
+                job_id,
+                error,
+            )
+
+    # Delete from MongoDB (source of truth for gallery)
     await db.jobs.delete_one({"job_id": job_id})
-    logger.info("[%s] Job deleted from MongoDB", job_id)
+    logger.info("[%s] Reel deleted — Cloudinary and MongoDB", job_id)
 
     return DeleteResponse(deleted=True, job_id=job_id)

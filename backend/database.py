@@ -49,6 +49,21 @@ async def connect_db() -> None:
     )
     logger.info("Compound index 'status_created_idx' created on jobs collection")
 
+    # Unique index on email — no duplicate accounts
+    users_collection = _db["users"]
+    await users_collection.create_index(
+        "email", unique=True, name="email_unique_idx"
+    )
+    logger.info("Unique index 'email_unique_idx' created on users collection")
+
+    # Index for feedback listing
+    feedback_collection = _db["feedback"]
+    await feedback_collection.create_index(
+        [("created_at", -1)],
+        name="feedback_created_idx",
+    )
+    logger.info("Index 'feedback_created_idx' created on feedback collection")
+
 
 async def disconnect_db() -> None:
     """

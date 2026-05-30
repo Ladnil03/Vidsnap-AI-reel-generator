@@ -3,8 +3,12 @@ uvicorn
 python-multipart
 motor
 cloudinary
-groq
+edge-tts==6.1.12
 python-dotenv
 aiofiles
 pydantic
 pydantic-settings
+passlib
+python-jose
+resend
+email-validator

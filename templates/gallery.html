@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% set active_page = "gallery" %}
+
+{% block title %}Gallery — VidSnap-AI{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/gallery.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="gallery-page">
+  <div class="gallery-layout">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1 class="display-3">Your <span class="grad-text">Gallery</span></h1>
+      <p>Browse, play, and download your generated reels.</p>
+    </div>
+
+    {% if reels %}
+
+    <!-- Toolbar -->
+    <div class="gallery-toolbar">
+      <div class="gallery-search-wrap">
+        <span class="gallery-search-icon">🔍</span>
+        <input
+          type="text"
+          class="gallery-search"
+          placeholder="Search reels..."
+          oninput="filterGallery(this.value)"
+        >
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <select class="gallery-sort" onchange="sortGallery(this.value)">
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="name">Name A–Z</option>
+        </select>
+        <div class="gallery-view-btns">
+          <button class="view-btn active" id="grid-btn" onclick="setView('grid')" title="Grid view">⊞</button>
+          <button class="view-btn" id="list-btn" onclick="setView('list')" title="List view">☰</button>
+        </div>
+        <a href="/create" class="btn-primary" style="padding: 9px 18px; font-size: 0.85rem;">
+          + New Reel
+        </a>
+      </div>
+    </div>
+
+    <!-- Processing Banner — shows if any reel is still processing -->
+    {% set processing_reels = reels | selectattr('status', 'equalto', 'processing') | list %}
+    {% if processing_reels %}
+    <div class="processing-banner">
+      <div class="processing-banner-left">
+        <div class="processing-banner-spinner"></div>
+        <div>
+          <div class="processing-banner-title">
+            {{ processing_reels | length }} reel{{ 's are' if processing_reels | length > 1 else ' is' }} being generated
+          </div>
+          <div class="processing-banner-sub">This usually takes under 60 seconds. Page will update automatically.</div>
+        </div>
+      </div>
+      <div class="processing-banner-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Error Banner — shows if any reel failed -->
+    {% set failed_reels = reels | selectattr('status', 'equalto', 'failed') | list %}
+    {% if failed_reels %}
+    <div class="error-banner">
+      <span class="error-banner-icon">⚠️</span>
+      <div>
+        <div class="error-banner-title">{{ failed_reels | length }} reel{{ 's' if failed_reels | length > 1 }} failed to generate</div>
+        <div class="error-banner-sub">You can delete them and try again from the Create page.</div>
+      </div>
+      <button class="error-banner-close" onclick="this.parentElement.remove()">✕</button>
+    </div>
+    {% endif %}
+
+    <!-- Reel Grid -->
+    <div class="reel-grid" id="reelGrid">
+
+      {% for reel in reels %}
+      <div
+        class="reel-card {% if reel.status == 'failed' %}reel-card-error{% endif %}"
+        data-title="{{ reel.title | lower }}"
+        {% if reel.status == 'ready' %}onclick="openLightbox('{{ reel.video_url }}', '{{ reel.title }}')"{% endif %}
+      >
+
+        <!-- Status Badge -->
+        <div class="reel-status-badge {{ reel.status }}">
+          {% if reel.status == 'ready' %}✓ Ready
+          {% elif reel.status == 'processing' %}⏳ Processing
+          {% elif reel.status == 'failed' %}✕ Failed
+          {% endif %}
+        </div>
+
+        <!-- Thumbnail -->
+        <div class="reel-video-wrap">
+          {% if reel.status == 'processing' %}
+            <!-- Processing placeholder -->
+            <div class="reel-thumb-processing">
+              <div class="reel-processing-spinner"></div>
+              <span>Generating...</span>
+            </div>
+          {% elif reel.status == 'failed' %}
+            <!-- Error placeholder -->
+            <div class="reel-thumb-error">
+              <span class="reel-error-icon">⚠️</span>
+              <span>Generation failed</span>
+              <span class="reel-error-sub">Try again</span>
+            </div>
+          {% else %}
+            {% if reel.thumbnail %}
+              <img class="reel-thumb" src="{{ reel.thumbnail }}" alt="{{ reel.title }}">
+            {% else %}
+              <div class="reel-thumb-placeholder">
+                🎬
+                <span>No preview</span>
+              </div>
+            {% endif %}
+            <div class="reel-overlay">
+              <div class="reel-play-btn">▶</div>
+            </div>
+            {% if reel.duration %}
+              <div class="reel-duration-badge">{{ reel.duration }}</div>
+            {% endif %}
+          {% endif %}
+        </div>
+
+        <!-- Card Body -->
+        <div class="reel-card-body">
+          <div class="reel-title">{{ reel.title }}</div>
+          <div class="reel-meta-row">
+            <span class="reel-date">{{ reel.created_at.strftime('%b %d, %Y') }}</span>
+            <div class="reel-actions">
+              {% if reel.status == 'ready' %}
+                
+                  href="{{ reel.video_url }}"
+                  class="reel-action-btn"
+                  title="Download"
+                  download
+                  onclick="event.stopPropagation()"
+                >⬇</a>
+              {% endif %}
+              <button
+                class="reel-action-btn {% if reel.status == 'failed' %}reel-action-btn-danger{% endif %}"
+                title="Delete"
+                onclick="event.stopPropagation(); confirmDelete('{{ url_for('delete_reel', reel_id=reel.id) }}', this)"
+              >🗑</button>
+            </div>
+          </div>
+
+          <!-- Processing progress bar -->
+          {% if reel.status == 'processing' %}
+          <div class="reel-progress-wrap">
+            <div class="reel-progress-bar"></div>
+          </div>
+          {% endif %}
+
+          <!-- Error retry message -->
+          {% if reel.status == 'failed' %}
+          <div class="reel-error-msg">
+            ⚠️ Failed — delete and try again
+          </div>
+          {% endif %}
+
+        </div>
+
+      </div>
+      {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <!-- Empty State -->
+    <div class="gallery-empty">
+      <div class="gallery-empty-icon">🎬</div>
+      <h3>No reels yet</h3>
+      <p>Create your first reel and it will appear here.</p>
+      <a href="/create" class="btn-primary">✨ Create Reel</a>
+    </div>
+
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <div class="lightbox-inner" onclick="event.stopPropagation()">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <video class="lightbox-video" id="lightboxVideo" controls></video>
+    <div class="lightbox-meta">
+      <span class="lightbox-title" id="lightboxTitle"></span>
+      <button class="lightbox-download" id="lightboxDownload">⬇ Download</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/gallery.js') }}"></script>
+{% endblock %}

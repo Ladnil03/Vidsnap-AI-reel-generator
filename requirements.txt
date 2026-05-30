@@ -1,14 +1,49 @@
-fastapi
-uvicorn
-python-multipart
-motor
-cloudinary
-edge-tts==6.1.12
-python-dotenv
-aiofiles
-pydantic
-pydantic-settings
-passlib
-python-jose
-resend
-email-validator
+# FastAPI backend
+fastapi==0.104.1
+uvicorn==0.24.0
+python-multipart==0.0.6
+
+# Flask frontend
+Flask==2.3.3
+Werkzeug==2.3.7
+
+# Database
+sqlalchemy==2.0.23
+alembic==1.12.1
+Flask-SQLAlchemy==3.0.5
+Flask-Migrate==4.0.5
+
+# Authentication
+Flask-Login==0.6.3
+Flask-WTF==1.1.1
+WTForms==3.0.1
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# API and data handling
+pydantic==2.5.0
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+python-dateutil==2.8.2
+httpx==0.25.2
+requests==2.31.0
+
+# AI and media
+openai==1.55.3
+elevenlabs==0.2.26
+fal-client==0.4.1
+moviepy==1.0.3
+pillow==10.1.0
+
+# Task queue and background processing
+celery==5.3.4
+redis==5.0.1
+
+# Production server
+gunicorn==21.2.0
+
+# Development and testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+black==23.11.0
+flake8==6.1.0

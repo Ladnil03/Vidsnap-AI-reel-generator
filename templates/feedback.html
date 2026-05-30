@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% set active_page = "feedback" %}
+
+{% block title %}Feedback — VidSnap-AI{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/feedback.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="feedback-page">
+  <div class="feedback-layout">
+
+    <div class="page-header">
+      <h1 class="display-3">Share Your <span class="grad-text">Feedback</span></h1>
+      <p>Help us make VidSnap-AI better for everyone.</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="auth-alert {{ category }}" style="margin-bottom:1.5rem;">
+            {{ '✓' if category == 'success' else '✕' }} {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="feedback-card">
+      <form class="feedback-form" method="POST" action="/feedback">
+
+        <!-- Rating -->
+        <div class="form-group">
+          <div class="form-label">⭐ Overall Rating</div>
+          <div class="star-rating" id="starRating">
+            <button type="button" class="star" data-val="1">★</button>
+            <button type="button" class="star" data-val="2">★</button>
+            <button type="button" class="star" data-val="3">★</button>
+            <button type="button" class="star" data-val="4">★</button>
+            <button type="button" class="star" data-val="5">★</button>
+          </div>
+          <input type="hidden" name="rating" id="ratingInput" required>
+        </div>
+
+        <!-- Category -->
+        <div class="form-group">
+          <div class="form-label">📂 Category</div>
+          <div class="category-row">
+            <label class="cat-option">
+              <input type="radio" name="category" value="general" checked>
+              <span class="cat-label">💬 General</span>
+            </label>
+            <label class="cat-option">
+              <input type="radio" name="category" value="bug">
+              <span class="cat-label">🐛 Bug Report</span>
+            </label>
+            <label class="cat-option">
+              <input type="radio" name="category" value="feature">
+              <span class="cat-label">✨ Feature Request</span>
+            </label>
+            <label class="cat-option">
+              <input type="radio" name="category" value="performance">
+              <span class="cat-label">⚡ Performance</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Message -->
+        <div class="form-group">
+          <div class="form-label">📝 Your Message</div>
+          <textarea
+            class="form-textarea"
+            name="message"
+            rows="5"
+            maxlength="1000"
+            placeholder="Tell us what you think, what's broken, or what you'd love to see..."
+            id="feedbackMsg"
+            required
+          ></textarea>
+          <div class="textarea-footer">
+            <span></span>
+            <span class="char-count" id="fbCharCount">0 / 1000</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-generate">
+          🚀 Submit Feedback
+        </button>
+
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/feedback.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% set active_page = "feedback" %}
+
+{% block title %}Feedback — VidSnap-AI{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/feedback.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="feedback-page">
+  <div class="feedback-layout">
+
+    <div class="page-header">
+      <h1 class="display-3">Share Your <span class="grad-text">Feedback</span></h1>
+      <p>Help us make VidSnap-AI better for everyone.</p>
+    </div>
+
+    <div id="feedbackAlert" class="auth-alert" style="margin-bottom:1.5rem; display:none;"></div>
+
+    <div class="feedback-card">
+      <form class="feedback-form" id="feedbackForm">
+
+        <!-- Rating -->
+        <div class="form-group">
+          <div class="form-label">⭐ Overall Rating</div>
+          <div class="star-rating" id="starRating">
+            <button type="button" class="star" data-val="1">★</button>
+            <button type="button" class="star" data-val="2">★</button>
+            <button type="button" class="star" data-val="3">★</button>
+            <button type="button" class="star" data-val="4">★</button>
+            <button type="button" class="star" data-val="5">★</button>
+          </div>
+          <input type="hidden" name="rating" id="ratingInput" required>
+        </div>
+
+        <!-- Message -->
+        <div class="form-group">
+          <div class="form-label">📝 Your Message</div>
+          <textarea
+            class="form-textarea"
+            id="feedbackMsg"
+            rows="5"
+            maxlength="1000"
+            placeholder="Tell us what you think, what's broken, or what you'd love to see..."
+            required
+          ></textarea>
+          <div class="textarea-footer">
+            <span></span>
+            <span class="char-count" id="fbCharCount">0 / 1000</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-generate">
+          🚀 Submit Feedback
+        </button>
+
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/feedback.js') }}"></script>
+{% endblock %}

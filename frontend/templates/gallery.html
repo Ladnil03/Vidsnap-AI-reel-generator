@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% set active_page = "gallery" %}
+
+{% block title %}Gallery — VidSnap-AI{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/gallery.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="gallery-page">
+  <div class="gallery-layout">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1 class="display-3">Your <span class="grad-text">Gallery</span></h1>
+      <p>Browse, play, and download your generated reels.</p>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="gallery-toolbar">
+      <div class="gallery-search-wrap">
+        <span class="gallery-search-icon">🔍</span>
+        <input type="text" class="gallery-search"
+               placeholder="Search reels..."
+               oninput="filterGallery(this.value)">
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <select class="gallery-sort" onchange="sortGallery(this.value)">
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+        </select>
+        <div class="gallery-view-btns">
+          <button class="view-btn active" id="grid-btn"
+                  onclick="setView('grid')" title="Grid view">⊞</button>
+          <button class="view-btn" id="list-btn"
+                  onclick="setView('list')" title="List view">☰</button>
+        </div>
+        <a href="/create" class="btn-primary"
+           style="padding:9px 18px; font-size:0.85rem;">+ New Reel</a>
+      </div>
+    </div>
+
+    <!-- Reel grid — filled by gallery.js loadGallery() -->
+    <div class="reel-grid" id="reelGrid">
+      <!-- Loading state -->
+      <div style="grid-column:1/-1; text-align:center;
+                  padding:3rem; color:var(--text3);">
+        Loading your reels...
+      </div>
+    </div>
+
+    <!-- Empty state — hidden until JS confirms no reels -->
+    <div class="gallery-empty" id="galleryEmpty" style="display:none;">
+      <div class="gallery-empty-icon">🎬</div>
+      <h3>No reels yet</h3>
+      <p>Create your first reel and it will appear here.</p>
+      <a href="/create" class="btn-primary">✨ Create Reel</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <div class="lightbox-inner" onclick="event.stopPropagation()">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <video class="lightbox-video" id="lightboxVideo" controls></video>
+    <div class="lightbox-meta">
+      <span class="lightbox-title" id="lightboxTitle"></span>
+      <button class="lightbox-download" id="lightboxDownload">⬇ Download</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
+<script src="{{ url_for('static', filename='js/gallery.js') }}"></script>
+{% endblock %}

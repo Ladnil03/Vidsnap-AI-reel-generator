@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% set active_page = "profile" %}
+
+{% block title %}Profile — VidSnap-AI{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-page" style="align-items: flex-start; padding-top: 4rem;">
+  <div class="auth-card" style="max-width: 560px;">
+
+    <div class="auth-header">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">👤</div>
+      <h1 id="profileName">User</h1>
+      <p id="profileEmail">Loading...</p>
+      <p id="profileDate" style="font-size:0.78rem; color:var(--text3); margin-top:0.4rem;"></p>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:2rem;">
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-md); padding:1.2rem; text-align:center;">
+        <div class="stat-num" id="reelCount" style="font-size:2rem;">0</div>
+        <div style="font-size:0.78rem; color:var(--text3); margin-top:4px;">Reels Created</div>
+      </div>
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-md); padding:1.2rem; text-align:center;">
+        <div class="stat-num" id="tokenCount" style="font-size:2rem;">5</div>
+        <div style="font-size:0.78rem; color:var(--text3); margin-top:4px;">Tokens Available</div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <a href="/create"   class="btn-primary"    style="justify-content:center; text-align:center;">✨ Create New Reel</a>
+      <a href="/gallery"  class="btn-secondary"  style="justify-content:center; text-align:center;">🎬 View My Gallery</a>
+      <a href="/feedback" class="btn-secondary"  style="justify-content:center; text-align:center;">💬 Give Feedback</a>
+      <button onclick="handleLogout()" class="btn-secondary"  style="justify-content:center; text-align:center; border-color:var(--accent); color:var(--accent);">🚪 Logout</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API_URL = 'http://localhost:8000';
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const token = getToken();
+  if (!token) {
+    window.location.href = '/login';
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/api/users/me`, {
+      headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch profile');
+    }
+
+    const profile = await response.json();
+    
+    // Update profile display
+    document.getElementById('profileName').textContent = profile.name || 'User';
+    document.getElementById('profileEmail').textContent = profile.email || 'No email';
+    document.getElementById('tokenCount').textContent = profile.tokens_remaining || 0;
+    
+    const createdDate = new Date(profile.created_at);
+    const dateStr = `Member since ${createdDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}`;
+    document.getElementById('profileDate').textContent = dateStr;
+
+  } catch (err) {
+    console.error('Error loading profile:', err);
+    document.getElementById('profileName').textContent = getUserInfo().name || 'User';
+    document.getElementById('profileEmail').textContent = getUserInfo().email || 'No email';
+    document.getElementById('tokenCount').textContent = getUserInfo().tokensRemaining || 0;
+  }
+});
+</script>
+{% endblock %}

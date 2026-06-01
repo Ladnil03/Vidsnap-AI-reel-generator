@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% set active_page = "" %}
+
+{% block title %}Register — VidSnap-AI{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🎬</div>
+      <span>VidSnap<span class="dot">.</span>AI</span>
+    </div>
+
+    <div class="auth-header">
+      <h1>Create account</h1>
+      <p>Start creating viral reels today</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="auth-alert {{ category }}">
+            {{ '✓' if category == 'success' else '✕' }} {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="auth-alert" id="authAlert" style="display:none;"></div>
+
+    <form class="auth-form" id="registerForm">
+      <div class="auth-field">
+        <label>Name</label>
+        <input type="text" id="regName" placeholder="Your full name" required>
+      </div>
+      <div class="auth-field">
+        <label>Email</label>
+        <input type="email" id="regEmail" placeholder="you@example.com" required>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <div class="auth-input-wrap">
+          <input type="password" id="regPassword" placeholder="Min. 8 characters" required>
+          <button type="button" class="auth-eye" onclick="togglePassword('regPassword', this)">👁</button>
+        </div>
+      </div>
+
+      <div id="strengthBar" style="height: 4px; background: transparent; border-radius: 2px; margin: 8px 0; transition: all 0.3s;"></div>
+      <p id="strengthLabel" style="font-size: 12px; margin: 0; color: var(--text-muted);"></p>
+
+      <div class="auth-field">
+        <label>Confirm Password</label>
+        <div class="auth-input-wrap">
+          <input type="password" id="regConfirm" placeholder="Repeat password" required>
+          <button type="button" class="auth-eye" onclick="togglePassword('regConfirm', this)">👁</button>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary auth-submit">Create Account</button>
+    </form>
+
+    <div class="auth-footer">
+      Already have an account? <a href="/login">Sign in</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+{% endblock %}

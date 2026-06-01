@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {% block title %}VidSnap-AI{% endblock %}
+    </title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
+
+    {% block styles %}
+    {% endblock %}
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="/" class="nav-brand">
+            <div class="nav-brand-icon">🎬</div>
+            <span>VidSnap<span class="dot">.</span>AI</span>
+        </a>
+
+        <ul class="nav-links">
+            <li><a href="/">🏠 Home</a></li>
+            <li><a href="/create" data-auth-required="true" style="display:none;">✨ Create</a></li>
+            <li><a href="/gallery" data-auth-required="true" style="display:none;">🎬 Gallery</a></li>
+            <li>
+              <a href="/feedback"
+                 id="navFeedback"
+                 style="display:none;">
+                💬 Feedback
+              </a>
+            </li>
+        </ul>
+
+        <div class="nav-right">
+            <!-- Logged out links — shown by JS if no token -->
+            <a href="/login"    id="navLogin"  class="btn-secondary" style="padding:8px 16px; font-size:0.85rem;">Login</a>
+            <a href="/register" id="navSignup" class="btn-cta-nav">+ Sign Up</a>
+
+            <!-- Logged in section — hidden by default, shown by JS if token exists -->
+            <div id="navUser" style="display:none; align-items:center; gap:10px;">
+              <span style="font-size:0.75rem; background:rgba(255,92,92,0.1);
+                           border:1px solid rgba(255,92,92,0.25); color:var(--accent);
+                           padding:3px 10px; border-radius:50px; font-weight:600;"
+                    id="navTokenBadge">5 tokens</span>
+              <a href="/profile"
+                 style="font-size:0.85rem; color:var(--text2);
+                        display:flex; align-items:center; gap:5px;">
+                👤 <span id="navUserName">User</span>
+              </a>
+              <button id="navLogout"
+                      class="btn-secondary"
+                      style="padding:8px 16px; font-size:0.85rem; border:none; cursor:pointer;">
+                Logout
+              </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Drawer -->
+    <div class="nav-drawer" id="navDrawer">
+        <!-- Updated via JavaScript -->
+    </div>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- JS -->
+    <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    {% block scripts %}
+    {% endblock %}
+</body>
+</html>

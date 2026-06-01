@@ -56,6 +56,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # STARTUP
     await connect_db()
 
+    # Log CORS configuration
+    logger.info(f"CORS allowed origins: {settings.allowed_origins_list}")
+
     # Start worker as a background asyncio task
     # daemon=True equivalent — task is cancelled on shutdown
     worker_task = asyncio.create_task(

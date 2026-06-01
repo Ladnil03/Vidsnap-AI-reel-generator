@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% set active_page = "create" %}
+
+{% block title %}Create Reel — VidSnap-AI{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/create.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="create-page">
+  <div class="create-layout">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1 class="display-3">Create Your <span class="grad-text">Reel</span></h1>
+      <p>Upload images & describe the narration — AI does the rest.</p>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="progress-steps">
+      <div class="prog-step active" id="prog-1">
+        <div class="prog-dot">1</div>
+        <span class="prog-label">Upload Images</span>
+      </div>
+      <div class="prog-step" id="prog-2">
+        <div class="prog-dot">2</div>
+        <span class="prog-label">Add Narration</span>
+      </div>
+      <div class="prog-step" id="prog-3">
+        <div class="prog-dot">3</div>
+        <span class="prog-label">Generate</span>
+      </div>
+    </div>
+
+    <!-- Step 1: Upload Images -->
+    <div class="create-card" style="margin-bottom: 1.5rem;">
+      <div class="create-card-header">
+        <div class="create-card-icon">📸</div>
+        <div>
+          <div class="create-card-title">Step 1 — Upload Images</div>
+          <div class="create-card-subtitle">Drag, drop or browse. Up to 20 images.</div>
+        </div>
+      </div>
+      <div class="create-card-body">
+
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-zone-inner">
+            <span class="drop-icon">☁️</span>
+            <div class="drop-title">Drag & drop images here</div>
+            <div class="drop-or"><span>or browse files</span></div>
+            <button class="btn-browse" type="button" id="browseBtn">
+              📁 Choose Images
+            </button>
+            <div class="drop-sub" style="margin-top: 0.8rem;">PNG, JPG, JPEG, WEBP — max 10MB each</div>
+          </div>
+        </div>
+
+        <input type="file" id="fileInput" multiple accept="image/*">
+
+        <div class="preview-count-badge" id="previewBadge"></div>
+        <div class="preview-grid" id="previewGrid"></div>
+
+      </div>
+    </div>
+
+    <!-- Step 2: Narration & Voice -->
+    <div class="create-card" style="margin-bottom: 1.5rem;">
+      <div class="create-card-header">
+        <div class="create-card-icon">🎙️</div>
+        <div>
+          <div class="create-card-title">Step 2 — Narration & Voice</div>
+          <div class="create-card-subtitle">Write what the AI should say over your reel</div>
+        </div>
+      </div>
+      <div class="create-card-body">
+
+        <!-- Voice Style -->
+        <div class="form-group">
+          <div class="form-label">
+            <div class="form-label-icon">🎵</div>
+            Voice Style
+          </div>
+          <div class="voice-row">
+            <label class="voice-option">
+              <input type="radio" name="voice" value="natural" checked>
+              <div class="voice-label">
+                <span class="voice-label-icon">🎤</span>
+                <div>
+                  <div class="voice-label-text">Natural</div>
+                  <div class="voice-label-sub">Warm, Casual</div>
+                </div>
+              </div>
+            </label>
+            <label class="voice-option">
+              <input type="radio" name="voice" value="elegant">
+              <div class="voice-label">
+                <span class="voice-label-icon">✨</span>
+                <div>
+                  <div class="voice-label-text">Elegant</div>
+                  <div class="voice-label-sub">Smooth, Cool</div>
+                </div>
+              </div>
+            </label>
+            <label class="voice-option">
+              <input type="radio" name="voice" value="bold">
+              <div class="voice-label">
+                <span class="voice-label-icon">⚡</span>
+                <div>
+                  <div class="voice-label-text">Bold</div>
+                  <div class="voice-label-sub">Powerful, Energetic</div>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Voiceover Text -->
+        <div class="form-group">
+          <div class="form-label">
+            <div class="form-label-icon">📝</div>
+            Voiceover Text
+          </div>
+          <textarea
+            class="form-textarea"
+            id="narrationText"
+            rows="5"
+            maxlength="900"
+            placeholder="Write what you want the AI to narrate... e.g. 'This summer I explored the streets of Paris...'"
+          ></textarea>
+          <div class="textarea-footer">
+            <span style="font-size: 0.78rem; color: var(--text3);">Be descriptive to better narration</span>
+            <span class="char-count" id="charCount">0 / 900</span>
+          </div>
+        </div>
+
+        <!-- Duration Slider -->
+        <div class="slider-wrap">
+          <div class="form-label">
+            <div class="form-label-icon">⏱️</div>
+            Image Duration per Frame
+          </div>
+          <div class="slider-header">
+            <span style="font-size: 0.8rem; color: var(--text3);">Seconds per image</span>
+            <span class="slider-val" id="sliderVal">3s</span>
+          </div>
+          <input
+            type="range"
+            class="styled-range"
+            id="durationSlider"
+            min="1" max="8" value="3" step="0.5"
+          >
+        </div>
+
+        <!-- Tips -->
+        <div class="create-tips">
+          <div class="tips-title">💡 Pro Tips</div>
+          <ul class="tips-list">
+            <li>Use 3–8 images for the best pacing. More images = longer reel.</li>
+            <li>Write narration that matches the mood of your photos.</li>
+            <li>Keep text under 300 characters for a punchy 15-second reel.</li>
+            <li>Landscape photos work best — they'll be auto-cropped to 9:16.</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Step 3: Generate -->
+    <div class="create-card">
+      <div class="create-card-header">
+        <div class="create-card-icon">🎬</div>
+        <div>
+          <div class="create-card-title">Step 3 — Generate Reel</div>
+          <div class="create-card-subtitle">AI will create your voiceover and stitch the video</div>
+        </div>
+      </div>
+      <div class="create-card-body">
+
+        <button class="btn-generate" id="generateBtn" type="button">
+          <span class="btn-spinner" id="btnSpinner"></span>
+          <span id="btnText">✨ Generate My Reel</span>
+        </button>
+
+        <!-- Processing Panel -->
+        <div class="processing-panel" id="processingPanel">
+          <div class="processing-title" id="procTitle">
+            <div class="proc-spinner"></div>
+            Creating your reel...
+          </div>
+          <div class="proc-stages">
+            <div class="proc-stage" id="stage-1">
+              <div class="proc-icon">1</div>
+              <div class="proc-stage-label">Uploading images</div>
+            </div>
+            <div class="proc-stage" id="stage-2">
+              <div class="proc-icon">2</div>
+              <div class="proc-stage-label">Generating voiceover</div>
+            </div>
+            <div class="proc-stage" id="stage-3">
+              <div class="proc-icon">3</div>
+              <div class="proc-stage-label">Stitching video</div>
+            </div>
+          </div>
+          <div class="proc-bar-wrap">
+            <div class="proc-bar" id="procBar"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
+<script src="{{ url_for('static', filename='js/create.js') }}"></script>
+{% endblock %}

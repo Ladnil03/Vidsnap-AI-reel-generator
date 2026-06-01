@@ -7,3 +7,9 @@ node_modules/
 dist/
 .DS_Store
 /tmp/vidsnap/
+static/uploads/
+static/outputs/
+.vscode/
+.idea/
+instance/
+*.db

@@ -1,3 +1,4 @@
+# Backend dependencies
 fastapi
 uvicorn
 python-multipart
@@ -12,3 +13,10 @@ passlib
 python-jose
 resend
 email-validator
+
+# Frontend dependencies
+flask
+flask-sqlalchemy
+flask-login
+flask-bcrypt
+flask-wtf

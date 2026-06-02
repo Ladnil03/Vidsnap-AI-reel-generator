@@ -71,16 +71,17 @@ async def _mark_done(job_id: str, reel_url: str, cloudinary_id: str) -> None:
     logger.info("[%s] Marked as done", job_id)
 
 
-async def _mark_failed(job_id: str, error_message: str) -> None:
+async def _mark_failed(job_id: str, error_message: str, user_id: str) -> None:
     """
-    Update a job's status to 'failed' with a descriptive error message.
+    Update a job's status to 'failed' with a descriptive error message and refund token.
 
     The error_message is returned to the frontend via GET /api/jobs/{id}
-    so the user can see what went wrong.
+    so the user can see what went wrong. Increments user's token balance by 1.
 
     Args:
         job_id: The UUID of the failed job.
         error_message: Human-readable description of what went wrong.
+        user_id: The UUID of the user to refund.
     """
     db = get_db()
     await db.jobs.update_one(
@@ -94,6 +95,12 @@ async def _mark_failed(job_id: str, error_message: str) -> None:
         },
     )
     logger.info("[%s] Marked as failed — %s", job_id, error_message)
+
+    await db.users.update_one(
+        {"user_id": user_id},
+        {"$inc": {"tokens_remaining": 1}},
+    )
+    logger.info("[%s] Refunded 1 token to user %s due to failure", job_id, user_id)
 
 
 async def _cleanup_tmp(tmp_dir: str) -> None:
@@ -139,7 +146,8 @@ async def _process_job(job: dict) -> None:
         await _mark_failed(
             job_id,
             "Temporary files were lost (server may have restarted). "
-            "Please submit the job again."
+            "Please submit the job again.",
+            job["user_id"],
         )
         return
 
@@ -171,7 +179,7 @@ async def _process_job(job: dict) -> None:
 
     except Exception as error:
         logger.error("[%s] Pipeline failed: %s", job_id, error, exc_info=True)
-        await _mark_failed(job_id, str(error))
+        await _mark_failed(job_id, str(error), job["user_id"])
 
     finally:
         await _cleanup_tmp(str(tmp_path))
@@ -186,6 +194,23 @@ async def run_worker() -> None:
     Never raises — all errors are handled inside _process_job.
     """
     logger.info("[Worker] Started — polling every %ds", settings.worker_poll_seconds)
+
+    # Recovery: Find any jobs stuck in 'processing' and mark them failed/refund them
+    try:
+        db = get_db()
+        async for job in db.jobs.find({"status": "processing"}):
+            logger.info(
+                "[Worker Startup] Recovering stuck job %s for user %s",
+                job["job_id"],
+                job["user_id"],
+            )
+            await _mark_failed(
+                job_id=job["job_id"],
+                error_message="Job was interrupted by a server restart/shutdown.",
+                user_id=job["user_id"],
+            )
+    except Exception as error:
+        logger.error("[Worker Startup] Error during stuck jobs recovery: %s", error, exc_info=True)
 
     while True:
         try:

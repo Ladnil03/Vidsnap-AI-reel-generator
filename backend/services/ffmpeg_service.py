@@ -7,6 +7,7 @@ imports — it is pure service logic.
 """
 
 import logging
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -20,19 +21,72 @@ IMAGE_DURATION_SECONDS: int = 3
 OUTPUT_FILENAME: str = "output.mp4"
 CONCAT_FILENAME: str = "input.txt"
 
+# Common Windows install paths for FFmpeg when it is not yet on PATH.
+# winget installs under AppData\Local\Microsoft\WinGet\Packages,
+# Chocolatey installs under ProgramData\chocolatey\bin,
+# and manual installs often land in ProgramFiles\ffmpeg\bin.
+FFMPEG_FALLBACK_PATHS: list[str] = [
+    r"C:\ffmpeg\bin\ffmpeg.exe",
+    r"C:\Program Files\ffmpeg\bin\ffmpeg.exe",
+    r"C:\ProgramData\chocolatey\bin\ffmpeg.exe",
+    str(
+        Path(os.environ.get("LOCALAPPDATA", ""))
+        / "Microsoft" / "WinGet" / "Links" / "ffmpeg.exe"
+    ),
+]
+
+# Expand wildcard-style winget package path at import time so we only
+# do the directory scan once, not per-job.
+_WINGET_PKG_DIR = (
+    Path(os.environ.get("LOCALAPPDATA", ""))
+    / "Microsoft" / "WinGet" / "Packages"
+)
+if _WINGET_PKG_DIR.exists():
+    for _pkg in _WINGET_PKG_DIR.glob("Gyan.FFmpeg*"):
+        for _candidate in _pkg.rglob("ffmpeg.exe"):
+            FFMPEG_FALLBACK_PATHS.insert(0, str(_candidate))
+            break
+
+
+def get_ffmpeg_binary() -> str:
+    """
+    Resolve the FFmpeg executable path.
+
+    First checks PATH via shutil.which. If that fails (e.g. PATH not
+    refreshed after a winget install), scans a list of well-known
+    Windows install locations.
+
+    Returns:
+        Absolute path string to the ffmpeg executable.
+
+    Raises:
+        RuntimeError: If FFmpeg cannot be found anywhere.
+    """
+    # Prefer PATH-resolved binary so system upgrades are picked up automatically
+    path_binary = shutil.which("ffmpeg")
+    if path_binary:
+        return path_binary
+
+    # Fall back to known install locations
+    for candidate in FFMPEG_FALLBACK_PATHS:
+        if candidate and Path(candidate).is_file():
+            logger.info("[FFmpeg] Found binary at fallback path: %s", candidate)
+            return candidate
+
+    raise RuntimeError(
+        "FFmpeg is not installed or not found on PATH. "
+        "Install FFmpeg and ensure it is accessible."
+    )
+
 
 def check_ffmpeg() -> None:
     """
-    Verify that FFmpeg is installed and available on the system PATH.
+    Verify that FFmpeg is installed and accessible.
 
     Raises:
-        RuntimeError: If FFmpeg is not found on PATH.
+        RuntimeError: If FFmpeg cannot be found on PATH or fallback locations.
     """
-    if shutil.which("ffmpeg") is None:
-        raise RuntimeError(
-            "FFmpeg is not installed or not found on PATH. "
-            "Install FFmpeg and ensure it is accessible."
-        )
+    get_ffmpeg_binary()  # Raises if not found
 
 
 def build_concat_file(
@@ -73,6 +127,7 @@ def build_ffmpeg_command(
     concat_path: Path,
     audio_path: Path,
     output_path: Path,
+    ffmpeg_binary: str = "ffmpeg",
 ) -> list[str]:
     """
     Build the FFmpeg command as a list of string arguments.
@@ -88,12 +143,13 @@ def build_ffmpeg_command(
         concat_path: Path to the FFmpeg concat list file.
         audio_path: Path to the generated audio.mp3.
         output_path: Path where the final MP4 will be written.
+        ffmpeg_binary: Absolute path (or name) of the ffmpeg executable.
 
     Returns:
         List of strings representing the full FFmpeg command.
     """
     return [
-        "ffmpeg",
+        ffmpeg_binary,
         "-y",
         "-f",
         "concat",
@@ -149,8 +205,10 @@ async def generate_reel(
     Raises:
         RuntimeError: If FFmpeg is not installed, fails, or produces no output.
     """
-    # Verify FFmpeg is available
-    check_ffmpeg()
+    # Resolve FFmpeg binary — searches PATH first, then known install locations.
+    # This ensures the service works even when PATH hasn't been refreshed after
+    # a winget/chocolatey install without restarting the terminal.
+    ffmpeg_binary = get_ffmpeg_binary()
 
     # Resolve full paths to images
     image_paths = [tmp_dir / fname for fname in image_filenames]
@@ -161,8 +219,8 @@ async def generate_reel(
     # Build concat file
     concat_path = build_concat_file(image_paths, tmp_dir)
 
-    # Build FFmpeg command
-    command = build_ffmpeg_command(concat_path, audio_path, output_path)
+    # Build FFmpeg command with the resolved binary path
+    command = build_ffmpeg_command(concat_path, audio_path, output_path, ffmpeg_binary)
 
     # Log command at debug level
     logger.debug("[FFmpeg] Command: %s", " ".join(command))

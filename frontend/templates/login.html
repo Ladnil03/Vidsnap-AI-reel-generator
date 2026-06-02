@@ -50,12 +50,60 @@
           <input type="checkbox" id="loginRemember">
           <span>Remember me</span>
         </label>
+        <a href="#" id="forgotPasswordLink" style="font-size:0.85rem; color:var(--teal, #6ee2c8); text-decoration:none;">Forgot password?</a>
       </div>
       <button type="submit" class="btn-primary auth-submit">Sign In</button>
     </form>
 
     <div class="auth-footer">
       Don't have an account? <a href="/register">Create one</a>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
+      <div class="auth-card" style="position:relative; width:100%; max-width:420px; margin:1rem;">
+        <button id="forgotModalClose" type="button" style="position:absolute; top:1rem; right:1rem; background:none; border:none; cursor:pointer; font-size:1.4rem; color:var(--text2, #aaa);">✕</button>
+
+        <!-- Step 1: Enter email -->
+        <div id="forgotStep1">
+          <div class="auth-header">
+            <h1>Reset Password</h1>
+            <p>Enter your email and we'll send you an OTP</p>
+          </div>
+          <div class="auth-alert" id="forgotAlert" style="display:none;"></div>
+          <form class="auth-form" id="forgotForm">
+            <div class="auth-field">
+              <label>Email</label>
+              <input type="email" id="forgotEmail" placeholder="you@example.com" required>
+            </div>
+            <button type="submit" class="btn-primary auth-submit" id="forgotSubmitBtn">Send OTP</button>
+          </form>
+        </div>
+
+        <!-- Step 2: Enter OTP + new password -->
+        <div id="forgotStep2" style="display:none;">
+          <div class="auth-header">
+            <h1>Set New Password</h1>
+            <p>Enter the OTP sent to your email</p>
+          </div>
+          <div class="auth-alert" id="resetAlert" style="display:none;"></div>
+          <form class="auth-form" id="resetForm">
+            <div class="auth-field">
+              <label>OTP Code</label>
+              <input type="text" id="resetOtp" placeholder="123456" maxlength="6" required>
+            </div>
+            <div class="auth-field">
+              <label>New Password</label>
+              <div class="auth-input-wrap">
+                <input type="password" id="resetPassword" placeholder="••••••••" required>
+                <button type="button" class="auth-eye" onclick="togglePassword('resetPassword', this)">👁</button>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary auth-submit" id="resetSubmitBtn">Reset Password</button>
+          </form>
+        </div>
+
+      </div>
     </div>
 
   </div>

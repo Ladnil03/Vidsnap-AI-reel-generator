@@ -90,7 +90,7 @@
 }
 .auth-eye:hover { color: var(--text); }
 
-.auth-remember { display: flex; align-items: center; }
+.auth-remember { display: flex; align-items: center; justify-content: space-between; }
 .auth-checkbox {
   display: flex;
   align-items: center;

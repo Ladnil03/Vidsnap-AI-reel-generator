@@ -221,3 +221,137 @@ if (registerForm) {
     }
   });
 }
+
+/* ── FORGOT PASSWORD MODAL ── */
+
+/**
+ * Show or hide the forgot-password modal overlay.
+ * @param {boolean} visible - True to show, false to hide.
+ */
+function setForgotModalVisible(visible) {
+  const modal = document.getElementById('forgotModal');
+  if (!modal) return;
+  modal.style.display = visible ? 'flex' : 'none';
+
+  if (visible) {
+    // Reset back to Step 1 whenever the modal is opened
+    document.getElementById('forgotStep1').style.display = 'block';
+    document.getElementById('forgotStep2').style.display = 'none';
+    const forgotAlert = document.getElementById('forgotAlert');
+    if (forgotAlert) { forgotAlert.style.display = 'none'; }
+    const forgotEmailInput = document.getElementById('forgotEmail');
+    if (forgotEmailInput) { forgotEmailInput.value = ''; }
+  }
+}
+
+// Open modal when "Forgot password?" link is clicked
+const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+if (forgotPasswordLink) {
+  forgotPasswordLink.addEventListener('click', (event) => {
+    event.preventDefault();
+    setForgotModalVisible(true);
+  });
+}
+
+// Close modal on X button click
+const forgotModalClose = document.getElementById('forgotModalClose');
+if (forgotModalClose) {
+  forgotModalClose.addEventListener('click', () => setForgotModalVisible(false));
+}
+
+// Close modal when clicking the dark backdrop (outside the card)
+const forgotModal = document.getElementById('forgotModal');
+if (forgotModal) {
+  forgotModal.addEventListener('click', (event) => {
+    if (event.target === forgotModal) setForgotModalVisible(false);
+  });
+}
+
+/**
+ * Handle Step 1 — request OTP email.
+ * Calls forgotPassword() from api.js which posts to /api/auth/forgot-password.
+ */
+const forgotForm = document.getElementById('forgotForm');
+if (forgotForm) {
+  // Track which email was entered so Step 2 can use it
+  let pendingResetEmail = '';
+
+  forgotForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const emailInput  = document.getElementById('forgotEmail');
+    const submitBtn   = document.getElementById('forgotSubmitBtn');
+    const alertBox    = document.getElementById('forgotAlert');
+
+    submitBtn.disabled  = true;
+    submitBtn.innerHTML = '<span class="auth-btn-spinner"></span> Sending OTP...';
+
+    try {
+      await forgotPassword(emailInput.value.trim());
+      pendingResetEmail = emailInput.value.trim();
+
+      // Advance to Step 2
+      document.getElementById('forgotStep1').style.display = 'none';
+      document.getElementById('forgotStep2').style.display = 'block';
+    } catch (error) {
+      if (alertBox) {
+        alertBox.className    = 'auth-alert error';
+        alertBox.innerHTML    = `✕ ${error.message}`;
+        alertBox.style.display = 'flex';
+      }
+      submitBtn.disabled  = false;
+      submitBtn.innerHTML = 'Send OTP';
+    }
+
+    /**
+     * Handle Step 2 — verify OTP and set new password.
+     * Only registers this listener once, after the email is confirmed in Step 1.
+     */
+    const resetForm = document.getElementById('resetForm');
+    if (resetForm && !resetForm.dataset.listenerAttached) {
+      resetForm.dataset.listenerAttached = 'true';
+
+      resetForm.addEventListener('submit', async (resetEvent) => {
+        resetEvent.preventDefault();
+
+        const otpInput      = document.getElementById('resetOtp');
+        const passwordInput = document.getElementById('resetPassword');
+        const resetSubmitBtn = document.getElementById('resetSubmitBtn');
+        const resetAlertBox = document.getElementById('resetAlert');
+
+        if (passwordInput.value.length < 8) {
+          if (resetAlertBox) {
+            resetAlertBox.className    = 'auth-alert error';
+            resetAlertBox.innerHTML    = '✕ Password must be at least 8 characters.';
+            resetAlertBox.style.display = 'flex';
+          }
+          return;
+        }
+
+        resetSubmitBtn.disabled  = true;
+        resetSubmitBtn.innerHTML = '<span class="auth-btn-spinner"></span> Resetting...';
+
+        try {
+          await resetPassword(pendingResetEmail, otpInput.value.trim(), passwordInput.value);
+
+          // Success — close modal and show login alert
+          setForgotModalVisible(false);
+          const loginAlertBox = document.getElementById('authAlert');
+          if (loginAlertBox) {
+            loginAlertBox.className    = 'auth-alert success';
+            loginAlertBox.innerHTML    = '✓ Password reset! Please log in with your new password.';
+            loginAlertBox.style.display = 'flex';
+          }
+        } catch (resetError) {
+          if (resetAlertBox) {
+            resetAlertBox.className    = 'auth-alert error';
+            resetAlertBox.innerHTML    = `✕ ${resetError.message}`;
+            resetAlertBox.style.display = 'flex';
+          }
+          resetSubmitBtn.disabled  = false;
+          resetSubmitBtn.innerHTML = 'Reset Password';
+        }
+      });
+    }
+  });
+}

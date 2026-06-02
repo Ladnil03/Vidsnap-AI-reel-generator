@@ -13,6 +13,7 @@ passlib
 python-jose
 resend
 email-validator
+bcrypt
 
 # Frontend dependencies
 flask

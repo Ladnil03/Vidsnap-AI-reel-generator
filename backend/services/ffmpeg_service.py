@@ -151,6 +151,8 @@ def build_ffmpeg_command(
     return [
         ffmpeg_binary,
         "-y",
+        "-loglevel",
+        "warning",  # Reduce log verbosity to save memory in subprocess capture
         "-f",
         "concat",
         "-safe",
@@ -168,6 +170,10 @@ def build_ffmpeg_command(
         ),
         "-c:v",
         "libx264",
+        "-preset",
+        "superfast",  # Faster encoding uses significantly less memory
+        "-threads",
+        "1",  # Restrict threads to 1 to prevent parallel thread memory overhead
         "-c:a",
         "aac",
         "-shortest",

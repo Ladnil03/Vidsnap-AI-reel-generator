@@ -22,7 +22,13 @@ BACKEND_URL: str = os.environ.get("BACKEND_URL", "http://localhost:8000")
 # App factory
 # ---------------------------------------------------------------------------
 
-app = Flask(__name__, template_folder="templates", static_folder="static")
+# Use absolute paths so templates and static folders are always found regardless of deployment context
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "templates"),
+    static_folder=os.path.join(BASE_DIR, "static"),
+)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "vidsnap-flask-key")
 
 

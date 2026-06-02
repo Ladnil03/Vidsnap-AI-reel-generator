@@ -4,17 +4,14 @@ No FastAPI imports, no database imports. Pure utility functions.
 """
 
 import logging
+import bcrypt
 from datetime import datetime, timedelta, timezone
 
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from backend.config import settings
 
 logger = logging.getLogger(__name__)
-
-# Password hashing context using bcrypt
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(plain_password: str) -> str:
@@ -26,9 +23,13 @@ def hash_password(plain_password: str) -> str:
         plain_password: The raw password from the user.
 
     Returns:
-        Bcrypt hashed password string.
+        str: Bcrypt hashed password string.
     """
-    return pwd_context.hash(plain_password)
+    # Convert plain password to bytes as required by bcrypt
+    password_bytes = plain_password.encode("utf-8")
+    salt = bcrypt.gensalt()
+    hashed_bytes = bcrypt.hashpw(password_bytes, salt)
+    return hashed_bytes.decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -40,9 +41,16 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         hashed_password: Stored bcrypt hash from database.
 
     Returns:
-        True if password matches, False otherwise.
+        bool: True if password matches, False otherwise.
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        # Convert inputs to bytes and verify using native bcrypt.checkpw
+        password_bytes = plain_password.encode("utf-8")
+        hashed_bytes = hashed_password.encode("utf-8")
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
+    except Exception as error:
+        logger.error("[Auth] Password verification failed: %s", error)
+        return False
 
 
 def create_access_token(user_id: str, email: str) -> str:

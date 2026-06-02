@@ -4,7 +4,7 @@ uvicorn
 python-multipart
 motor
 cloudinary
-edge-tts==6.1.12
+edge-tts>=7.2.8
 python-dotenv
 aiofiles
 pydantic

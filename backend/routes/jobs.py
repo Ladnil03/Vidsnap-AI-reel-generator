@@ -24,7 +24,7 @@ from backend.utils.file_handler import validate_image_list
 
 logger = logging.getLogger(__name__)
 
-TMP_BASE: Path = Path("/tmp/vidsnap")
+TMP_BASE: Path = Path("tmp/vidsnap").resolve()
 
 router = APIRouter(prefix="/api/jobs", tags=["Jobs"])
 

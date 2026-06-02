@@ -42,8 +42,6 @@
 </div>
 
 <script>
-const API_URL = 'http://localhost:8000';
-
 document.addEventListener('DOMContentLoaded', async () => {
   const token = getToken();
   if (!token) {
@@ -52,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
-    const response = await fetch(`${API_URL}/api/users/me`, {
+    const response = await fetch(`${API_BASE}/api/users/me`, {
       headers: getAuthHeaders()
     });
 

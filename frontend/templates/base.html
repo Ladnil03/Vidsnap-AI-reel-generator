@@ -17,6 +17,11 @@
 
     {% block styles %}
     {% endblock %}
+
+    <!-- Inject backend URL from Flask env var so api.js auto-configures in production -->
+    <script>
+      window.VIDSNAP_API_BASE = "{{ backend_url }}";
+    </script>
 </head>
 
 <body>

@@ -1,23 +1,15 @@
-# Backend dependencies
-fastapi
-uvicorn
-python-multipart
-motor
-cloudinary
+# Backend dependencies — pinned for reproducible builds on Render
+fastapi==0.111.0
+uvicorn==0.30.1
+python-multipart==0.0.9
+motor==3.4.0
+cloudinary==1.40.0
 edge-tts>=7.2.8
-python-dotenv
-aiofiles
-pydantic
-pydantic-settings
-passlib
-python-jose
-resend
-email-validator
-bcrypt
-
-# Frontend dependencies
-flask
-flask-sqlalchemy
-flask-login
-flask-bcrypt
-flask-wtf
+python-dotenv==1.0.1
+aiofiles==23.2.1
+pydantic==2.7.1
+pydantic-settings==2.2.1
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+resend==2.8.0
+email-validator==2.1.1

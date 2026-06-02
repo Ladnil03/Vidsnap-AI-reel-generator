@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: vidsnap-ai-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: MONGODB_URI
+        sync: false   # Set manually in Render dashboard — contains credentials
+      - key: MONGODB_DB
+        value: vidsnap
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false   # Set manually in Render dashboard
+      - key: CLOUDINARY_API_KEY
+        sync: false   # Set manually in Render dashboard
+      - key: CLOUDINARY_API_SECRET
+        sync: false   # Set manually in Render dashboard
+      - key: CLOUDINARY_FOLDER
+        value: vidsnap-reels
+      - key: JWT_SECRET_KEY
+        sync: false   # Set manually — must be a long, random secret
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: "60"
+      - key: RESEND_API_KEY
+        sync: false   # Set manually in Render dashboard
+      - key: EMAIL_FROM
+        sync: false   # Set manually — use onboarding@resend.dev on free tier
+      - key: FREE_TOKENS_ON_SIGNUP
+        value: "5"
+      - key: ALLOWED_ORIGINS
+        sync: false   # Set manually — add deployed frontend URL here
+      - key: MAX_IMAGE_SIZE_MB
+        value: "10"
+      - key: WORKER_POLL_SECONDS
+        value: "3"

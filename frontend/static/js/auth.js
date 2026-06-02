@@ -135,8 +135,8 @@ if (loginForm) {
   loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const emailInput    = loginForm.querySelector('input[name="email"]');
-    const passwordInput = loginForm.querySelector('input[name="password"]');
+    const emailInput    = document.getElementById('loginEmail');
+    const passwordInput = document.getElementById('loginPassword');
     const submitBtn     = loginForm.querySelector('.auth-submit');
     const alertBox      = document.getElementById('authAlert');
 

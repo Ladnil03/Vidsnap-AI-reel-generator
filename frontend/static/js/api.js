@@ -11,8 +11,14 @@
 // CONSTANTS
 // ============================================================================
 
-const API_BASE = 'http://localhost:8000';
-// Change to Railway deployed URL in production
+/**
+ * Backend API base URL.
+ * In production, window.VIDSNAP_API_BASE is injected by base.html
+ * from the BACKEND_URL environment variable set on the Flask server.
+ * Falls back to localhost for local development with no config needed.
+ */
+const API_BASE = window.VIDSNAP_API_BASE || 'http://localhost:8000';
+
 
 // LocalStorage keys
 const TOKEN_KEY = 'vidsnap_token';

@@ -1,276 +1,344 @@
 /**
- * gallery.js — Fetch reels from FastAPI, search, sort, delete
+ * gallery.js — VidSnap AI Gallery
+ *
+ * Responsibilities:
+ *   - Fetch reels from FastAPI and render to the DOM
+ *   - Filter and sort the reel list client-side (no extra API calls)
+ *   - Handle reel deletion with optimistic UI removal
+ *   - Open / close the video lightbox modal
+ *   - Show toast notifications for user feedback
+ *
+ * All API calls delegate to api.js (loaded first by base.html).
+ * Field names match FastAPI response: job_id, reel_url, created_at.
  */
 
-/**
- * Load reels from FastAPI and render them in the gallery grid.
- * Called on page load and after deletion.
- */
-async function loadGallery() {
-  const reelGrid = document.getElementById('reelGrid');
-  const emptyState = document.getElementById('galleryEmpty');
-  if (!reelGrid) return;
+'use strict';
 
-  try {
-    const reels = await getAllReels();
-    // reels = [{ job_id, reel_url, created_at }]
+// ---------------------------------------------------------------------------
+// Module state
+// ---------------------------------------------------------------------------
 
-    if (reels.length === 0) {
-      reelGrid.innerHTML = '';
-      if (emptyState) emptyState.style.display = 'block';
-      return;
-    }
-
-    if (emptyState) emptyState.style.display = 'none';
-
-    reelGrid.innerHTML = reels.map(reel => {
-      const date = new Date(reel.created_at).toLocaleDateString('en-IN', {
-        day: 'numeric', month: 'short', year: 'numeric'
-      });
-
-      return `
-        <div class="reel-card" data-title="reel" data-job-id="${reel.job_id}"
-             onclick="openLightbox('${reel.reel_url}', 'Reel')">
-
-          <div class="reel-status-badge ready">✓ Ready</div>
-
-          <div class="reel-video-wrap">
-            <video class="reel-thumb" preload="metadata" muted>
-              <source src="${reel.reel_url}" type="video/mp4">
-            </video>
-            <div class="reel-overlay">
-              <div class="reel-play-btn">▶</div>
-            </div>
-          </div>
-
-          <div class="reel-card-body">
-            <div class="reel-title">Reel</div>
-            <div class="reel-meta-row">
-              <span class="reel-date">${date}</span>
-              <div class="reel-actions">
-                <a href="${reel.reel_url}"
-                   class="reel-action-btn"
-                   title="Download"
-                   download
-                   onclick="event.stopPropagation()">⬇</a>
-                <button
-                  class="reel-action-btn"
-                  title="Delete"
-                  onclick="event.stopPropagation(); handleDelete('${reel.job_id}', this)">
-                  🗑
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-  } catch (error) {
-    console.error('Failed to load gallery:', error);
-    if (error.message.includes('401')) {
-      window.location.href = '/login';
-    }
-  }
-}
-
-/**
- * Delete a reel by job_id using FastAPI DELETE /api/reels/{job_id}.
- * Removes the card from DOM on success.
- */
-async function handleDelete(jobId, btn) {
-  if (!confirm('Delete this reel? This cannot be undone.')) return;
-
-  const card = btn.closest('.reel-card');
-  card.style.transform  = 'scale(0)';
-  card.style.opacity    = '0';
-  card.style.transition = 'all 0.3s';
-
-  try {
-    await deleteReel(jobId);
-    setTimeout(() => {
-      card.remove();
-      showToast('success', 'Reel deleted');
-      // Show empty state if no more reels
-      const remaining = document.querySelectorAll('.reel-card').length;
-      if (remaining === 0) {
-        const emptyState = document.getElementById('galleryEmpty');
-        if (emptyState) emptyState.style.display = 'block';
-      }
-    }, 300);
-  } catch (error) {
-    card.style.transform = '';
-    card.style.opacity   = '';
-    showToast('error', 'Could not delete reel');
-  }
-}
-
-// Load gallery when page opens
-document.addEventListener('DOMContentLoaded', loadGallery);
-
+/** @type {Array<Object>} Master list — all reels fetched from the API. */
 let allReels = [];
 
-/* ── INITIALIZE GALLERY ── */
+// ---------------------------------------------------------------------------
+// Bootstrap — single DOMContentLoaded listener
+// ---------------------------------------------------------------------------
+
 document.addEventListener('DOMContentLoaded', async () => {
+  /**
+   * Entry point. Redirect unauthenticated users and load the gallery.
+   * A single listener avoids the double-fetch bug that existed before.
+   */
   if (!isLoggedIn()) {
     window.location.href = '/login';
     return;
   }
 
+  // Close lightbox on Escape key press
+  document.addEventListener('keydown', (keyboardEvent) => {
+    if (keyboardEvent.key === 'Escape') {
+      closeLightbox();
+    }
+  });
+
+  await loadGallery();
+});
+
+// ---------------------------------------------------------------------------
+// Data loading
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch all reels for the current user from FastAPI, store in allReels,
+ * then render them. Shows a toast on network/auth failure.
+ *
+ * @returns {Promise<void>}
+ */
+async function loadGallery() {
   try {
     allReels = await getAllReels();
     renderReels(allReels);
-  } catch (err) {
-    showToast('error', err.message);
-    console.error(err);
+  } catch (fetchError) {
+    // Redirect to login on 401 — token expired or missing
+    if (fetchError.message && fetchError.message.includes('401')) {
+      window.location.href = '/login';
+      return;
+    }
+    showToast('error', 'Failed to load gallery: ' + fetchError.message);
+    console.error('[gallery] loadGallery error:', fetchError);
   }
-});
+}
 
-/* ── RENDER REELS ── */
+// ---------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------
+
+/**
+ * Render an array of reel objects into the #reelGrid element.
+ * Shows the #galleryEmpty empty state when the array is empty.
+ * Uses API field names: job_id, reel_url, created_at.
+ *
+ * @param {Array<Object>} reels - Reel documents from FastAPI.
+ * @returns {void}
+ */
 function renderReels(reels) {
-  const grid = document.getElementById('reelGrid');
-  if (!grid) return;
+  const reelGrid   = document.getElementById('reelGrid');
+  const emptyState = document.getElementById('galleryEmpty');
 
-  grid.innerHTML = '';
+  if (!reelGrid) return;
 
+  // Show empty state when there are no reels to display
   if (reels.length === 0) {
-    grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No reels yet. <a href="/create">Create your first reel!</a></p>';
+    reelGrid.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
     return;
   }
 
-  reels.forEach(reel => {
-    const card = document.createElement('div');
-    card.className = 'reel-card';
-    card.dataset.title = reel.title || '';
-    card.innerHTML = `
-      <div class="reel-thumbnail">
-        <img src="${reel.thumbnail || 'https://via.placeholder.com/300x200?text=No+Thumbnail'}" alt="${reel.title || 'Reel'}">
-        <div class="reel-overlay">
-          <button class="btn-play" onclick="openLightbox('${reel.video_url}', '${reel.title || 'Reel'}')">▶ Play</button>
+  if (emptyState) emptyState.style.display = 'none';
+
+  reelGrid.innerHTML = reels.map((reel) => {
+    const formattedDate = new Date(reel.created_at).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+
+    return `
+      <div class="reel-card" data-job-id="${reel.job_id}"
+           onclick="openLightbox('${reel.reel_url}', 'Reel')">
+
+        <div class="reel-status-badge ready">✓ Ready</div>
+
+        <div class="reel-video-wrap">
+          <video class="reel-thumb" preload="metadata" muted>
+            <source src="${reel.reel_url}" type="video/mp4">
+          </video>
+          <div class="reel-overlay">
+            <div class="reel-play-btn">▶</div>
+          </div>
         </div>
-      </div>
-      <div class="reel-info">
-        <h4>${reel.title || 'Untitled Reel'}</h4>
-        <p class="reel-meta">${reel.duration || '0s'} • ${new Date(reel.created_at).toLocaleDateString()}</p>
-        <div class="reel-actions">
-          <button class="btn-small btn-danger" onclick="confirmDelete('${reel.job_id}', this)">🗑 Delete</button>
+
+        <div class="reel-card-body">
+          <div class="reel-title">Reel</div>
+          <div class="reel-meta-row">
+            <span class="reel-date">${formattedDate}</span>
+            <div class="reel-actions">
+              <a href="${reel.reel_url}"
+                 class="reel-action-btn"
+                 title="Download"
+                 download
+                 onclick="event.stopPropagation()">⬇</a>
+              <button
+                class="reel-action-btn"
+                title="Delete"
+                onclick="event.stopPropagation(); handleDelete('${reel.job_id}', this)">
+                🗑
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     `;
-    grid.appendChild(card);
+  }).join('');
+}
+
+// ---------------------------------------------------------------------------
+// Filtering and sorting (client-side — no API calls needed)
+// ---------------------------------------------------------------------------
+
+/**
+ * Filter allReels by a case-insensitive search query and re-render.
+ * Filters on the reel date string since reels have no title field.
+ *
+ * @param {string} query - Text typed into the search input.
+ * @returns {void}
+ */
+function filterGallery(query) {
+  const lowercaseQuery = query.toLowerCase();
+  const filteredReels  = allReels.filter((reel) => {
+    const dateString = new Date(reel.created_at)
+      .toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      .toLowerCase();
+    return dateString.includes(lowercaseQuery);
   });
+  renderReels(filteredReels);
 }
 
-/* ── SEARCH ── */
-function filterGallery(q) {
-  const filtered = allReels.filter(reel =>
-    (reel.title || '').toLowerCase().includes(q.toLowerCase())
-  );
-  renderReels(filtered);
-}
+/**
+ * Sort allReels by the given criteria and re-render.
+ *
+ * @param {'newest'|'oldest'} sortValue - Sort order selected by the user.
+ * @returns {void}
+ */
+function sortGallery(sortValue) {
+  const sortedReels = [...allReels];
 
-/* ── SORT ── */
-function sortGallery(val) {
-  const sorted = [...allReels];
-  if (val === 'name') {
-    sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-  } else if (val === 'oldest') {
-    sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-  } else if (val === 'newest') {
-    sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  if (sortValue === 'oldest') {
+    sortedReels.sort(
+      (reelA, reelB) => new Date(reelA.created_at) - new Date(reelB.created_at)
+    );
+  } else {
+    // Default: newest first
+    sortedReels.sort(
+      (reelA, reelB) => new Date(reelB.created_at) - new Date(reelA.created_at)
+    );
   }
-  renderReels(sorted);
+
+  renderReels(sortedReels);
 }
 
-/* ── VIEW TOGGLE ── */
-function setView(v) {
-  const gridBtn = document.getElementById('grid-btn');
-  const listBtn = document.getElementById('list-btn');
-  if (gridBtn) gridBtn.classList.toggle('active', v === 'grid');
-  if (listBtn) listBtn.classList.toggle('active', v === 'list');
-  const reelGrid = document.getElementById('reelGrid');
-  if (reelGrid) {
-    reelGrid.className = 'reel-grid' + (v === 'list' ? ' list-view' : '');
-  }
+// ---------------------------------------------------------------------------
+// View toggle
+// ---------------------------------------------------------------------------
+
+/**
+ * Switch between grid and list view by toggling CSS classes.
+ *
+ * @param {'grid'|'list'} viewMode - The view layout to activate.
+ * @returns {void}
+ */
+function setView(viewMode) {
+  const gridButton = document.getElementById('grid-btn');
+  const listButton = document.getElementById('list-btn');
+  const reelGrid   = document.getElementById('reelGrid');
+
+  if (gridButton) gridButton.classList.toggle('active', viewMode === 'grid');
+  if (listButton) listButton.classList.toggle('active', viewMode === 'list');
+  if (reelGrid)   reelGrid.className = 'reel-grid' + (viewMode === 'list' ? ' list-view' : '');
 }
 
-/* ── LIGHTBOX ── */
-function openLightbox(videoUrl, title) {
-  if (!videoUrl) return;
-  const lightbox = document.getElementById('lightbox');
-  const video    = document.getElementById('lightboxVideo');
-  const titleEl  = document.getElementById('lightboxTitle');
-  const dlBtn    = document.getElementById('lightboxDownload');
-  
-  if (!lightbox || !video) return;
+// ---------------------------------------------------------------------------
+// Deletion
+// ---------------------------------------------------------------------------
 
-  video.src      = videoUrl;
-  titleEl.textContent = title;
-  dlBtn.onclick  = () => {
-    const a = document.createElement('a');
-    a.href = videoUrl;
-    a.download = title + '.mp4';
-    a.click();
-  };
-  lightbox.classList.add('open');
-  video.play();
-}
-
-function closeLightbox() {
-  const lightbox = document.getElementById('lightbox');
-  const video    = document.getElementById('lightboxVideo');
-  if (!lightbox || !video) return;
-  
-  video.pause();
-  video.src = '';
-  lightbox.classList.remove('open');
-}
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeLightbox();
-});
-
-/* ── DELETE ── */
-async function confirmDelete(jobId, btn) {
+/**
+ * Delete a reel by job_id. Removes the card from the DOM and the allReels
+ * array on success. Restores card visibility on failure.
+ *
+ * @param {string} jobId - The UUID of the reel to delete.
+ * @param {HTMLElement} triggerButton - The button that was clicked (used to find the card).
+ * @returns {Promise<void>}
+ */
+async function handleDelete(jobId, triggerButton) {
   if (!confirm('Delete this reel? This cannot be undone.')) return;
 
-  const card = btn.closest('.reel-card');
+  const reelCard = triggerButton.closest('.reel-card');
+
+  // Animate the card out optimistically — reverts on error
+  reelCard.style.transform  = 'scale(0)';
+  reelCard.style.opacity    = '0';
+  reelCard.style.transition = 'all 0.3s';
 
   try {
     await deleteReel(jobId);
-    
-    // Remove from allReels array
-    allReels = allReels.filter(r => r.job_id !== jobId);
-    
-    card.style.transform  = 'scale(0)';
-    card.style.opacity    = '0';
-    card.style.transition = 'all 0.3s';
+
+    // Remove from master list so filter/sort stay in sync
+    allReels = allReels.filter((reel) => reel.job_id !== jobId);
+
     setTimeout(() => {
-      card.remove();
-    }, 300);
-        allReels = allReels.filter(r => r.job_id !== jobId);
-      }, 300);
+      reelCard.remove();
       showToast('success', 'Reel deleted');
-    } else {
-      throw new Error('Failed to delete reel');
-    }
-  } catch (err) {
-    showToast('error', err.message);
+
+      // Show empty state if there are no cards left
+      const remainingCards = document.querySelectorAll('.reel-card').length;
+      if (remainingCards === 0) {
+        const emptyState = document.getElementById('galleryEmpty');
+        if (emptyState) emptyState.style.display = 'block';
+      }
+    }, 300);
+
+  } catch (deleteError) {
+    // Revert the optimistic animation so the user can try again
+    reelCard.style.transform  = '';
+    reelCard.style.opacity    = '';
+    showToast('error', 'Could not delete reel: ' + deleteError.message);
+    console.error('[gallery] handleDelete error:', deleteError);
   }
 }
 
-/* ── TOAST ── */
-function showToast(type, message) {
-  let container = document.querySelector('.toast-container');
-  if (!container) {
-    container = document.createElement('div');
-    container.className = 'toast-container';
-    document.body.appendChild(container);
+// ---------------------------------------------------------------------------
+// Lightbox
+// ---------------------------------------------------------------------------
+
+/**
+ * Open the video lightbox and start playback.
+ *
+ * @param {string} videoUrl - Cloudinary HTTPS URL of the reel video.
+ * @param {string} title    - Display title shown inside the lightbox.
+ * @returns {void}
+ */
+function openLightbox(videoUrl, title) {
+  if (!videoUrl) return;
+
+  const lightboxEl       = document.getElementById('lightbox');
+  const videoEl          = document.getElementById('lightboxVideo');
+  const titleEl          = document.getElementById('lightboxTitle');
+  const downloadButton   = document.getElementById('lightboxDownload');
+
+  if (!lightboxEl || !videoEl) return;
+
+  videoEl.src             = videoUrl;
+  if (titleEl) titleEl.textContent = title;
+
+  // Wire up the download button each time so it targets the current video
+  if (downloadButton) {
+    downloadButton.onclick = () => {
+      const anchorEl    = document.createElement('a');
+      anchorEl.href     = videoUrl;
+      anchorEl.download = title + '.mp4';
+      anchorEl.click();
+    };
   }
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  const icons = { success: '✓', error: '✕', info: 'ℹ' };
-  toast.innerHTML = `<span class="toast-icon">${icons[type] || 'ℹ'}</span> ${message}`;
-  container.appendChild(toast);
-  setTimeout(() => toast.remove(), 4000);
+
+  lightboxEl.classList.add('open');
+  videoEl.play();
+}
+
+/**
+ * Close the video lightbox and stop playback.
+ *
+ * @returns {void}
+ */
+function closeLightbox() {
+  const lightboxEl = document.getElementById('lightbox');
+  const videoEl    = document.getElementById('lightboxVideo');
+
+  if (!lightboxEl || !videoEl) return;
+
+  videoEl.pause();
+  videoEl.src = '';
+  lightboxEl.classList.remove('open');
+}
+
+// ---------------------------------------------------------------------------
+// Toast notifications
+// ---------------------------------------------------------------------------
+
+/**
+ * Display a transient toast notification at the bottom of the screen.
+ * Auto-removes after 4 seconds.
+ *
+ * @param {'success'|'error'|'info'} type    - Visual style of the toast.
+ * @param {string}                   message - Human-readable message to show.
+ * @returns {void}
+ */
+function showToast(type, message) {
+  let toastContainer = document.querySelector('.toast-container');
+
+  if (!toastContainer) {
+    toastContainer           = document.createElement('div');
+    toastContainer.className = 'toast-container';
+    document.body.appendChild(toastContainer);
+  }
+
+  const toastIcons = { success: '✓', error: '✕', info: 'ℹ' };
+  const toastEl    = document.createElement('div');
+  toastEl.className = `toast ${type}`;
+  toastEl.innerHTML = `<span class="toast-icon">${toastIcons[type] || 'ℹ'}</span> ${message}`;
+
+  toastContainer.appendChild(toastEl);
+
+  // Auto-remove after 4 seconds — long enough to read, short enough not to annoy
+  setTimeout(() => toastEl.remove(), 4000);
 }

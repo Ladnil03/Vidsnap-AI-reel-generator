@@ -116,7 +116,7 @@ async def _process_job(job: dict) -> None:
     Run the full pipeline for a single job.
 
     Executes three steps in sequence:
-      Step 1 — generate_audio (Groq TTS)
+      Step 1 — generate_audio (edge-tts)
       Step 2 — generate_reel (FFmpeg)
       Step 3 — upload_reel (Cloudinary)
     Updates MongoDB status at each step boundary.
@@ -128,19 +128,34 @@ async def _process_job(job: dict) -> None:
     job_id: str = job["job_id"]
     tmp_dir: str = job["tmp_dir"]
 
+    # Use Path() which normalizes separators for the current OS.
+    # MongoDB stores tmp_dir as a string, and path separators may differ
+    # between the OS that created the job and the OS currently running.
+    tmp_path: Path = Path(tmp_dir)
+
+    # Guard — tmp_dir may have been wiped if the server restarted.
+    # Failing fast here gives the user a clear, actionable error message.
+    if not tmp_path.exists():
+        await _mark_failed(
+            job_id,
+            "Temporary files were lost (server may have restarted). "
+            "Please submit the job again."
+        )
+        return
+
     try:
         # Step 1 — Text to Speech
         logger.info("[%s] Step 1/3 — Generating audio...", job_id)
         audio_path = await generate_audio(
             text=job["voiceover_text"],
-            output_dir=Path(tmp_dir),
+            output_dir=tmp_path,
         )
 
         # Step 2 — FFmpeg reel
         logger.info("[%s] Step 2/3 — Generating reel...", job_id)
         video_path = await generate_reel(
             image_filenames=job["image_files"],
-            tmp_dir=Path(tmp_dir),
+            tmp_dir=tmp_path,
             audio_path=audio_path,
         )
 
@@ -159,7 +174,7 @@ async def _process_job(job: dict) -> None:
         await _mark_failed(job_id, str(error))
 
     finally:
-        await _cleanup_tmp(tmp_dir)
+        await _cleanup_tmp(str(tmp_path))
 
 
 async def run_worker() -> None:

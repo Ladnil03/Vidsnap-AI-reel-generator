@@ -8,6 +8,7 @@ Routes perform HTTP validation only — business logic is delegated to backgroun
 import logging
 import os
 import shutil
+import tempfile
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,7 +25,9 @@ from backend.utils.file_handler import validate_image_list
 
 logger = logging.getLogger(__name__)
 
-TMP_BASE: Path = Path("tmp/vidsnap").resolve()
+# OS-agnostic temp directory — resolves to /tmp/vidsnap on Linux,
+# system temp folder on Windows. Never hardcode paths.
+TMP_BASE: Path = Path(tempfile.gettempdir()) / "vidsnap"
 
 router = APIRouter(prefix="/api/jobs", tags=["Jobs"])
 

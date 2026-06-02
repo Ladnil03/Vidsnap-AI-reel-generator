@@ -1,1 +1,2 @@
-flask
+# Frontend dependencies — Flask HTML server only
+flask==3.0.3

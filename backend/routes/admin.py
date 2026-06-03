@@ -24,6 +24,8 @@ router = APIRouter(prefix="/api/admin", tags=["Admin"])
 
 @router.get("/users", response_model=list[AdminUserItem])
 async def get_all_users(
+    skip: int = 0,
+    limit: int = 50,
     admin: dict = Depends(get_current_admin),
 ) -> list[AdminUserItem]:
     """
@@ -32,6 +34,8 @@ async def get_all_users(
     Sorted by account creation date, newest first.
 
     Args:
+        skip: Number of records to skip for pagination.
+        limit: Maximum number of records to return.
         admin: Authenticated admin user (injected by dependency).
 
     Returns:
@@ -40,7 +44,7 @@ async def get_all_users(
     db = get_db()
     users_list: list[AdminUserItem] = []
 
-    cursor = db.users.find(sort=[("created_at", -1)])
+    cursor = db.users.find(sort=[("created_at", -1)]).skip(skip).limit(limit)
 
     async for user in cursor:
         # Count completed reels for this user
@@ -111,6 +115,8 @@ async def update_user_tokens(
 
 @router.get("/reels", response_model=list[dict])
 async def get_all_reels(
+    skip: int = 0,
+    limit: int = 50,
     admin: dict = Depends(get_current_admin),
 ) -> list[dict]:
     """
@@ -119,6 +125,8 @@ async def get_all_reels(
     Includes user email for admin reference. Sorted by creation date, newest first.
 
     Args:
+        skip: Number of records to skip for pagination.
+        limit: Maximum number of records to return.
         admin: Authenticated admin user (injected by dependency).
 
     Returns:
@@ -130,7 +138,7 @@ async def get_all_reels(
     cursor = db.jobs.find(
         {"status": "done", "reel_url": {"$ne": None}},
         sort=[("created_at", -1)],
-    )
+    ).skip(skip).limit(limit)
 
     async for job in cursor:
         # Fetch user email

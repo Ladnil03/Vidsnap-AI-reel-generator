@@ -85,12 +85,18 @@ function clearAuthData() {
  * @throws {Error} Error with detail from API or fallback message
  */
 async function handleApiError(response, fallbackMessage) {
+  let detail = fallbackMessage;
   try {
     const errorData = await response.json();
-    throw new Error(errorData.detail || fallbackMessage);
-  } catch (parseError) {
-    throw new Error(fallbackMessage);
+    if (errorData && errorData.detail) {
+      detail = typeof errorData.detail === 'string'
+        ? errorData.detail
+        : JSON.stringify(errorData.detail);
+    }
+  } catch (_) {
+    // Response body not JSON — use fallback
   }
+  throw new Error(detail);
 }
 
 // ============================================================================

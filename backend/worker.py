@@ -152,11 +152,21 @@ async def _process_job(job: dict) -> None:
         return
 
     try:
+        # Map voice style to edge-tts voice name
+        voice_style = job.get("voice", "natural")
+        voice_mapping = {
+            "natural": "en-US-AriaNeural",
+            "elegant": "en-US-JennyNeural",
+            "bold": "en-US-GuyNeural",
+        }
+        edge_voice = voice_mapping.get(voice_style, "en-US-AriaNeural")
+
         # Step 1 — Text to Speech
         logger.info("[%s] Step 1/3 — Generating audio...", job_id)
         audio_path = await generate_audio(
             text=job["voiceover_text"],
             output_dir=tmp_path,
+            voice=edge_voice,
         )
 
         # Step 2 — FFmpeg reel
@@ -165,6 +175,7 @@ async def _process_job(job: dict) -> None:
             image_filenames=job["image_files"],
             tmp_dir=tmp_path,
             audio_path=audio_path,
+            image_duration=job.get("image_duration", 3),
         )
 
         # Step 3 — Upload to Cloudinary
@@ -212,7 +223,9 @@ async def run_worker() -> None:
     except Exception as error:
         logger.error("[Worker Startup] Error during stuck jobs recovery: %s", error, exc_info=True)
 
+    empty_polls = 0
     while True:
+        job = None
         try:
             job = await _claim_next_job()
             if job:
@@ -222,5 +235,12 @@ async def run_worker() -> None:
                 logger.debug("[Worker] No queued jobs")
         except Exception as error:
             logger.error("[Worker] Unexpected error in poll loop: %s", error, exc_info=True)
-        finally:
-            await asyncio.sleep(settings.worker_poll_seconds)
+
+        if job is None:
+            empty_polls += 1
+            sleep_duration = min(settings.worker_poll_seconds * (1.5 ** min(empty_polls, 8)), 30)
+        else:
+            empty_polls = 0
+            sleep_duration = settings.worker_poll_seconds
+
+        await asyncio.sleep(sleep_duration)

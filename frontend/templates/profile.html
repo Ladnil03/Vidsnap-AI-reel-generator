@@ -69,6 +69,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const dateStr = `Member since ${createdDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}`;
     document.getElementById('profileDate').textContent = dateStr;
 
+    // Fetch reel count
+    try {
+      const reelsResponse = await fetch(`${API_BASE}/api/reels`, {
+        headers: getAuthHeaders()
+      });
+      if (reelsResponse.ok) {
+        const reels = await reelsResponse.json();
+        document.getElementById('reelCount').textContent = reels.length;
+      }
+    } catch (_) { /* non-critical */ }
+
   } catch (err) {
     console.error('Error loading profile:', err);
     document.getElementById('profileName').textContent = getUserInfo().name || 'User';

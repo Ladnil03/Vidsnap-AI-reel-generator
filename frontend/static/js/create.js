@@ -181,9 +181,13 @@ async function startGenerate() {
           clearInterval(pollingInterval);
           completeAllStages();
           showToast('success', '🎉 Reel is ready! Redirecting to gallery...');
-          // Update token count in navbar
-          const currentTokens = parseInt(localStorage.getItem('vidsnap_tokens') || '0');
-          localStorage.setItem('vidsnap_tokens', currentTokens - 1);
+          // Update token count in navbar by fetching fresh profile
+          try {
+            const profile = await getProfile();
+            localStorage.setItem('vidsnap_tokens', String(profile.tokens_remaining));
+            // Trigger navbar update
+            updateNavbarAuthState();
+          } catch (_) { /* non-critical */ }
           setTimeout(() => { window.location.href = '/gallery'; }, 2000);
         }
 

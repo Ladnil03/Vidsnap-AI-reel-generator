@@ -48,6 +48,8 @@ def _build_job_document(
     tmp_dir: Path,
     image_filenames: list[str],
     user_id: str,
+    voice: str,
+    duration: int,
 ) -> dict:
     """
     Build the MongoDB job document for a new reel job.
@@ -61,6 +63,8 @@ def _build_job_document(
         tmp_dir: Path to temporary directory where images are stored.
         image_filenames: List of saved image filenames (without directory).
         user_id: ID of the user who created this job.
+        voice: Voice style selection (natural/elegant/bold).
+        duration: Display duration for each image.
 
     Returns:
         dict: A complete job document ready for insertion into MongoDB.
@@ -77,6 +81,8 @@ def _build_job_document(
         "reel_url": None,
         "cloudinary_id": None,
         "error_msg": None,
+        "voice": voice,
+        "image_duration": duration,
         "created_at": now,
         "updated_at": now,
     }
@@ -86,6 +92,8 @@ def _build_job_document(
 async def create_job(
     voiceover_text: Annotated[str, Form()],
     images: Annotated[list[UploadFile], File()],
+    voice: Annotated[str, Form()] = "natural",
+    duration: Annotated[int, Form()] = 3,
     current_user: dict = Depends(get_current_user),
 ) -> JobCreatedResponse:
     """
@@ -158,7 +166,15 @@ async def create_job(
         logger.debug("[%s] Saved %s (%d bytes)", job_id, filename, len(file_bytes))
 
     # Create job document
-    doc = _build_job_document(job_id, voiceover_text, tmp_dir, image_filenames, current_user["user_id"])
+    doc = _build_job_document(
+        job_id,
+        voiceover_text,
+        tmp_dir,
+        image_filenames,
+        current_user["user_id"],
+        voice,
+        duration,
+    )
 
     # Insert into MongoDB
     await get_db().jobs.insert_one(doc)

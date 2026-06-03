@@ -6,6 +6,7 @@ returning the public URL. Also handles deletion.
 This module has no FastAPI imports — it is pure service logic.
 """
 
+import asyncio
 import logging
 from pathlib import Path
 
@@ -51,7 +52,9 @@ async def upload_reel(
     logger.info("[Storage] Uploading reel for job %s...", job_id)
 
     try:
-        result = cloudinary.uploader.upload(
+        import asyncio
+        result = await asyncio.to_thread(
+            cloudinary.uploader.upload,
             str(video_path),
             resource_type="video",
             folder=settings.cloudinary_folder,
@@ -83,7 +86,9 @@ async def delete_reel(cloudinary_id: str) -> None:
     logger.info("[Storage] Deleting reel %s from Cloudinary...", cloudinary_id)
 
     try:
-        cloudinary.uploader.destroy(
+        import asyncio
+        await asyncio.to_thread(
+            cloudinary.uploader.destroy,
             cloudinary_id,
             resource_type="video",
         )

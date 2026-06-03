@@ -111,7 +111,7 @@ function renderReels(reels) {
         <div class="reel-status-badge ready">✓ Ready</div>
 
         <div class="reel-video-wrap">
-          <video class="reel-thumb" preload="metadata" muted>
+          <video class="reel-thumb" preload="none" muted>
             <source src="${reel.reel_url}" type="video/mp4">
           </video>
           <div class="reel-overlay">

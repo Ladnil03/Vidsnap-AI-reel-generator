@@ -92,6 +92,7 @@ def check_ffmpeg() -> None:
 def build_concat_file(
     image_paths: list[Path],
     output_dir: Path,
+    image_duration: int = 3,
 ) -> Path:
     """
     Write an FFmpeg concat file listing all images with their durations.
@@ -103,6 +104,7 @@ def build_concat_file(
     Args:
         image_paths: Ordered list of absolute paths to image files.
         output_dir: Directory where input.txt will be written.
+        image_duration: Duration to display each image in seconds.
 
     Returns:
         Path to the written concat file.
@@ -113,7 +115,7 @@ def build_concat_file(
         # Write all images with duration
         for image_path in image_paths:
             f.write(f"file '{image_path.absolute()}'\n")
-            f.write(f"duration {IMAGE_DURATION_SECONDS}\n")
+            f.write(f"duration {image_duration}\n")
 
         # Repeat last image without duration to prevent early cutoff
         if image_paths:
@@ -189,6 +191,7 @@ async def generate_reel(
     image_filenames: list[str],
     tmp_dir: Path,
     audio_path: Path,
+    image_duration: int = 3,
 ) -> Path:
     """
     Combine images and audio into a 1080x1920 vertical MP4 reel.
@@ -204,6 +207,7 @@ async def generate_reel(
         image_filenames: Ordered list of image filenames (not full paths).
         tmp_dir: Directory containing the images and audio.
         audio_path: Path to the generated audio.mp3.
+        image_duration: Duration to display each image in seconds.
 
     Returns:
         Path to the generated output.mp4 file.
@@ -223,7 +227,7 @@ async def generate_reel(
     output_path = tmp_dir / OUTPUT_FILENAME
 
     # Build concat file
-    concat_path = build_concat_file(image_paths, tmp_dir)
+    concat_path = build_concat_file(image_paths, tmp_dir, image_duration)
 
     # Build FFmpeg command with the resolved binary path
     command = build_ffmpeg_command(concat_path, audio_path, output_path, ffmpeg_binary)
@@ -235,7 +239,9 @@ async def generate_reel(
     logger.info("[FFmpeg] Starting reel generation...")
 
     try:
-        result = subprocess.run(
+        import asyncio
+        result = await asyncio.to_thread(
+            subprocess.run,
             command,
             capture_output=True,
             text=True,

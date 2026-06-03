@@ -64,6 +64,7 @@ def _build_user_document(name: str, email: str, hashed_password: str) -> dict:
         "is_admin": False,
         "otp": None,
         "otp_created_at": None,
+        "otp_attempts": 0,
         "created_at": datetime.now(timezone.utc),
     }
 
@@ -186,6 +187,7 @@ async def forgot_password(request: ForgotPasswordRequest) -> dict:
                 "$set": {
                     "otp": otp,
                     "otp_created_at": datetime.now(timezone.utc),
+                    "otp_attempts": 0,
                 }
             },
         )
@@ -230,8 +232,19 @@ async def reset_password(request: ResetPasswordRequest) -> dict:
             detail="Invalid request.",
         )
 
+    # Check for brute-force attempts
+    if user.get("otp_attempts", 0) >= 5:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Too many failed attempts. Request a new OTP.",
+        )
+
     # Verify OTP matches
     if user["otp"] != request.otp:
+        await db.users.update_one(
+            {"user_id": user["user_id"]},
+            {"$inc": {"otp_attempts": 1}}
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired OTP.",
@@ -254,6 +267,7 @@ async def reset_password(request: ResetPasswordRequest) -> dict:
                 "password_hash": new_hash,
                 "otp": None,
                 "otp_created_at": None,
+                "otp_attempts": 0,
             }
         },
     )

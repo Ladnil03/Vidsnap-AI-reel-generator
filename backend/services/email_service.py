@@ -4,6 +4,7 @@ Used for sending OTP emails for forgot password flow.
 No FastAPI imports — pure service logic.
 """
 
+import asyncio
 import logging
 
 import resend
@@ -48,7 +49,9 @@ async def send_otp_email(to_email: str, otp: str, name: str) -> None:
     </div>
     """
     try:
-        resend.Emails.send(
+        import asyncio
+        await asyncio.to_thread(
+            resend.Emails.send,
             {
                 "from": settings.email_from,
                 "to": to_email,

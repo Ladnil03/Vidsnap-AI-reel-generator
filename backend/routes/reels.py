@@ -19,7 +19,11 @@ router = APIRouter(prefix="/api/reels", tags=["Reels"])
 
 
 @router.get("", response_model=list[ReelItem])
-async def list_reels(current_user: dict = Depends(get_current_user)) -> list[ReelItem]:
+async def list_reels(
+    skip: int = 0,
+    limit: int = 20,
+    current_user: dict = Depends(get_current_user),
+) -> list[ReelItem]:
     """
     Return all completed reels for the current user, newest first.
 
@@ -28,6 +32,8 @@ async def list_reels(current_user: dict = Depends(get_current_user)) -> list[Ree
     Used by the frontend Gallery page to display generated reels.
 
     Args:
+        skip: Number of records to skip for pagination.
+        limit: Maximum number of records to return.
         current_user: Authenticated user (injected by dependency).
 
     Returns:
@@ -40,7 +46,7 @@ async def list_reels(current_user: dict = Depends(get_current_user)) -> list[Ree
     cursor = db.jobs.find(
         {"user_id": current_user["user_id"], "status": "done", "reel_url": {"$ne": None}},
         sort=[("created_at", -1)],
-    )
+    ).skip(skip).limit(limit)
 
     async for job in cursor:
         reel = ReelItem(

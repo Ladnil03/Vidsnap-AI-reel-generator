@@ -252,6 +252,8 @@ async def reset_password(request: ResetPasswordRequest) -> dict:
 
     # Check OTP expiry (10 minute window)
     otp_created = user["otp_created_at"]
+    if otp_created.tzinfo is None:
+        otp_created = otp_created.replace(tzinfo=timezone.utc)
     if datetime.now(timezone.utc) - otp_created > timedelta(minutes=10):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

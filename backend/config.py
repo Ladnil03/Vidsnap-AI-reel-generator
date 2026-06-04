@@ -27,9 +27,11 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256" # JWT signing algorithm
     jwt_expire_minutes: int = 60 # How long a JWT token stays valid (in minutes)
 
-    # Resend email service (free tier — for forgot password)
-    resend_api_key: str          # API key from resend.com dashboard
-    email_from: str              # Sender email e.g. noreply@yourdomain.com
+    # Gmail SMTP configuration for forgot password OTP
+    # email_from must be the Gmail address used to generate the App Password
+    # gmail_app_password: Google Account → Security → 2-Step Verification → App Passwords
+    email_from: str              # Sender email e.g. yourname@gmail.com
+    gmail_app_password: str      # 16-char Google App Password
 
     # Token system
     free_tokens_on_signup: int = 5  # Tokens given to every new user on registration

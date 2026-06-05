@@ -28,8 +28,8 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60 # How long a JWT token stays valid (in minutes)
 
     # Brevo configuration for forgot password OTP
-    email_from: str              # Sender email e.g. onboarding@resend.dev
-    brevo_api_key: str           # Brevo API Key
+    email_from: str = "placeholder@vidsnap.ai"   # Sender email
+    brevo_api_key: str = "placeholder"           # Brevo API Key
 
     # Token system
     free_tokens_on_signup: int = 5  # Tokens given to every new user on registration

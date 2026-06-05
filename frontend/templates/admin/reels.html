@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}All Platform Reels — VidSnap-AI Admin{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/gallery.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <a href="/admin" class="admin-sidebar-link">🏠 Dashboard</a>
+    <a href="/admin/users" class="admin-sidebar-link">👥 Users</a>
+    <a href="/admin/reels" class="admin-sidebar-link active">🎬 Reels</a>
+    <a href="/admin/feedback" class="admin-sidebar-link">💬 Feedback</a>
+    <a href="#" id="adminSidebarLogout" class="admin-sidebar-link">🚪 Logout</a>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <div class="admin-header">
+      <h1 class="display-3">Reels</h1>
+      
+      <!-- Search -->
+      <div class="admin-search-wrap">
+        <span class="admin-search-icon">🔍</span>
+        <input type="text" class="admin-search" id="reelSearch" placeholder="Search by user email...">
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="admin-reels-stats" id="adminReelsCount">
+      Total Reels Generated: 0
+    </div>
+
+    <!-- Reels Grid -->
+    <div class="reel-grid" id="adminReelsGrid" style="margin-bottom: 2.5rem;">
+      <div style="grid-column: 1/-1; text-align:center; padding: 5rem 0; color:var(--text3);">Loading reels...</div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <button class="pagination-btn" id="reelsPrevBtn" disabled>◀ Previous</button>
+      <span class="pagination-info" id="reelsPageInfo">Page 1 of 1</span>
+      <button class="pagination-btn" id="reelsNextBtn" disabled>Next ▶</button>
+    </div>
+  </main>
+</div>
+
+<!-- Lightbox element -->
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-inner">
+    <button class="lightbox-close" id="lightboxClose" onclick="closeAdminLightbox()">✕</button>
+    <video class="lightbox-video" id="lightboxVideo" controls></video>
+    <div class="lightbox-meta">
+      <span class="lightbox-title" id="lightboxTitle">Reel Preview</span>
+      <button class="lightbox-download" id="lightboxDownload">⬇ Download</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

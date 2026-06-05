@@ -15,9 +15,15 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
-  transition: background var(--transition);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 [data-theme="light"] .navbar { background: rgba(250,250,250,0.75); }
+[data-theme="light"] .navbar.scrolled { background: rgba(250,250,250,0.95) !important; }
+
+.navbar.scrolled {
+  background: rgba(6,8,16,0.95) !important;
+  box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+}
 
 .nav-brand {
   display: flex;

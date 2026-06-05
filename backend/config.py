@@ -27,11 +27,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256" # JWT signing algorithm
     jwt_expire_minutes: int = 60 # How long a JWT token stays valid (in minutes)
 
-    # Gmail SMTP configuration for forgot password OTP
-    # email_from must be the Gmail address used to generate the App Password
-    # gmail_app_password: Google Account → Security → 2-Step Verification → App Passwords
-    email_from: str              # Sender email e.g. yourname@gmail.com
-    gmail_app_password: str      # 16-char Google App Password
+    # Brevo configuration for forgot password OTP
+    email_from: str              # Sender email e.g. onboarding@resend.dev
+    brevo_api_key: str           # Brevo API Key
 
     # Token system
     free_tokens_on_signup: int = 5  # Tokens given to every new user on registration

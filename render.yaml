@@ -22,7 +22,7 @@ services:
         value: HS256
       - key: JWT_EXPIRE_MINUTES
         value: "60"
-      - key: RESEND_API_KEY
+      - key: BREVO_API_KEY
         sync: false   # Set manually in Render dashboard
       - key: EMAIL_FROM
         sync: false   # Set manually — use onboarding@resend.dev on free tier

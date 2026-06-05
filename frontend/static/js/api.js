@@ -25,6 +25,7 @@ const TOKEN_KEY = 'vidsnap_token';
 const NAME_KEY = 'vidsnap_name';
 const EMAIL_KEY = 'vidsnap_email';
 const TOKENS_KEY = 'vidsnap_tokens';
+const IS_ADMIN_KEY = 'vidsnap_is_admin';
 
 // ============================================================================
 // PRIVATE HELPER FUNCTIONS
@@ -65,6 +66,7 @@ function saveAuthData(responseData) {
   localStorage.setItem(NAME_KEY, responseData.name);
   localStorage.setItem(EMAIL_KEY, responseData.email);
   localStorage.setItem(TOKENS_KEY, String(responseData.tokens_remaining));
+  localStorage.setItem(IS_ADMIN_KEY, String(responseData.is_admin || false));
 }
 
 /**
@@ -75,6 +77,7 @@ function clearAuthData() {
   localStorage.removeItem(NAME_KEY);
   localStorage.removeItem(EMAIL_KEY);
   localStorage.removeItem(TOKENS_KEY);
+  localStorage.removeItem(IS_ADMIN_KEY);
 }
 
 /**
@@ -166,6 +169,14 @@ function logout() {
  */
 function isLoggedIn() {
   return !!getToken();
+}
+
+/**
+ * Check if the logged-in user is an admin.
+ * @returns {boolean} True if the user has admin role
+ */
+function isAdmin() {
+  return localStorage.getItem(IS_ADMIN_KEY) === 'true';
 }
 
 /**

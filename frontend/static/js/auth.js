@@ -145,9 +145,32 @@ if (loginForm) {
     submitBtn.innerHTML = '<span class="auth-btn-spinner"></span> Signing in...';
 
     try {
-      await login(emailInput.value.trim(), passwordInput.value);
-      // Redirect on success
-      window.location.href = '/';
+      const data = await login(emailInput.value.trim(), passwordInput.value);
+      const roleInput = document.querySelector('input[name="loginRole"]:checked');
+      const selectedRole = roleInput ? roleInput.value : 'user';
+
+      if (selectedRole === 'admin' && !data.is_admin) {
+        // Clear saved auth data because they failed the role verification
+        if (typeof clearAuthData === 'function') {
+          clearAuthData();
+        } else {
+          ['vidsnap_token','vidsnap_name','vidsnap_email','vidsnap_tokens','vidsnap_is_admin']
+            .forEach(key => localStorage.removeItem(key));
+        }
+        throw new Error("Access denied: You do not have administrator privileges.");
+      }
+
+      // If user logs in as "user", override admin role storage locally to false
+      // so they can see the normal site interface without admin links
+      if (selectedRole === 'user') {
+        localStorage.setItem('vidsnap_is_admin', 'false');
+      }
+
+      if (data.is_admin && selectedRole === 'admin') {
+        window.location.href = '/admin';
+      } else {
+        window.location.href = '/';
+      }
     } catch (error) {
       // Show error message
       if (alertBox) {

@@ -3,6 +3,15 @@
 ═══════════════════════════════════════════════ */
 
 /* ── HERO ── */
+.hero-animate {
+  opacity: 0;
+  animation: heroStagger 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes heroStagger {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .hero {
   position: relative;
   min-height: calc(100vh - 68px);
@@ -122,6 +131,15 @@
   overflow: hidden;
   position: relative;
   box-shadow: var(--shadow), 0 0 0 8px var(--surface2);
+  animation: phonePulse 3s ease-in-out infinite;
+}
+@keyframes phonePulse {
+  0%, 100% {
+    box-shadow: var(--shadow), 0 0 0 8px var(--surface2), 0 0 15px rgba(255, 92, 92, 0.2);
+  }
+  50% {
+    box-shadow: var(--shadow), 0 0 0 8px var(--surface2), 0 0 30px rgba(255, 92, 92, 0.5);
+  }
 }
 .phone-notch {
   position: absolute;
@@ -215,9 +233,18 @@
   white-space: nowrap;
   z-index: 10;
 }
-.float-badge-1 { top: 60px;    left: -110px; animation: float2 7s ease-in-out infinite 0s; }
-.float-badge-2 { bottom: 80px; left: -120px; animation: float2 7s ease-in-out infinite 1.5s; }
-.float-badge-3 { top: 140px;   right: -110px; animation: float2 7s ease-in-out infinite 0.8s; }
+.float-badge-1 { top: 60px;    left: -110px; animation: badgeFloat1 7s ease-in-out infinite 0s; }
+.float-badge-2 { bottom: 80px; left: -120px; animation: badgeFloat2 7s ease-in-out infinite 1.5s; }
+.float-badge-3 { top: 140px;   right: -110px; animation: badgeFloat1 7s ease-in-out infinite 0.8s; }
+
+@keyframes badgeFloat1 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(-10px, 15px) rotate(2deg); }
+}
+@keyframes badgeFloat2 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(15px, -15px) rotate(-2deg); }
+}
 .float-badge-icon { font-size: 1.1rem; }
 .float-badge-title { font-size: 0.8rem; font-weight: 700; color: var(--text); }
 .float-badge-sub   { font-size: 0.7rem; color: var(--text3); }
@@ -276,6 +303,21 @@
   transition: all 0.3s;
   position: relative;
   overflow: hidden;
+}
+.bento-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -150%;
+  width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transform: skewX(-20deg);
+  transition: none;
+  z-index: 2;
+  pointer-events: none;
+}
+.bento-card:hover::before {
+  left: 150%;
+  transition: left 0.8s ease-in-out;
 }
 .bento-card:hover {
   border-color: var(--border2);

@@ -45,6 +45,19 @@
           <button type="button" class="auth-eye" onclick="togglePassword('loginPassword', this)">👁</button>
         </div>
       </div>
+      <div class="auth-field">
+        <label>Login Role</label>
+        <div class="role-selector">
+          <label class="role-option">
+            <input type="radio" name="loginRole" value="user" checked>
+            <span class="role-box">👤 User</span>
+          </label>
+          <label class="role-option">
+            <input type="radio" name="loginRole" value="admin">
+            <span class="role-box">🛡️ Admin</span>
+          </label>
+        </div>
+      </div>
       <div class="auth-remember">
         <label class="auth-checkbox">
           <input type="checkbox" id="loginRemember">

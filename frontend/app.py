@@ -79,6 +79,30 @@ def profile() -> str:
     return render_template("profile.html", active_page="profile", backend_url=BACKEND_URL)
 
 
+@app.route("/admin")
+def admin_dashboard():
+    """Serve the admin dashboard page."""
+    return render_template("admin/dashboard.html", active_page="admin_dashboard", backend_url=BACKEND_URL)
+
+
+@app.route("/admin/users")
+def admin_users():
+    """Serve the admin users page."""
+    return render_template("admin/users.html", active_page="admin_users", backend_url=BACKEND_URL)
+
+
+@app.route("/admin/reels")
+def admin_reels():
+    """Serve the admin reels page."""
+    return render_template("admin/reels.html", active_page="admin_reels", backend_url=BACKEND_URL)
+
+
+@app.route("/admin/feedback")
+def admin_feedback():
+    """Serve the admin feedback page."""
+    return render_template("admin/feedback.html", active_page="admin_feedback", backend_url=BACKEND_URL)
+
+
 # ---------------------------------------------------------------------------
 # Error handlers — registered before __main__ so they always activate
 # ---------------------------------------------------------------------------

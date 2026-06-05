@@ -76,3 +76,37 @@ if (heroVisual && phoneFrame) {
     phoneFrame.style.transition = 'transform 0.1s ease';
   });
 }
+
+/* ── STATS COUNTER SCROLL TRIGGER ── */
+document.addEventListener('DOMContentLoaded', () => {
+  const statsSection = document.querySelector('.hero-stats');
+  if (statsSection) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const statNums = entry.target.querySelectorAll('.stat-num');
+          statNums.forEach(el => {
+            const text = el.textContent.trim();
+            if (text === '1080p') {
+              animateCounter(el, 1080, 'p');
+            } else if (text === '<60s') {
+              // Custom count-up animation for "<60s" to preserve formatting
+              let start = 0;
+              const duration = 1500;
+              const step = (timestamp) => {
+                if (!start) start = timestamp;
+                const progress = Math.min((timestamp - start) / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                el.textContent = '<' + Math.floor(eased * 60) + 's';
+                if (progress < 1) requestAnimationFrame(step);
+              };
+              requestAnimationFrame(step);
+            }
+          });
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    observer.observe(statsSection);
+  }
+});

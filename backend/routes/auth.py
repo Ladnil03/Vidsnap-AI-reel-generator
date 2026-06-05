@@ -114,6 +114,7 @@ async def signup(request: SignupRequest) -> AuthResponse:
         name=user_doc["name"],
         email=user_doc["email"],
         tokens_remaining=user_doc["tokens_remaining"],
+        is_admin=user_doc.get("is_admin", False),
     )
 
 
@@ -156,6 +157,7 @@ async def login(request: LoginRequest) -> AuthResponse:
         name=user["name"],
         email=user["email"],
         tokens_remaining=user["tokens_remaining"],
+        is_admin=user.get("is_admin", False),
     )
 
 

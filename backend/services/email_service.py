@@ -1,16 +1,12 @@
 """
-Email service using Gmail SMTP.
+Email service using Brevo HTTP API.
 Used for sending OTP emails for forgot password flow.
-Uses Python built-in libraries (smtplib, ssl, email) to send secure emails.
 """
 
 import asyncio
 import logging
-import smtplib
-import ssl
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-
+import urllib.request
+import json
 from backend.config import settings
 
 logger = logging.getLogger(__name__)
@@ -20,36 +16,9 @@ OTP_EMAIL_SUBJECT: str = "VidSnap AI — Your Password Reset OTP"
 OTP_EXPIRY_MINUTES: int = 10
 
 
-def _send_email_sync(to_email: str, subject: str, html_body: str) -> None:
-    """
-    Synchronous helper to send email via Gmail SMTP_SSL.
-    Runs in a background thread to prevent blocking the async loop.
-    """
-    try:
-        # Create message
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"VidSnap AI <{settings.email_from}>"
-        msg["To"] = to_email
-
-        # Attach HTML body
-        msg.attach(MIMEText(html_body, "html"))
-
-        # Create secure SSL context
-        context = ssl.create_default_context()
-
-        # Connect and send
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
-            server.login(settings.email_from, settings.gmail_app_password)
-            server.sendmail(settings.email_from, to_email, msg.as_string())
-
-    except Exception as error:
-        raise RuntimeError(f"SMTP send failed: {error}") from error
-
-
 async def send_otp_email(to_email: str, otp: str, name: str) -> None:
     """
-    Send a password reset OTP to the user's email via Gmail SMTP.
+    Send a password reset OTP to the user's email via Brevo email API.
 
     Args:
         to_email: Recipient email address.
@@ -75,10 +44,52 @@ async def send_otp_email(to_email: str, otp: str, name: str) -> None:
     </div>
     """
 
+    # Check for placeholder API keys in development
+    is_placeholder = (
+        not settings.brevo_api_key
+        or "placeholder" in settings.brevo_api_key.lower()
+        or "your_brevo_api_key" in settings.brevo_api_key.lower()
+    )
+
     try:
-        # Offload the blocking smtplib execution to a separate thread
-        await asyncio.to_thread(_send_email_sync, to_email, OTP_EMAIL_SUBJECT, html_body)
-        logger.info("[Email] OTP sent to %s", to_email)
+        if is_placeholder:
+            logger.info("\n" + "=" * 80 + f"\n[DEVELOPMENT] Password Reset OTP for {name} ({to_email}) is: {otp}\n" + "=" * 80)
+            return
+
+        payload = {
+            "sender": {
+                "email": settings.email_from,
+                "name": "VidSnap AI"
+            },
+            "to": [
+                {
+                    "email": to_email,
+                    "name": name
+                }
+            ],
+            "subject": OTP_EMAIL_SUBJECT,
+            "htmlContent": html_body
+        }
+
+        def _send():
+            req = urllib.request.Request(
+                "https://api.brevo.com/v3/smtp/email",
+                data=json.dumps(payload).encode("utf-8"),
+                headers={
+                    "accept": "application/json",
+                    "api-key": settings.brevo_api_key,
+                    "content-type": "application/json"
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=10) as response:
+                return response.read().decode("utf-8")
+
+        await asyncio.to_thread(_send)
+        logger.info("[Email] OTP sent to %s via Brevo", to_email)
+
     except Exception as error:
-        logger.error("[Email] Failed to send OTP: %s", error, exc_info=True)
+        # Log to console so developer can see the OTP even if API fails
+        logger.warning("\n" + "=" * 80 + f"\n[FALLBACK] Email delivery failed. OTP for {name} ({to_email}) is: {otp}\n" + "=" * 80)
+        logger.error("[Email] Failed to send OTP via Brevo: %s", error)
         raise RuntimeError(f"Failed to send OTP email: {error}") from error

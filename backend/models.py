@@ -88,6 +88,7 @@ class AuthResponse(BaseModel):
     name: str = Field(..., description="User's name")
     email: str = Field(..., description="User's email")
     tokens_remaining: int = Field(..., description="Remaining tokens for reel generation")
+    is_admin: bool = Field(False, description="Whether the user is an admin")
 
 
 class ForgotPasswordRequest(BaseModel):

@@ -144,6 +144,7 @@ async function startGenerate() {
 
   // Lock UI
   generateBtn.disabled = true;
+  generateBtn.classList.add('processing');
   if (btnText)     btnText.innerHTML = 'Uploading…';
   if (btnSpinner)  btnSpinner.style.display = 'block';
   if (processingPanel) processingPanel.classList.add('show');
@@ -195,6 +196,7 @@ async function startGenerate() {
           clearInterval(pollingInterval);
           // Reset UI
           generateBtn.disabled = false;
+          generateBtn.classList.remove('processing');
           if (btnSpinner) btnSpinner.style.display = 'none';
           if (btnText)    btnText.innerHTML = '✨ Generate My Reel';
           if (processingPanel) processingPanel.classList.remove('show');
@@ -211,6 +213,7 @@ async function startGenerate() {
   } catch (error) {
     // Job creation failed
     generateBtn.disabled = false;
+    generateBtn.classList.remove('processing');
     if (btnSpinner) btnSpinner.style.display = 'none';
     if (btnText)    btnText.innerHTML = '✨ Generate My Reel';
     if (processingPanel) processingPanel.classList.remove('show');

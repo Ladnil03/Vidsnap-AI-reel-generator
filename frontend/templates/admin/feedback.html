@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}User Feedback — VidSnap-AI Admin{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <a href="/admin" class="admin-sidebar-link">🏠 Dashboard</a>
+    <a href="/admin/users" class="admin-sidebar-link">👥 Users</a>
+    <a href="/admin/reels" class="admin-sidebar-link">🎬 Reels</a>
+    <a href="/admin/feedback" class="admin-sidebar-link active">💬 Feedback</a>
+    <a href="#" id="adminSidebarLogout" class="admin-sidebar-link">🚪 Logout</a>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <div class="admin-header">
+      <h1 class="display-3">Feedback</h1>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="admin-reels-stats" id="feedbackCount">
+      Total Submissions: 0
+    </div>
+
+    <!-- Feedback Cards Container -->
+    <div class="feedback-grid" id="feedbackCardsContainer">
+      <div style="text-align:center; padding: 5rem 0; color:var(--text3);">Loading feedback...</div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

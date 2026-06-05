@@ -35,8 +35,9 @@
 
         <ul class="nav-links">
             <li><a href="/">🏠 Home</a></li>
-            <li><a href="/create" data-auth-required="true" style="display:none;">✨ Create</a></li>
-            <li><a href="/gallery" data-auth-required="true" style="display:none;">🎬 Gallery</a></li>
+            <li><a href="/admin" id="navAdminDashboard" style="display:none;">🛡️ Admin Dashboard</a></li>
+            <li><a href="/create" id="navCreate" data-auth-required="true" style="display:none;">✨ Create</a></li>
+            <li><a href="/gallery" id="navGallery" data-auth-required="true" style="display:none;">🎬 Gallery</a></li>
             <li>
               <a href="/feedback"
                  id="navFeedback"
@@ -73,7 +74,11 @@
 
     <!-- Mobile Drawer -->
     <div class="nav-drawer" id="navDrawer">
-        <!-- Updated via JavaScript -->
+        <a href="/">🏠 Home</a>
+        <a href="/admin" id="navDrawerAdminDashboard" style="display:none;">🛡️ Admin Dashboard</a>
+        <a href="/create" id="navDrawerCreate" style="display:none;">✨ Create</a>
+        <a href="/gallery" id="navDrawerGallery" style="display:none;">🎬 Gallery</a>
+        <a href="/feedback" id="navDrawerFeedback" style="display:none;">💬 Feedback</a>
     </div>
 
     <!-- Main Content -->

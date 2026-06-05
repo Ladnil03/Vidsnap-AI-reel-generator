@@ -97,7 +97,7 @@ function renderReels(reels) {
 
   if (emptyState) emptyState.style.display = 'none';
 
-  reelGrid.innerHTML = reels.map((reel) => {
+  reelGrid.innerHTML = reels.map((reel, index) => {
     const formattedDate = new Date(reel.created_at).toLocaleDateString('en-IN', {
       day: 'numeric',
       month: 'short',
@@ -106,6 +106,7 @@ function renderReels(reels) {
 
     return `
       <div class="reel-card" data-job-id="${reel.job_id}"
+           style="animation: cardFadeIn 0.4s ease-out forwards; animation-delay: ${index * 0.05}s; opacity: 0;"
            onclick="openLightbox('${reel.reel_url}', 'Reel')">
 
         <div class="reel-status-badge ready">✓ Ready</div>
@@ -226,7 +227,7 @@ async function handleDelete(jobId, triggerButton) {
   const reelCard = triggerButton.closest('.reel-card');
 
   // Animate the card out optimistically — reverts on error
-  reelCard.style.transform  = 'scale(0)';
+  reelCard.style.transform  = 'scale(0) rotate(10deg)';
   reelCard.style.opacity    = '0';
   reelCard.style.transition = 'all 0.3s';
 

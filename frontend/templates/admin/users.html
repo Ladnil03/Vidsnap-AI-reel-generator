@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users — VidSnap-AI Admin{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <a href="/admin" class="admin-sidebar-link">🏠 Dashboard</a>
+    <a href="/admin/users" class="admin-sidebar-link active">👥 Users</a>
+    <a href="/admin/reels" class="admin-sidebar-link">🎬 Reels</a>
+    <a href="/admin/feedback" class="admin-sidebar-link">💬 Feedback</a>
+    <a href="#" id="adminSidebarLogout" class="admin-sidebar-link">🚪 Logout</a>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <div class="admin-header">
+      <h1 class="display-3">Users</h1>
+      
+      <!-- Search -->
+      <div class="admin-search-wrap">
+        <span class="admin-search-icon">🔍</span>
+        <input type="text" class="admin-search" id="userSearch" placeholder="Search by name or email...">
+      </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="admin-table-container">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th class="sortable" data-column="name">Name ⇅</th>
+            <th class="sortable" data-column="email">Email ⇅</th>
+            <th class="sortable" data-column="tokens_remaining">Tokens Remaining ⇅</th>
+            <th class="sortable" data-column="total_reels">Total Reels ⇅</th>
+            <th class="sortable sorted-desc" data-column="created_at">Joined Date ⇅</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody">
+          <tr>
+            <td colspan="6" style="text-align:center; padding:3rem 0; color:var(--text3);">Loading users list...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <button class="pagination-btn" id="usersPrevBtn" disabled>◀ Previous</button>
+      <span class="pagination-info" id="usersPageInfo">Page 1 of 1</span>
+      <button class="pagination-btn" id="usersNextBtn" disabled>Next ▶</button>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

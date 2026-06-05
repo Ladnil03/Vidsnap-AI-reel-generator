@@ -113,6 +113,7 @@ function updateNavbarAuthState() {
   const token  = localStorage.getItem('vidsnap_token');
   const name   = localStorage.getItem('vidsnap_name');
   const tokens = localStorage.getItem('vidsnap_tokens');
+  const isAdminUser = localStorage.getItem('vidsnap_is_admin') === 'true';
 
   // Elements that exist in the navbar template
   const loginLink    = document.getElementById('navLogin');
@@ -120,8 +121,16 @@ function updateNavbarAuthState() {
   const userSection  = document.getElementById('navUser');
   const userNameEl   = document.getElementById('navUserName');
   const tokenBadge   = document.getElementById('navTokenBadge');
-  const logoutBtn    = document.getElementById('navLogout');
   const feedbackLink = document.getElementById('navFeedback');
+  const adminLink    = document.getElementById('navAdminDashboard');
+  const createLink   = document.getElementById('navCreate');
+  const galleryLink  = document.getElementById('navGallery');
+
+  // Mobile drawer elements
+  const drawerAdminLink    = document.getElementById('navDrawerAdminDashboard');
+  const drawerCreateLink   = document.getElementById('navDrawerCreate');
+  const drawerGalleryLink  = document.getElementById('navDrawerGallery');
+  const drawerFeedbackLink = document.getElementById('navDrawerFeedback');
 
   if (token && name) {
     // Logged in state
@@ -129,22 +138,62 @@ function updateNavbarAuthState() {
     if (signupLink)   signupLink.style.display  = 'none';
     if (userSection)  userSection.style.display = 'flex';
     if (userNameEl)   userNameEl.textContent    = name;
-    if (tokenBadge)   tokenBadge.textContent    = `${tokens} tokens`;
-    if (feedbackLink) feedbackLink.style.display = '';
+
+    if (isAdminUser) {
+      // Admin view
+      if (tokenBadge)         tokenBadge.style.display = 'none';
+      if (adminLink)          adminLink.style.display = 'block';
+      if (drawerAdminLink)    drawerAdminLink.style.display = 'block';
+      
+      if (createLink)         createLink.style.display = 'none';
+      if (galleryLink)        galleryLink.style.display = 'none';
+      if (feedbackLink)       feedbackLink.style.display = 'none';
+      if (drawerCreateLink)   drawerCreateLink.style.display = 'none';
+      if (drawerGalleryLink)  drawerGalleryLink.style.display = 'none';
+      if (drawerFeedbackLink) drawerFeedbackLink.style.display = 'none';
+    } else {
+      // Regular User view
+      if (tokenBadge) {
+        tokenBadge.style.display = 'inline-block';
+        tokenBadge.textContent   = `${tokens} tokens`;
+      }
+      if (adminLink)          adminLink.style.display = 'none';
+      if (drawerAdminLink)    drawerAdminLink.style.display = 'none';
+      
+      if (createLink)         createLink.style.display = 'block';
+      if (galleryLink)        galleryLink.style.display = 'block';
+      if (feedbackLink)       feedbackLink.style.display = 'block';
+      if (drawerCreateLink)   drawerCreateLink.style.display = 'block';
+      if (drawerGalleryLink)  drawerGalleryLink.style.display = 'block';
+      if (drawerFeedbackLink) drawerFeedbackLink.style.display = 'block';
+    }
   } else {
     // Logged out state
     if (loginLink)    loginLink.style.display  = '';
     if (signupLink)   signupLink.style.display  = '';
     if (userSection)  userSection.style.display = 'none';
-    if (feedbackLink) feedbackLink.style.display = 'none';
+    
+    // Hide all protected links
+    if (adminLink)          adminLink.style.display = 'none';
+    if (createLink)         createLink.style.display = 'none';
+    if (galleryLink)        galleryLink.style.display = 'none';
+    if (feedbackLink)       feedbackLink.style.display = 'none';
+    if (drawerAdminLink)    drawerAdminLink.style.display = 'none';
+    if (drawerCreateLink)   drawerCreateLink.style.display = 'none';
+    if (drawerGalleryLink)  drawerGalleryLink.style.display = 'none';
+    if (drawerFeedbackLink) drawerFeedbackLink.style.display = 'none';
   }
 }
 
 // Wire up logout button
 document.getElementById('navLogout')?.addEventListener('click', () => {
-  // Clear localStorage
-  ['vidsnap_token','vidsnap_name','vidsnap_email','vidsnap_tokens']
-    .forEach(key => localStorage.removeItem(key));
+  // Clear localStorage using api helper if available
+  if (typeof clearAuthData === 'function') {
+    clearAuthData();
+  } else {
+    ['vidsnap_token','vidsnap_name','vidsnap_email','vidsnap_tokens','vidsnap_is_admin']
+      .forEach(key => localStorage.removeItem(key));
+  }
   window.location.href = '/login';
 });
 
@@ -153,16 +202,99 @@ updateNavbarAuthState();
 
 /* ── PROTECTED PAGE GUARD ── */
 
-/**
- * Pages that require login.
- * If user is not logged in and visits these paths, redirect to login.
- */
-const protectedPaths = ['/create', '/gallery', '/feedback', '/profile'];
+const protectedPaths = ['/create', '/gallery', '/feedback', '/profile', '/admin', '/admin/users', '/admin/reels', '/admin/feedback'];
 const currentPath    = window.location.pathname;
 
-if (protectedPaths.includes(currentPath)) {
-  const token = localStorage.getItem('vidsnap_token');
+const token = localStorage.getItem('vidsnap_token');
+const isAdminUser = localStorage.getItem('vidsnap_is_admin') === 'true';
+
+if (currentPath.startsWith('/admin')) {
   if (!token) {
     window.location.href = '/login';
+  } else if (!isAdminUser) {
+    window.location.href = '/';
+  }
+} else if (protectedPaths.includes(currentPath)) {
+  if (!token) {
+    window.location.href = '/login';
+  } else if (isAdminUser && (currentPath === '/create' || currentPath === '/gallery' || currentPath === '/feedback')) {
+    window.location.href = '/admin';
   }
 }
+
+// ── NAVBAR SCROLL EFFECT ──
+window.addEventListener('scroll', () => {
+  const navbar = document.querySelector('.navbar');
+  if (navbar) {
+    if (window.scrollY > 20) {
+      navbar.classList.add('scrolled');
+    } else {
+      navbar.classList.remove('scrolled');
+    }
+  }
+});
+
+// Run immediately in case the page loaded scrolled
+const navbar = document.querySelector('.navbar');
+if (navbar && window.scrollY > 20) {
+  navbar.classList.add('scrolled');
+}
+
+// ── BUTTON HOVER RIPPLE EFFECT ──
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.btn-primary, .btn-generate');
+  if (btn) {
+    // Create ripple span
+    const ripple = document.createElement('span');
+    ripple.classList.add('ripple-span');
+    
+    // Position the ripple span
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+    
+    ripple.style.width = ripple.style.height = `${size}px`;
+    ripple.style.left = `${x}px`;
+    ripple.style.top = `${y}px`;
+    
+    // Ensure relative positioning and overflow hidden
+    if (window.getComputedStyle(btn).position === 'static') {
+      btn.style.position = 'relative';
+    }
+    if (window.getComputedStyle(btn).overflow !== 'hidden') {
+      btn.style.overflow = 'hidden';
+    }
+    
+    btn.appendChild(ripple);
+    
+    setTimeout(() => {
+      ripple.remove();
+    }, 600);
+  }
+});
+
+// ── SMOOTH PAGE TRANSITIONS ──
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('a');
+  if (link) {
+    const href = link.getAttribute('href');
+    const target = link.getAttribute('target');
+    const download = link.hasAttribute('download');
+    
+    // Only intercept internal, non-download, non-blank links
+    if (href && href.startsWith('/') && !href.startsWith('//') && !download && target !== '_blank') {
+      // Don't intercept anchor links on same page
+      if (href.includes('#') && href.split('#')[0] === window.location.pathname) {
+        return;
+      }
+      
+      e.preventDefault();
+      document.body.classList.add('fade-out');
+      
+      setTimeout(() => {
+        window.location.href = href;
+      }, 200);
+    }
+  }
+});

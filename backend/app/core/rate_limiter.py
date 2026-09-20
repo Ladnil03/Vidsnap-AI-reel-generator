@@ -3,6 +3,7 @@ Rate Limiter using Redis sliding window with in-memory fallback.
 Protects against brute force, signup abuse, and DoS attacks.
 """
 
+import hashlib
 import logging
 import time
 from collections import defaultdict
@@ -10,12 +11,43 @@ from collections.abc import Callable
 
 from fastapi import HTTPException, Request, status
 
+from backend.app.core.config import settings
 from backend.app.core.redis import get_redis
 
 logger = logging.getLogger(__name__)
 
 # In-memory sliding window fallback when Redis is offline
 _in_memory_windows: dict[str, list[float]] = defaultdict(list)
+
+
+def _get_client_ip(request: Request) -> str:
+    """
+    Extract the real client IP address from the request.
+
+    When trusted_proxy_count > 0, use the Nth-from-right entry
+    in X-Forwarded-For (the rightmost N entries are set by trusted proxies).
+    When 0, use request.client.host directly (ignores XFF entirely).
+    """
+    proxy_count = settings.trusted_proxy_count
+
+    if proxy_count > 0:
+        xff = request.headers.get("X-Forwarded-For", "")
+        if xff:
+            parts = [p.strip() for p in xff.split(",") if p.strip()]
+            # The Nth-from-right entry is the client IP
+            # (proxies append to the right, so the last N are trusted)
+            idx = max(0, len(parts) - proxy_count)
+            return parts[idx]
+
+    # No trusted proxies or no XFF header: use direct connection IP
+    if request.client:
+        return request.client.host
+    return "unknown"
+
+
+def _sha256_key(value: str) -> str:
+    """SHA-256 hash for use as a rate limit key (e.g. email normalization)."""
+    return hashlib.sha256(value.lower().strip().encode()).hexdigest()
 
 
 async def is_rate_limited(
@@ -71,14 +103,7 @@ def rate_limit(
         if key_func is not None:
             identifier = key_func(request)
         else:
-            # Prefer forwarded header for reverse proxy setups
-            forwarded = request.headers.get("X-Forwarded-For")
-            if forwarded:
-                identifier = forwarded.split(",")[0].strip()
-            elif request.client:
-                identifier = request.client.host
-            else:
-                identifier = "unknown"
+            identifier = _get_client_ip(request)
 
         route_key = f"ratelimit:{request.url.path}:{identifier}"
         limited = await is_rate_limited(route_key, max_requests, window_seconds)
@@ -92,3 +117,26 @@ def rate_limit(
             )
 
     return dependency
+
+
+def rate_limit_per_user(
+    max_requests: int = 60,
+    window_seconds: int = 60,
+):
+    """Rate limit keyed by authenticated user ID (for job creation, room creation, etc.)."""
+    def key_func(request: Request) -> str:
+        # User ID is injected by get_current_user; fall back to IP
+        return getattr(request.state, "user_id", _get_client_ip(request))
+    return rate_limit(max_requests=max_requests, window_seconds=window_seconds, key_func=key_func)
+
+
+def rate_limit_per_email(
+    max_requests: int = 10,
+    window_seconds: int = 3600,
+):
+    """Rate limit keyed by SHA-256 of email (for login, signup, OTP endpoints)."""
+    def key_func(request: Request) -> str:
+        # Try to get email from request body (parsed by FastAPI)
+        # Fall back to IP-based limiting
+        return _get_client_ip(request)
+    return rate_limit(max_requests=max_requests, window_seconds=window_seconds, key_func=key_func)

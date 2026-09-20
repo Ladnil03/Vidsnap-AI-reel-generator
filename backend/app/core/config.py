@@ -9,8 +9,10 @@ import re
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_DEFAULT_JWT_SECRET = "development_insecure_jwt_secret_key_min_32_characters_long_12345"
 
 
 class Settings(BaseSettings):
@@ -29,7 +31,7 @@ class Settings(BaseSettings):
 
     # Security & JWT Auth
     jwt_secret_key: str = Field(
-        default="development_insecure_jwt_secret_key_min_32_characters_long_12345",
+        default=_DEFAULT_JWT_SECRET,
         description="HMAC secret key used to sign JWT tokens",
     )
     jwt_algorithm: str = "HS256"
@@ -83,6 +85,8 @@ class Settings(BaseSettings):
     hls_abr_enabled: bool = False
     rate_limit_per_minute: int = 60
     auth_rate_limit_per_minute: int = 10
+    trusted_proxy_count: int = 0
+    metrics_token: str | None = None
 
     # Worker & FFmpeg Pipeline Settings
     worker_concurrency: int = 2
@@ -126,6 +130,42 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
+
+    @model_validator(mode="after")
+    def _validate_production_safety(self) -> "Settings":
+        """Fail fast when staging/production is misconfigured."""
+        if self.environment not in ("staging", "production"):
+            return self
+
+        errors: list[str] = []
+
+        # JWT secret must be strong
+        if self.jwt_secret_key == _DEFAULT_JWT_SECRET or len(self.jwt_secret_key) < 32:
+            errors.append(
+                "JWT secret key must be set to a unique value of at least 32 characters "
+                f"in {self.environment}."
+            )
+
+        # Debug must be off
+        if self.debug:
+            errors.append(f"debug must be False in {self.environment}.")
+
+        # Local storage is not production-ready
+        if self.storage_provider == "local":
+            errors.append(f"storage_provider must not be 'local' in {self.environment}.")
+
+        # CORS origins must not include dev addresses or wildcards
+        origins = self.allowed_origins_list
+        unsafe = [o for o in origins if "localhost" in o or "127.0.0.1" in o or o.strip() == "*"]
+        if unsafe:
+            errors.append(
+                f"allowed_origins contains unsafe entries for {self.environment}: {unsafe}"
+            )
+
+        if errors:
+            raise ValueError(" | ".join(errors))
+
+        return self
 
     @property
     def allowed_origins_list(self) -> list[str]:

@@ -88,7 +88,7 @@ async def test_create_video_from_key_missing_object_returns_404(async_client: As
 
     try:
         payload = {
-            "key": "videos/non_existent_key_123456.mp4",
+            "key": f"videos/{user_id}/non_existent_key_123456.mp4",
             "title": "Ghost Video",
             "description": "Should fail",
             "hashtags": ["#Error"],

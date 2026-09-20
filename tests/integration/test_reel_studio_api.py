@@ -48,7 +48,7 @@ async def test_reel_studio_job_lifecycle(async_client: AsyncClient, mock_db):
             # 1. Create Job with image keys
             payload = {
                 "voiceover_text": "This is a great story for our vertical reel.",
-                "image_keys": ["uploads/user/img1.jpg", "uploads/user/img2.jpg"],
+                "image_keys": [f"uploads/{user_id}/img1.jpg", f"uploads/{user_id}/img2.jpg"],
                 "voice": "en-US-AriaNeural",
                 "duration": 3,
             }

@@ -69,6 +69,25 @@ async def process_reel_job(ctx: dict[str, Any], job_id: str) -> None:
         return
 
     logger.info("[%s] Starting processing pipeline for user %s", job_id, job["user_id"])
+
+    # Re-validate image key ownership inside the worker (defense-in-depth)
+    user_id = job["user_id"]
+    for key in job.get("image_keys", []):
+        parts = key.split("/")
+        if len(parts) < 3 or parts[1] != user_id or ".." in parts:
+            logger.error("[%s] Key ownership violation: key '%s' does not belong to user '%s'", job_id, key, user_id)
+            await db.jobs.update_one(
+                {"job_id": job_id},
+                {"$set": {
+                    "status": "failed",
+                    "stage": JobStage.FAILED.value,
+                    "error_msg": "Key ownership violation",
+                    "updated_at": datetime.now(timezone.utc),
+                }},
+            )
+            await BillingService.atomic_refund_token(user_id, job_id, "Key ownership violation")
+            return
+
     now = datetime.now(timezone.utc)
 
     # Update job to processing

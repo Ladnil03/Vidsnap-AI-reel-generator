@@ -35,6 +35,7 @@ from backend.app.content.service import ContentService
 from backend.app.core.adapters.factory import get_queue_adapter, get_storage_adapter
 from backend.app.core.rate_limiter import rate_limit
 from backend.app.identity.dependencies import get_current_user, get_optional_current_user
+from backend.app.media.ownership import assert_key_owned
 from backend.app.media.service import MediaService
 
 router = APIRouter(prefix="/api/v1/content", tags=["Content & Video Platform"])
@@ -74,6 +75,10 @@ async def create_video_from_key(
     creates the video record, and enqueues transcode processing.
     """
     storage = get_storage_adapter()
+
+    # Validate key ownership (IDOR prevention)
+    assert_key_owned(current_user["user_id"], request.key)
+
     exists = await storage.head_object(request.key)
     if not exists:
         raise HTTPException(

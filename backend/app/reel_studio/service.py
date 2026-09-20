@@ -13,6 +13,7 @@ from fastapi import HTTPException, status
 from backend.app.billing_quota.service import BillingService
 from backend.app.core.adapters.factory import get_queue_adapter, get_storage_adapter
 from backend.app.core.database import get_db
+from backend.app.media.ownership import assert_keys_owned
 from backend.app.reel_studio.models import (
     CreateJobRequest,
     JobCreatedResponse,
@@ -39,6 +40,9 @@ class ReelStudioService:
         3. Enqueues job to Redis ARQ worker.
         """
         job_id = str(uuid.uuid4())
+
+        # Validate ownership of all image keys (IDOR prevention)
+        assert_keys_owned(user_id, request.image_keys)
 
         # 1. Atomic token deduction
         has_token = await BillingService.atomic_consume_token(user_id, job_id)

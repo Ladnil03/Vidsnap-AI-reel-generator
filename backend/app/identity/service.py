@@ -191,41 +191,54 @@ class IdentityService:
         """
         Generate and send a 6-digit OTP for password reset.
         Hashed with salt at rest, expires in 10 minutes.
+        Enforces a 60-second resend cooldown and never resets the attempt
+        counter of an in-flight OTP, so a resend cannot bypass lockout.
         """
         db = get_db()
         email = email.strip().lower()
+        now = datetime.now(timezone.utc)
+
+        existing = await db.otps.find_one({"email": email})
+        if existing:
+            created_at = existing["created_at"]
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
+            if now - created_at < timedelta(seconds=60):
+                return
+            if existing.get("attempts", 0) >= 5:
+                return
+
         user = await db.users.find_one({"email": email})
+        if not user:
+            return
 
-        if user:
-            otp_code = generate_secure_otp()
-            salt = secrets.token_hex(16)
-            hashed_otp = hash_otp(otp_code, salt)
-            now = datetime.now(timezone.utc)
+        otp_code = generate_secure_otp()
+        salt = secrets.token_hex(16)
+        hashed_otp = hash_otp(otp_code, salt)
 
-            # Store OTP in otps collection (overwriting any previous OTP for this user)
-            await db.otps.update_one(
-                {"email": email},
-                {
-                    "$set": {
-                        "email": email,
-                        "user_id": user["user_id"],
-                        "hashed_otp": hashed_otp,
-                        "salt": salt,
-                        "attempts": 0,
-                        "created_at": now,
-                    }
+        # Preserve attempt counter on re-request inside the lock window
+        await db.otps.update_one(
+            {"email": email},
+            {
+                "$set": {
+                    "user_id": user["user_id"],
+                    "hashed_otp": hashed_otp,
+                    "salt": salt,
+                    "created_at": now,
                 },
-                upsert=True,
-            )
+                "$setOnInsert": {"attempts": 0},
+            },
+            upsert=True,
+        )
 
-            # Deliver OTP email via configured EmailPort
-            email_adapter = get_email_adapter()
-            await email_adapter.send_otp_email(
-                recipient_email=email,
-                recipient_name=user["name"],
-                otp_code=otp_code,
-            )
-            logger.info("Password reset OTP requested for: %s", email)
+        # Deliver OTP email via configured EmailPort
+        email_adapter = get_email_adapter()
+        await email_adapter.send_otp_email(
+            recipient_email=email,
+            recipient_name=user["name"],
+            otp_code=otp_code,
+        )
+        logger.info("Password reset OTP requested for: %s", email)
 
     @staticmethod
     async def verify_and_reset_password(request: ResetPasswordRequest) -> None:
@@ -244,9 +257,8 @@ class IdentityService:
                 detail="Invalid or expired verification code.",
             )
 
-        # Check attempt limits
+        # Check attempt limits (keep record so a resend cannot reset the counter)
         if otp_record.get("attempts", 0) >= 5:
-            await db.otps.delete_one({"email": email})
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Too many failed verification attempts. Please request a new code.",

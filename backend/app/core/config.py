@@ -13,6 +13,8 @@ from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _DEFAULT_JWT_SECRET = "development_insecure_jwt_secret_key_min_32_characters_long_12345"
+_DEFAULT_MONGODB_URI = "mongodb://localhost:27017"
+_DEFAULT_REDIS_URL = "redis://localhost:6379/0"
 
 
 class Settings(BaseSettings):
@@ -160,6 +162,19 @@ class Settings(BaseSettings):
         if unsafe:
             errors.append(
                 f"allowed_origins contains unsafe entries for {self.environment}: {unsafe}"
+            )
+
+        # Infra endpoints must be explicitly provisioned (no localhost defaults)
+        if self.mongodb_uri == _DEFAULT_MONGODB_URI:
+            errors.append(
+                f"MONGODB_URI must be explicitly configured in {self.environment} "
+                "(localhost default is not allowed)."
+            )
+
+        if self.redis_url == _DEFAULT_REDIS_URL:
+            errors.append(
+                f"REDIS_URL must be explicitly configured in {self.environment} "
+                "(localhost default is not allowed)."
             )
 
         if errors:

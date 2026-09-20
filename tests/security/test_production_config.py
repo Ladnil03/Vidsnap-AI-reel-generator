@@ -90,6 +90,26 @@ class TestProductionConfigGuard:
         with pytest.raises(ValidationError, match=r"(?i)jwt"):
             _make_settings(environment="staging")
 
+    def test_production_default_mongodb_uri_raises(self):
+        """Default MONGODB_URI (localhost) in production must raise."""
+        with pytest.raises(ValidationError, match=r"(?i)mongodb"):
+            _make_settings(
+                environment="production",
+                jwt_secret_key="a_very_secure_production_jwt_secret_key_64chars_long_!@#$%^&*()",
+                allowed_origins="https://app.vidsnap.ai",
+                mongodb_uri="mongodb://localhost:27017",
+            )
+
+    def test_production_default_redis_url_raises(self):
+        """Default REDIS_URL (localhost) in production must raise."""
+        with pytest.raises(ValidationError, match=r"(?i)redis"):
+            _make_settings(
+                environment="production",
+                jwt_secret_key="a_very_secure_production_jwt_secret_key_64chars_long_!@#$%^&*()",
+                allowed_origins="https://app.vidsnap.ai",
+                redis_url="redis://localhost:6379/0",
+            )
+
     def test_valid_production_config_passes(self):
         """A fully valid production config should not raise."""
         s = _make_settings(

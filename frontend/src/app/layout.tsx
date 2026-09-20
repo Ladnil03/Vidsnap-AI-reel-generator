@@ -6,6 +6,7 @@ import { ToastProvider } from '../components/Toast';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { MobileNav } from '../components/MobileNav';
+import { CompanionWidget } from '../components/CompanionWidget';
 
 export const metadata: Metadata = {
   title: 'VidSnap.AI — Next-Gen AI Social Reel Generator',
@@ -44,6 +45,7 @@ export default function RootLayout({
               </main>
               <Footer />
               <MobileNav />
+              <CompanionWidget />
             </ToastProvider>
           </I18nProvider>
         </AuthProvider>

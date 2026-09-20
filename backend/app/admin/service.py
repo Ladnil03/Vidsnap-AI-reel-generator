@@ -5,7 +5,7 @@ Uses MongoDB aggregation pipelines to eliminate N+1 queries.
 
 import logging
 
-from backend.app.admin.models import AdminReelItem, AdminUserItem
+from backend.app.admin.models import AdminReelItem, AdminSystemStats, AdminUserItem
 from backend.app.billing_quota.models import TransactionType
 from backend.app.billing_quota.service import BillingService
 from backend.app.core.database import get_db
@@ -132,3 +132,84 @@ class AdminService:
             transaction_type=TransactionType.ADMIN_GRANT,
             memo=f"Admin {admin_email} adjusted tokens from {current_tokens} to {new_tokens}",
         )
+
+    @staticmethod
+    async def get_system_stats() -> AdminSystemStats:
+        """
+        Aggregate platform-wide health, adoption, and moderation metrics.
+        """
+        db = get_db()
+        total_users = await db.users.count_documents({})
+        total_creators = await db.users.count_documents({"roles": "creator"})
+        total_businesses = await db.users.count_documents({"roles": "business"})
+        total_reels = await db.jobs.count_documents({"status": "done", "deleted": {"$ne": True}})
+        pending_reports = await db.content_reports.count_documents({"status": "pending"})
+
+        # Active watch rooms
+        active_rooms = await db.rooms.count_documents({"status": "active"}) if hasattr(db, "rooms") else 0
+
+        # Aggregated tokens circulating
+        pipeline_tokens = [
+            {"$group": {"_id": None, "total": {"$sum": "$tokens_remaining"}}}
+        ]
+        tokens_circulating = 0
+        async for r in db.users.aggregate(pipeline_tokens):
+            tokens_circulating = r.get("total", 0)
+
+        # Total reel views
+        pipeline_views = [
+            {"$group": {"_id": None, "total": {"$sum": "$views_count"}}}
+        ]
+        total_views = 0
+        if hasattr(db, "videos"):
+            async for r in db.videos.aggregate(pipeline_views):
+                total_views = r.get("total", 0)
+
+        return AdminSystemStats(
+            total_users=total_users,
+            total_creators=total_creators,
+            total_businesses=total_businesses,
+            total_reels=total_reels,
+            total_views=total_views,
+            active_rooms=active_rooms,
+            pending_reports=pending_reports,
+            tokens_circulating=tokens_circulating,
+        )
+
+    @staticmethod
+    async def update_user_role(
+        user_id: str,
+        role: str,
+        action: str,
+        admin_email: str,
+    ) -> list[str]:
+        """
+        Grant or revoke a specific role from a user.
+        """
+        db = get_db()
+        user = await db.users.find_one({"user_id": user_id})
+        if not user:
+            raise ValueError(f"User '{user_id}' not found.")
+
+        current_roles: list[str] = user.get("roles", ["user"])
+        cleaned_role = role.strip().lower()
+
+        if action == "add":
+            if cleaned_role not in current_roles:
+                current_roles.append(cleaned_role)
+        elif action == "remove":
+            if cleaned_role in current_roles:
+                current_roles.remove(cleaned_role)
+                if not current_roles:
+                    current_roles = ["user"]
+
+        await db.users.update_one(
+            {"user_id": user_id},
+            {"$set": {"roles": current_roles}},
+        )
+
+        logger.info(
+            "Admin %s modified roles for %s (Action: %s %s -> Result: %s)",
+            admin_email, user_id, action, cleaned_role, current_roles,
+        )
+        return current_roles

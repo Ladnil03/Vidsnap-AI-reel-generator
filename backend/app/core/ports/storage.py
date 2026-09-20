@@ -1,10 +1,11 @@
 """
 Storage Port: Abstract interface for object storage operations.
-Enables pluggable backends: Cloudflare R2, AWS S3, Local filesystem, MinIO.
+Enables pluggable backends: Cloudinary (Zero-card Free Tier) and Local filesystem.
 """
 
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any
 
 
 class StoragePort(ABC):
@@ -16,7 +17,7 @@ class StoragePort(ABC):
         key: str,
         content_type: str,
         expires_in: int = 3600,
-    ) -> dict[str, str]:
+    ) -> dict[str, Any]:
         """
         Generate a pre-signed URL allowing the client to upload directly to storage.
         Returns dict containing 'upload_url', 'key', and any required form fields/headers.

@@ -183,6 +183,134 @@ async def ensure_indexes(db: AsyncIOMotorDatabase) -> None:
         name="idx_interactions_ttl_15d",
     )
 
+    # Phase 8: AI Companion & Personalization Indexes
+    user_moods = db["user_moods"]
+    await user_moods.create_index([("user_id", ASCENDING)], unique=True, name="idx_mood_user_id_unique")
+
+    companion_messages = db["companion_messages"]
+    await companion_messages.create_index(
+        [("user_id", ASCENDING), ("timestamp", DESCENDING)],
+        name="idx_companion_user_timestamp",
+    )
+    await companion_messages.create_index(
+        [("timestamp", ASCENDING)],
+        expireAfterSeconds=2592000,
+        name="idx_companion_ttl_30d",
+    )
+
+    ai_playlists = db["ai_playlists"]
+    await ai_playlists.create_index(
+        [("user_id", ASCENDING), ("created_at", DESCENDING)],
+        name="idx_playlists_user_created",
+    )
+
+    daily_plans = db["daily_plans"]
+    await daily_plans.create_index(
+        [("user_id", ASCENDING), ("date", ASCENDING)],
+        unique=True,
+        name="idx_daily_plans_user_date_unique",
+    )
+
+    digital_twins = db["digital_twins"]
+    await digital_twins.create_index(
+        [("creator_id", ASCENDING)],
+        unique=True,
+        name="idx_digital_twins_creator_unique",
+    )
+
+    # Phase 9: Gamification & Engagement Indexes
+    xp_ledger = db["xp_ledger"]
+    await xp_ledger.create_index([("idempotency_key", ASCENDING)], unique=True, name="idx_xp_idempotency_unique")
+    await xp_ledger.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="idx_xp_user_created")
+    await xp_ledger.create_index(
+        [("user_id", ASCENDING), ("action", ASCENDING), ("created_at", DESCENDING)],
+        name="idx_xp_user_action",
+    )
+
+    user_levels = db["user_levels"]
+    await user_levels.create_index([("user_id", ASCENDING)], unique=True, name="idx_user_levels_uid_unique")
+    await user_levels.create_index([("total_xp", DESCENDING)], name="idx_user_levels_xp_desc")
+
+    user_streaks = db["user_streaks"]
+    await user_streaks.create_index(
+        [("user_id", ASCENDING), ("scope", ASCENDING), ("target_id", ASCENDING)],
+        unique=True,
+        name="idx_streaks_user_scope_target_unique",
+    )
+
+    user_challenges = db["user_challenges"]
+    await user_challenges.create_index(
+        [("user_id", ASCENDING), ("challenge_id", ASCENDING), ("period_key", ASCENDING)],
+        unique=True,
+        name="idx_challenges_user_ch_period_unique",
+    )
+
+    user_badges = db["user_badges"]
+    await user_badges.create_index(
+        [("user_id", ASCENDING), ("badge_id", ASCENDING)],
+        unique=True,
+        name="idx_badges_user_badge_unique",
+    )
+    await user_badges.create_index(
+        [("user_id", ASCENDING), ("unlocked_at", DESCENDING)],
+        name="idx_badges_user_unlocked",
+    )
+
+    # Phase 10: Creator & Business Platforms Indexes
+    creator_profiles = db["creator_profiles"]
+    await creator_profiles.create_index([("user_id", ASCENDING)], unique=True, name="idx_cp_user_id_unique")
+
+    creator_verifications = db["creator_verifications"]
+    await creator_verifications.create_index(
+        [("user_id", ASCENDING), ("status", ASCENDING)],
+        name="idx_cv_user_status",
+    )
+
+    creator_events = db["creator_events"]
+    await creator_events.create_index([("creator_id", ASCENDING)], name="idx_ce_creator_id")
+    await creator_events.create_index([("scheduled_at", DESCENDING)], name="idx_ce_scheduled_desc")
+
+    business_profiles = db["business_profiles"]
+    await business_profiles.create_index([("user_id", ASCENDING)], unique=True, name="idx_bp_user_id_unique")
+
+    campaigns = db["campaigns"]
+    await campaigns.create_index([("business_id", ASCENDING)], name="idx_cmp_business_id")
+    await campaigns.create_index(
+        [("status", ASCENDING), ("created_at", DESCENDING)],
+        name="idx_cmp_status_created",
+    )
+
+    collab_applications = db["collab_applications"]
+    await collab_applications.create_index(
+        [("campaign_id", ASCENDING), ("creator_id", ASCENDING)],
+        unique=True,
+        name="idx_ca_campaign_creator_unique",
+    )
+    await collab_applications.create_index([("creator_id", ASCENDING)], name="idx_ca_creator_id")
+
+    # Phase 11: Moderation & Trust Layer Indexes
+    content_reports = db["content_reports"]
+    await content_reports.create_index(
+        [("reporter_id", ASCENDING), ("target_type", ASCENDING), ("target_id", ASCENDING)],
+        name="idx_cr_reporter_target",
+    )
+    await content_reports.create_index(
+        [("status", ASCENDING), ("priority", DESCENDING), ("created_at", DESCENDING)],
+        name="idx_cr_status_priority_created",
+    )
+    await content_reports.create_index(
+        [("target_type", ASCENDING), ("target_id", ASCENDING)],
+        name="idx_cr_target_lookup",
+    )
+
+    moderation_actions = db["moderation_actions"]
+    await moderation_actions.create_index([("report_id", ASCENDING)], name="idx_ma_report_id")
+    await moderation_actions.create_index(
+        [("moderator_id", ASCENDING), ("created_at", DESCENDING)],
+        name="idx_ma_moderator_created",
+    )
+    await moderation_actions.create_index([("target_type", ASCENDING), ("target_id", ASCENDING)], name="idx_ma_target")
+
     logger.info("Database indexes ensured successfully.")
 
 

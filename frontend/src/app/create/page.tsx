@@ -86,6 +86,8 @@ export default function CreateReelPage() {
   const [scheduledDate, setScheduledDate] = useState('');
   const [generatingTags, setGeneratingTags] = useState(false);
   const [uploadingNative, setUploadingNative] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadPhase, setUploadPhase] = useState<string>('');
   const [publishedVideo, setPublishedVideo] = useState<VideoContent | null>(null);
 
   // Cleanup object URLs
@@ -231,7 +233,7 @@ export default function CreateReelPage() {
     }
   };
 
-  // Submit Mode B Native Video
+  // Submit Mode B Native Video with direct R2 upload and fallback
   const handleUploadNativeVideo = async (isDraft: boolean = false) => {
     if (!nativeVideoFile) {
       toastError('Please select a video file.');
@@ -243,19 +245,71 @@ export default function CreateReelPage() {
     }
 
     setUploadingNative(true);
+    setUploadProgress(0);
+    setUploadPhase('Preparing upload...');
+
     try {
-      const formData = new FormData();
-      formData.append('video', nativeVideoFile);
-      formData.append('title', videoTitle);
-      formData.append('description', videoDescription);
-      formData.append('hashtags', videoHashtags);
-      formData.append('visibility', visibility);
-      formData.append('is_draft', String(isDraft));
-      if (isScheduled && scheduledDate) {
-        formData.append('scheduled_at', new Date(scheduledDate).toISOString());
+      const parsedTags = videoHashtags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+      const scheduledIso = isScheduled && scheduledDate ? new Date(scheduledDate).toISOString() : undefined;
+
+      let res: VideoContent | null = null;
+
+      // Step 1: Attempt browser-direct signed upload to Cloudinary / Object Storage
+      try {
+        setUploadPhase('Requesting direct edge upload URL...');
+        const presigned = await api.media.getVideoUploadUrl({
+          filename: nativeVideoFile.name,
+          content_type: nativeVideoFile.type || 'video/mp4',
+          size_bytes: nativeVideoFile.size,
+        });
+
+        if (presigned?.upload_url && presigned?.key) {
+          setUploadPhase('Uploading directly to edge storage...');
+          await api.media.uploadToPresigned(
+            presigned.upload_url,
+            nativeVideoFile,
+            nativeVideoFile.type || 'video/mp4',
+            (percent) => {
+              setUploadProgress(percent);
+            },
+            presigned.method || 'PUT',
+            presigned.fields
+          );
+
+          setUploadPhase('Registering video post...');
+          res = await api.content.createVideoFromKey({
+            key: presigned.key,
+            title: videoTitle,
+            description: videoDescription,
+            hashtags: parsedTags,
+            visibility: visibility as any,
+            scheduled_at: scheduledIso,
+            is_draft: isDraft,
+          });
+        }
+      } catch (directErr) {
+        console.warn('Direct edge upload failed or unsupported; falling back to multipart upload:', directErr);
       }
 
-      const res = await api.content.uploadNativeVideo(formData);
+      // Step 2: Fallback to standard multipart upload if direct-to-R2 was not completed
+      if (!res) {
+        setUploadPhase('Uploading via backend stream...');
+        const formData = new FormData();
+        formData.append('video', nativeVideoFile);
+        formData.append('title', videoTitle);
+        formData.append('description', videoDescription);
+        formData.append('hashtags', videoHashtags);
+        formData.append('visibility', visibility);
+        formData.append('is_draft', String(isDraft));
+        if (scheduledIso) {
+          formData.append('scheduled_at', scheduledIso);
+        }
+        res = await api.content.uploadNativeVideo(formData);
+      }
+
       setPublishedVideo(res);
       try {
         confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
@@ -268,6 +322,8 @@ export default function CreateReelPage() {
       toastError(msg);
     } finally {
       setUploadingNative(false);
+      setUploadProgress(null);
+      setUploadPhase('');
     }
   };
 
@@ -592,6 +648,30 @@ export default function CreateReelPage() {
                   )}
                 </div>
               </div>
+
+              {/* Direct Upload Progress Indicator */}
+              {uploadingNative && (
+                <div style={{ marginTop: '20px', background: 'rgba(255, 255, 255, 0.03)', padding: '14px 18px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
+                    <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Loader2 size={13} className="spin" />
+                      <span>{uploadPhase || 'Uploading...'}</span>
+                    </span>
+                    <span style={{ fontWeight: 600, color: 'var(--accent-cyan)' }}>
+                      {uploadProgress !== null ? `${uploadProgress}%` : ''}
+                    </span>
+                  </div>
+                  <div style={{ width: '100%', height: '6px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{
+                      width: `${uploadProgress ?? 100}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, var(--primary), var(--accent-cyan))',
+                      transition: 'width 0.2s ease',
+                      borderRadius: '3px',
+                    }} />
+                  </div>
+                </div>
+              )}
 
               {/* Action buttons */}
               <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>

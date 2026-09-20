@@ -6,11 +6,12 @@
  */
 
 import React, { useState } from 'react';
-import { Heart, Bookmark, MessageSquare, Share2, Send, X, Loader2 } from 'lucide-react';
+import { Heart, Bookmark, MessageSquare, Share2, Send, X, Loader2, Flag } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { VideoComment, VideoContent } from '../lib/types';
+import ReportModal from './ReportModal';
 
 export interface EngagementBarProps {
   videoId?: string;
@@ -56,6 +57,7 @@ export function EngagementBar({
   const [loadingComments, setLoadingComments] = useState(false);
   const [newCommentText, setNewCommentText] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const handleLike = async () => {
     if (!user) {
@@ -225,6 +227,22 @@ export function EngagementBar({
         >
           <Share2 size={18} />
         </button>
+
+        {/* Report */}
+        <button
+          onClick={() => setReportModalOpen(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: 'var(--text-muted)',
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+          }}
+          title="Report inappropriate content"
+        >
+          <Flag size={16} />
+        </button>
       </div>
 
       {/* Slide-out / Modal Comments Drawer */}
@@ -343,6 +361,15 @@ export function EngagementBar({
           </div>
         </div>
       )}
+
+      {/* User Content Reporting Modal */}
+      <ReportModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        targetType="video"
+        targetId={resolvedVideoId}
+        targetTitle={video?.title}
+      />
     </div>
   );
 }

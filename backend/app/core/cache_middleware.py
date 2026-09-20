@@ -25,15 +25,29 @@ DEFAULT_CACHE_RULES: list[CacheRule] = [
     # Health endpoints: never cache
     (r"^/health/", "no-store", False),
     # Static media files: aggressive caching (1 day + stale-while-revalidate)
-    (r"^/api/v1/media/files/", f"public, max-age={settings.cache_max_age_media}, stale-while-revalidate=3600", True),
+    (
+        r"^/api/v1/media/files/",
+        f"public, max-age={settings.cache_max_age_media}, stale-while-revalidate=3600",
+        True,
+    ),
     # Auth endpoints: never cache
     (r"^/api/v1/auth/", "no-store", False),
     # Discovery/Feed/RecSys (personalized): short cache
-    (r"^/api/v1/(discovery|feed|recsys)/", f"private, max-age={settings.cache_max_age_api}, stale-while-revalidate=30", False),
+    (
+        r"^/api/v1/(discovery|feed|recsys)/",
+        f"private, max-age={settings.cache_max_age_api}, stale-while-revalidate=30",
+        False,
+    ),
     # Content GET endpoints: short private cache
-    (r"^/api/v1/content/videos($|\?)", f"private, max-age={settings.cache_max_age_api}, stale-while-revalidate=30", False),
+    (
+        r"^/api/v1/content/videos($|\?)",
+        f"private, max-age={settings.cache_max_age_api}, stale-while-revalidate=30",
+        False,
+    ),
     # Notifications: never cache
     (r"^/api/v1/notifications", "no-store", False),
+    # Real-time rooms & watch parties: never cache
+    (r"^/api/v1/rooms", "no-store", False),
 ]
 
 

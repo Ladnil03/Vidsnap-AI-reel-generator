@@ -5,7 +5,7 @@
 VidSnap.AI is designed with **Strict Legal-by-Design Compliance**. To guarantee zero copyright infringement, zero bandwidth theft, and total alignment with international intellectual property laws:
 
 1. **Zero Scraping**: VidSnap NEVER scrapes unauthorized websites, parses unauthorized HTML, or bypasses anti-bot mechanisms. All third-party content is acquired strictly through official public developer APIs, oEmbed endpoints, or official partnership feeds.
-2. **Zero Re-Hosting / Zero Video Proxying**: VidSnap **NEVER downloads, re-encodes, or re-hosts third-party video media files** on our Cloudflare R2, AWS S3, or local storage. Third-party content remains hosted exclusively on the original platform's servers.
+2. **Zero Re-Hosting / Zero Video Proxying**: VidSnap **NEVER downloads, re-encodes, or re-hosts third-party video media files** on our Cloudinary, cloud storage, or local storage. Third-party content remains hosted exclusively on the original platform's servers.
 3. **Official Players & Direct CDNs**:
    - **YouTube Shorts**: Rendered exclusively via the official YouTube responsive `iframe` embed player or oEmbed specification.
    - **Pexels & Pixabay**: Streamed directly from official, authenticated CDN endpoints provided by their public APIs under their respective developer agreements.

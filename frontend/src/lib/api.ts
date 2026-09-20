@@ -4,32 +4,81 @@
  */
 
 import {
+  AIPlaylist,
+  CompanionChatResponse,
+  CompanionMessage,
+  CreateAIPlaylistRequest,
+  DailyPlan,
+  DailyPlanSlot,
+  DigitalTwinInteractResponse,
+  DigitalTwinProfile,
+  EntertainmentJourney,
+  MoodState,
+  MoodType,
   AdminReel,
+  AdminSystemStats,
   AdminUser,
   AuthResponse,
+  AutomatedModerationResult,
+  AwardXPResponse,
+  BadgeCatalogItem,
+  BrandSafetyReport,
+  BusinessProfile,
+  Campaign,
+  CampaignStatusType,
+  CollabApplication,
+  CollabApplicationStatusType,
   Community,
   CommunityCategory,
+  ContentReport,
+  CreateRoomRequest,
+  CreateVideoFromKeyRequest,
+  CreatorAnalytics,
+  CreatorCopilotResponse,
+  CreatorEvent,
+  CreatorProfile,
   DiscoveryItem,
   DiscoverySearchResponse,
   FeedbackItem,
   FeedResponse,
   FeedTab,
   FollowStatus,
+  GamificationProfile,
   HashtagSuggestion,
+  LeaderboardResponse,
+  LeaderboardScopeType,
+  LiveKitTokenResponse,
+  ModerationAction,
+  ModerationActionType,
+  ModerationStats,
   NotificationItem,
   NotificationListResponse,
+  PresignedVideoUpload,
   RecommendationFeedResponse,
   RecommendationItem,
   ReelItem,
   ReelJob,
+  ReportReasonType,
+  ReportStatusType,
+  ReportTargetType,
+  Room,
+  RoomChatMessage,
+  RoomSummaryResponse,
+  RoomWatchState,
   SocialUserSummary,
   SourceStatus,
+  StreakScopeType,
+  StreakState,
   User,
+  UserChallenge,
+  UserLevel,
   UserProfile,
   UserVectorProfile,
+  VerificationApplication,
   VideoComment,
   VideoContent,
   WatchProgress,
+  XPActionType,
 } from './types';
 
 const ACCESS_TOKEN_KEY = 'vidsnap_access_token';
@@ -274,6 +323,84 @@ export const api = {
         body: JSON.stringify({ tokens }),
       });
     },
+
+    async getStats(): Promise<AdminSystemStats> {
+      return apiFetch<AdminSystemStats>('/api/v1/admin/stats');
+    },
+
+    async updateUserRole(userId: string, role: string, action: 'add' | 'remove' = 'add'): Promise<{ updated: boolean; user_id: string; roles: string[] }> {
+      return apiFetch<{ updated: boolean; user_id: string; roles: string[] }>(`/api/v1/admin/users/${userId}/roles`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, action }),
+      });
+    },
+  },
+
+  media: {
+    async getVideoUploadUrl(payload: {
+      filename: string;
+      content_type: string;
+      size_bytes: number;
+    }): Promise<PresignedVideoUpload> {
+      return apiFetch<PresignedVideoUpload>('/api/v1/media/upload-url/video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async uploadToPresigned(
+      uploadUrl: string,
+      file: File | Blob,
+      contentType: string,
+      onProgress?: (percent: number, loaded: number, total: number) => void,
+      method: string = 'PUT',
+      fields?: Record<string, string>
+    ): Promise<void> {
+      return new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        const httpMethod = method.toUpperCase();
+        xhr.open(httpMethod, uploadUrl);
+
+        if (onProgress && xhr.upload) {
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+              const percent = Math.round((event.loaded / event.total) * 100);
+              onProgress(percent, event.loaded, event.total);
+            }
+          };
+        }
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Direct upload failed with status ${xhr.status}: ${xhr.statusText}`));
+          }
+        };
+
+        xhr.onerror = () => {
+          reject(new Error('Network error during direct storage upload'));
+        };
+
+        if (httpMethod === 'POST') {
+          // Cloudinary / Multipart direct signed upload
+          const formData = new FormData();
+          if (fields) {
+            for (const [key, value] of Object.entries(fields)) {
+              formData.append(key, value);
+            }
+          }
+          formData.append('file', file);
+          xhr.send(formData);
+        } else {
+          // Standard PUT direct upload (R2 / S3 / Local)
+          xhr.setRequestHeader('Content-Type', contentType);
+          xhr.send(file);
+        }
+      });
+    },
   },
 
   content: {
@@ -289,6 +416,14 @@ export const api = {
       is_draft?: boolean;
     }): Promise<VideoContent> {
       return apiFetch<VideoContent>('/api/v1/content/videos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async createVideoFromKey(payload: CreateVideoFromKeyRequest): Promise<VideoContent> {
+      return apiFetch<VideoContent>('/api/v1/content/videos/from-key', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -532,4 +667,429 @@ export const api = {
       });
     },
   },
+
+  rooms: {
+    async createRoom(payload: CreateRoomRequest): Promise<Room> {
+      return apiFetch<Room>('/api/v1/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async listRooms(skip: number = 0, limit: number = 30, search?: string): Promise<Room[]> {
+      const q = new URLSearchParams({ skip: String(skip), limit: String(limit) });
+      if (search) q.set('search', search);
+      return apiFetch<Room[]>(`/api/v1/rooms?${q.toString()}`);
+    },
+
+    async getRoom(roomId: string): Promise<Room> {
+      return apiFetch<Room>(`/api/v1/rooms/${roomId}`);
+    },
+
+    async joinRoom(roomId: string, passcode?: string): Promise<Room> {
+      return apiFetch<Room>(`/api/v1/rooms/${roomId}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passcode }),
+      });
+    },
+
+    async leaveRoom(roomId: string): Promise<{ left: boolean }> {
+      return apiFetch<{ left: boolean }>(`/api/v1/rooms/${roomId}/leave`, {
+        method: 'POST',
+      });
+    },
+
+    async syncAction(roomId: string, actionPayload: {
+      action: 'play' | 'pause' | 'seek' | 'change_media' | 'set_rate';
+      position_seconds?: number;
+      playback_rate?: number;
+      media_url?: string;
+      media_title?: string;
+      media_type?: string;
+    }): Promise<RoomWatchState> {
+      return apiFetch<RoomWatchState>(`/api/v1/rooms/${roomId}/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(actionPayload),
+      });
+    },
+
+    async getMessages(roomId: string, limit: number = 50): Promise<RoomChatMessage[]> {
+      return apiFetch<RoomChatMessage[]>(`/api/v1/rooms/${roomId}/messages?limit=${limit}`);
+    },
+
+    async getRtcToken(roomId: string): Promise<LiveKitTokenResponse> {
+      return apiFetch<LiveKitTokenResponse>(`/api/v1/rooms/${roomId}/rtc-token`, {
+        method: 'POST',
+      });
+    },
+
+    async getAiSummary(roomId: string): Promise<RoomSummaryResponse> {
+      return apiFetch<RoomSummaryResponse>(`/api/v1/rooms/${roomId}/summary`, {
+        method: 'POST',
+      });
+    },
+
+    createWebSocket(roomId: string, token?: string): WebSocket {
+      const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = typeof window !== 'undefined' ? window.location.host : 'localhost:8000';
+      const url = `${protocol}//${host}/api/v1/rooms/${roomId}/ws${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+      return new WebSocket(url);
+    },
+  },
+
+  companion: {
+    async chat(message: string, mood?: MoodType): Promise<CompanionChatResponse> {
+      return apiFetch<CompanionChatResponse>('/api/v1/companion/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, mood }),
+      });
+    },
+
+    async getHistory(limit: number = 30): Promise<CompanionMessage[]> {
+      return apiFetch<CompanionMessage[]>(`/api/v1/companion/history?limit=${limit}`);
+    },
+
+    async clearHistory(): Promise<{ cleared: boolean }> {
+      return apiFetch<{ cleared: boolean }>('/api/v1/companion/history', {
+        method: 'DELETE',
+      });
+    },
+
+    async getMood(): Promise<MoodState | null> {
+      return apiFetch<MoodState | null>('/api/v1/companion/mood');
+    },
+
+    async setMood(mood: MoodType, consentGiven: boolean = true, note?: string): Promise<MoodState> {
+      return apiFetch<MoodState>('/api/v1/companion/mood', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mood, consent_given: consentGiven, note }),
+      });
+    },
+
+    async generatePlaylist(payload: CreateAIPlaylistRequest): Promise<AIPlaylist> {
+      return apiFetch<AIPlaylist>('/api/v1/companion/playlists/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async listPlaylists(): Promise<AIPlaylist[]> {
+      return apiFetch<AIPlaylist[]>('/api/v1/companion/playlists');
+    },
+
+    async listJourneys(): Promise<EntertainmentJourney[]> {
+      return apiFetch<EntertainmentJourney[]>('/api/v1/companion/journeys');
+    },
+
+    async getJourney(journeyType: string, duration: number = 10): Promise<EntertainmentJourney> {
+      return apiFetch<EntertainmentJourney>(`/api/v1/companion/journeys/${journeyType}?duration=${duration}`);
+    },
+
+    async getDailyPlan(date?: string): Promise<DailyPlan> {
+      const q = date ? `?date=${encodeURIComponent(date)}` : '';
+      return apiFetch<DailyPlan>(`/api/v1/companion/daily-planner${q}`);
+    },
+
+    async updateDailyPlan(slots: DailyPlanSlot[]): Promise<DailyPlan> {
+      return apiFetch<DailyPlan>('/api/v1/companion/daily-planner', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slots }),
+      });
+    },
+
+    async getDigitalTwin(creatorId: string): Promise<DigitalTwinProfile> {
+      return apiFetch<DigitalTwinProfile>(`/api/v1/companion/digital-twin/${creatorId}`);
+    },
+
+    async updateDigitalTwin(profile: DigitalTwinProfile): Promise<DigitalTwinProfile> {
+      return apiFetch<DigitalTwinProfile>('/api/v1/companion/digital-twin', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile),
+      });
+    },
+
+    async interactDigitalTwin(creatorId: string, message: string): Promise<DigitalTwinInteractResponse> {
+      return apiFetch<DigitalTwinInteractResponse>(`/api/v1/companion/digital-twin/${creatorId}/interact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      });
+    },
+  },
+
+  gamification: {
+    async getProfile(): Promise<GamificationProfile> {
+      return apiFetch<GamificationProfile>('/api/v1/gamification/profile');
+    },
+
+    async getLevel(): Promise<UserLevel> {
+      return apiFetch<UserLevel>('/api/v1/gamification/level');
+    },
+
+    async awardXP(
+      action: XPActionType,
+      idempotencyKey: string,
+      amount?: number,
+      metadata?: Record<string, unknown>
+    ): Promise<AwardXPResponse> {
+      return apiFetch<AwardXPResponse>('/api/v1/gamification/xp/award', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          idempotency_key: idempotencyKey,
+          amount,
+          metadata,
+        }),
+      });
+    },
+
+    async getStreaks(): Promise<StreakState[]> {
+      return apiFetch<StreakState[]>('/api/v1/gamification/streaks');
+    },
+
+    async recordStreak(
+      scope: StreakScopeType = 'daily',
+      dateStr?: string,
+      targetId?: string
+    ): Promise<StreakState> {
+      return apiFetch<StreakState>('/api/v1/gamification/streaks/record', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scope,
+          date_str: dateStr,
+          target_id: targetId,
+        }),
+      });
+    },
+
+    async useFreeze(
+      scope: StreakScopeType = 'daily',
+      targetId?: string
+    ): Promise<StreakState> {
+      return apiFetch<StreakState>('/api/v1/gamification/streaks/freeze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scope,
+          target_id: targetId,
+        }),
+      });
+    },
+
+    async getChallenges(): Promise<UserChallenge[]> {
+      return apiFetch<UserChallenge[]>('/api/v1/gamification/challenges');
+    },
+
+    async claimChallenge(challengeId: string): Promise<AwardXPResponse> {
+      return apiFetch<AwardXPResponse>(`/api/v1/gamification/challenges/${challengeId}/claim`, {
+        method: 'POST',
+      });
+    },
+
+    async getBadges(): Promise<BadgeCatalogItem[]> {
+      return apiFetch<BadgeCatalogItem[]>('/api/v1/gamification/badges');
+    },
+
+    async getLeaderboard(
+      scope: LeaderboardScopeType = 'all_time',
+      limit: number = 50
+    ): Promise<LeaderboardResponse> {
+      return apiFetch<LeaderboardResponse>(
+        `/api/v1/gamification/leaderboard?scope=${scope}&limit=${limit}`
+      );
+    },
+  },
+
+  creator: {
+    async getProfile(): Promise<CreatorProfile> {
+      return apiFetch<CreatorProfile>('/api/v1/creator/profile');
+    },
+
+    async updateProfile(bio?: string, niche?: string, socialLinks?: Record<string, string>): Promise<CreatorProfile> {
+      return apiFetch<CreatorProfile>('/api/v1/creator/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bio, niche, social_links: socialLinks }),
+      });
+    },
+
+    async applyVerification(niche: string, portfolioLinks: string[], statement: string): Promise<VerificationApplication> {
+      return apiFetch<VerificationApplication>('/api/v1/creator/verify/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ niche, portfolio_links: portfolioLinks, statement }),
+      });
+    },
+
+    async getAnalytics(days: number = 30): Promise<CreatorAnalytics> {
+      return apiFetch<CreatorAnalytics>(`/api/v1/creator/analytics?days=${days}`);
+    },
+
+    async getCopilotInsights(topic: string, targetAudience?: string, moodVibe?: string): Promise<CreatorCopilotResponse> {
+      return apiFetch<CreatorCopilotResponse>('/api/v1/creator/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic, target_audience: targetAudience, mood_vibe: moodVibe }),
+      });
+    },
+
+    async listEvents(creatorId?: string, limit: number = 20): Promise<CreatorEvent[]> {
+      const q = creatorId ? `?creator_id=${encodeURIComponent(creatorId)}&limit=${limit}` : `?limit=${limit}`;
+      return apiFetch<CreatorEvent[]>(`/api/v1/creator/events${q}`);
+    },
+
+    async createEvent(title: string, scheduledAt: string, description?: string, roomId?: string): Promise<CreatorEvent> {
+      return apiFetch<CreatorEvent>('/api/v1/creator/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, scheduled_at: scheduledAt, description, room_id: roomId }),
+      });
+    },
+  },
+
+  business: {
+    async getProfile(): Promise<BusinessProfile> {
+      return apiFetch<BusinessProfile>('/api/v1/business/profile');
+    },
+
+    async updateProfile(
+      companyName: string,
+      website: string,
+      industry: string,
+      description?: string,
+      logoUrl?: string
+    ): Promise<BusinessProfile> {
+      return apiFetch<BusinessProfile>('/api/v1/business/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_name: companyName,
+          website,
+          industry,
+          description,
+          logo_url: logoUrl,
+        }),
+      });
+    },
+
+    async listCampaigns(category?: string, status: CampaignStatusType = 'active', limit: number = 50): Promise<Campaign[]> {
+      const catParam = category ? `&category=${encodeURIComponent(category)}` : '';
+      return apiFetch<Campaign[]>(`/api/v1/business/campaigns?status_filter=${status}&limit=${limit}${catParam}`);
+    },
+
+    async createCampaign(data: {
+      title: string;
+      description: string;
+      category: string;
+      budget_perk: string;
+      target_creators_count: number;
+      requirements?: string[];
+      deadline: string;
+    }): Promise<Campaign> {
+      return apiFetch<Campaign>('/api/v1/business/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    },
+
+    async getCampaign(campaignId: string): Promise<Campaign> {
+      return apiFetch<Campaign>(`/api/v1/business/campaigns/${campaignId}`);
+    },
+
+    async applyToCampaign(campaignId: string, pitch: string, portfolioReelId?: string): Promise<CollabApplication> {
+      return apiFetch<CollabApplication>(`/api/v1/business/campaigns/${campaignId}/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pitch, portfolio_reel_id: portfolioReelId }),
+      });
+    },
+
+    async getCampaignApplications(campaignId: string): Promise<CollabApplication[]> {
+      return apiFetch<CollabApplication[]>(`/api/v1/business/campaigns/${campaignId}/applications`);
+    },
+
+    async updateApplicationStatus(applicationId: string, newStatus: CollabApplicationStatusType): Promise<CollabApplication> {
+      return apiFetch<CollabApplication>(`/api/v1/business/applications/${applicationId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+    },
+
+    async getMyCollabs(): Promise<CollabApplication[]> {
+      return apiFetch<CollabApplication[]>('/api/v1/business/collabs/my');
+    },
+
+    async evaluateBrandSafety(contentText: string, tags?: string[]): Promise<BrandSafetyReport> {
+      return apiFetch<BrandSafetyReport>('/api/v1/business/brand-safety/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content_text: contentText, tags: tags || [] }),
+      });
+    },
+  },
+
+  moderation: {
+    async report(payload: {
+      target_type: ReportTargetType;
+      target_id: string;
+      reason: ReportReasonType;
+      details?: string;
+    }): Promise<ContentReport> {
+      return apiFetch<ContentReport>('/api/v1/moderation/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async scan(text: string, contentType: string = 'caption'): Promise<AutomatedModerationResult> {
+      return apiFetch<AutomatedModerationResult>('/api/v1/moderation/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, content_type: contentType }),
+      });
+    },
+
+    async getQueue(status?: ReportStatusType, targetType?: ReportTargetType, skip: number = 0, limit: number = 50): Promise<ContentReport[]> {
+      const q = new URLSearchParams();
+      if (status) q.set('status', status);
+      if (targetType) q.set('target_type', targetType);
+      q.set('skip', skip.toString());
+      q.set('limit', limit.toString());
+      return apiFetch<ContentReport[]>(`/api/v1/moderation/queue?${q.toString()}`);
+    },
+
+    async getReport(reportId: string): Promise<ContentReport> {
+      return apiFetch<ContentReport>(`/api/v1/moderation/reports/${reportId}`);
+    },
+
+    async takeAction(reportId: string, actionType: ModerationActionType, resolutionNote: string, autoNotify: boolean = true): Promise<ModerationAction> {
+      return apiFetch<ModerationAction>(`/api/v1/moderation/reports/${reportId}/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action_type: actionType,
+          resolution_note: resolutionNote,
+          auto_notify_reporter: autoNotify,
+        }),
+      });
+    },
+
+    async getStats(): Promise<ModerationStats> {
+      return apiFetch<ModerationStats>('/api/v1/moderation/stats');
+    },
+  },
 };
+

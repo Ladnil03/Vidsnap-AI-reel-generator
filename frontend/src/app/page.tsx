@@ -33,7 +33,7 @@ export default function HomePage() {
   const faqs = [
     {
       q: 'Is VidSnap.AI really ₹0 / month free?',
-      a: 'Yes! VidSnap.AI is engineered using always-free cloud infrastructure: Microsoft Edge-TTS neural voices, MongoDB Atlas M0, Redis on Always-Free VMs, and Cloudflare R2 zero-egress storage.',
+      a: 'Yes! VidSnap.AI is engineered using 100% card-free cloud infrastructure: Microsoft Edge-TTS neural voices, MongoDB Atlas M0, Cloudinary Media Cloud (25GB free tier, no credit card required), and local/free Redis.',
     },
     {
       q: 'What video quality and format does the engine produce?',

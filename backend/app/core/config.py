@@ -49,19 +49,12 @@ class Settings(BaseSettings):
     # Redis Cache & Queue
     redis_url: str = "redis://localhost:6379/0"
 
-    # Object Storage: "local", "r2", "s3", or "cloudinary"
-    storage_provider: Literal["local", "r2", "s3", "cloudinary"] = "local"
+    # Object Storage: "cloudinary" (Zero Card Required Free Tier) or "local"
+    storage_provider: Literal["cloudinary", "local"] = "cloudinary"
     local_storage_path: Path = Path("./media_storage")
 
-    # Cloudflare R2 / S3
-    r2_account_id: str | None = None
-    r2_access_key_id: str | None = None
-    r2_secret_access_key: str | None = None
-    r2_bucket_name: str = "vidsnap-media"
-    r2_public_url: str | None = None
-
-    # Legacy Cloudinary
-    cloudinary_cloud_name: str | None = None
+    # Cloudinary Storage & Media Cloud (Free Tier: 25 monthly credits - Zero Card Required)
+    cloudinary_cloud_name: str | None = "vidsnap"
     cloudinary_api_key: str | None = None
     cloudinary_api_secret: str | None = None
     cloudinary_folder: str = "vidsnap-reels"
@@ -72,11 +65,9 @@ class Settings(BaseSettings):
     resend_api_key: str | None = None
     brevo_api_key: str | None = None
 
-    # LLM Router Keys
+    # LLM Providers (Free Tier Chain - No Credit Card Required)
     groq_api_key: str | None = None
     gemini_api_key: str | None = None
-    cloudflare_api_token: str | None = None
-    cloudflare_account_id: str | None = None
     openrouter_api_key: str | None = None
 
     # Quotas & Limits
@@ -114,6 +105,19 @@ class Settings(BaseSettings):
     pixabay_api_key: str | None = None
     max_discovery_catalog_size: int = 20000  # 512MB MongoDB M0 safety ceiling
     wellbeing_card_interval: int = 15       # Anti-doomscroll mindful pause interval
+
+    # CDN & Edge Caching: "cloudinary" (Multi-CDN delivery) or "passthrough" (local dev)
+    cdn_provider: Literal["cloudinary", "passthrough"] = "cloudinary"
+    cache_max_age_media: int = 86400    # 1 day for static media
+    cache_max_age_api: int = 60         # 1 minute for API responses
+
+    # Phase 7: Realtime, Watch Together Rooms & LiveKit RTC
+    livekit_api_key: str | None = None
+    livekit_api_secret: str | None = None
+    livekit_url: str = "wss://vidsnap-rtc.livekit.cloud"
+    room_ws_heartbeat_seconds: int = 30
+    room_presence_ttl_seconds: int = 60
+    room_chat_history_limit: int = 100
 
 
     model_config = SettingsConfigDict(

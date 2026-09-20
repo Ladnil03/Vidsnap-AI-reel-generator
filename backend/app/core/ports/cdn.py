@@ -1,6 +1,6 @@
 """
 CDN Port: Abstract interface for Content Delivery Network operations.
-Enables pluggable CDN backends: Passthrough (no-op), Cloudflare, AWS CloudFront.
+Enables pluggable CDN backends: Cloudinary (Multi-CDN with f_auto,q_auto) and Passthrough (local dev).
 """
 
 from abc import ABC, abstractmethod

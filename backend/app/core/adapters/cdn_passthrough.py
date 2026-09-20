@@ -1,6 +1,6 @@
 """
 Passthrough CDN Adapter.
-No-op adapter for local development and free tier without Cloudflare Workers.
+No-op adapter for local development and offline environments.
 Delegates URL construction to the storage adapter and returns default cache headers.
 """
 

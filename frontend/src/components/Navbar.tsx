@@ -22,7 +22,11 @@ import {
   Globe,
   Bell,
   Compass,
-  Users
+  Users,
+  Tv,
+  Trophy,
+  Briefcase,
+  Palette
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n, Locale } from '../context/I18nContext';
@@ -168,6 +172,101 @@ export function Navbar() {
           >
             <Users size={16} />
             <span>Communities</span>
+          </Link>
+
+          <Link
+            href="/rooms"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              color: isActive('/rooms') ? 'var(--primary-light)' : 'var(--text-secondary)',
+              background: isActive('/rooms') ? 'var(--glass-bg-hover)' : 'transparent',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            <Tv size={16} />
+            <span>Rooms</span>
+          </Link>
+
+          <Link
+            href="/companion"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              color: isActive('/companion') ? 'var(--primary-light)' : 'var(--text-secondary)',
+              background: isActive('/companion') ? 'var(--glass-bg-hover)' : 'transparent',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            <Sparkles size={16} />
+            <span>Companion ✨</span>
+          </Link>
+
+          <Link
+            href="/gamification"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              color: isActive('/gamification') ? 'var(--primary-light)' : 'var(--text-secondary)',
+              background: isActive('/gamification') ? 'var(--glass-bg-hover)' : 'transparent',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            <Trophy size={16} />
+            <span>Rewards 🏆</span>
+          </Link>
+
+          <Link
+            href="/creator"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              color: isActive('/creator') ? 'var(--primary-light)' : 'var(--text-secondary)',
+              background: isActive('/creator') ? 'var(--glass-bg-hover)' : 'transparent',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            <Palette size={16} />
+            <span>Creator 🎨</span>
+          </Link>
+
+          <Link
+            href="/business"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              color: isActive('/business') ? 'var(--primary-light)' : 'var(--text-secondary)',
+              background: isActive('/business') ? 'var(--glass-bg-hover)' : 'transparent',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            <Briefcase size={16} />
+            <span>Collabs 💼</span>
           </Link>
 
           {user && (
@@ -490,6 +589,24 @@ export function Navbar() {
           </Link>
           <Link href="/communities" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem' }}>
             Communities
+          </Link>
+          <Link href="/rooms" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem' }}>
+            Watch Parties
+          </Link>
+          <Link href="/companion" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem' }}>
+            AI Companion ✨
+          </Link>
+          <Link href="/gamification" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Trophy size={18} />
+            Rewards & Quests 🏆
+          </Link>
+          <Link href="/creator" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Palette size={18} />
+            Creator Studio 🎨
+          </Link>
+          <Link href="/business" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Briefcase size={18} />
+            Collab Marketplace 💼
           </Link>
           {user && (
             <>

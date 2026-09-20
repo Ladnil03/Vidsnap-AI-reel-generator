@@ -7,7 +7,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, Users, Film, MessageSquare, LayoutDashboard, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Users, Film, MessageSquare, LayoutDashboard, AlertTriangle, ShieldAlert, Activity } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function AdminLayout({
@@ -156,6 +156,44 @@ export default function AdminLayout({
           >
             <Film size={15} />
             <span>Reels</span>
+          </Link>
+
+          <Link
+            href="/admin/moderation"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              color: isActive('/admin/moderation') ? '#fff' : 'var(--text-secondary)',
+              background: isActive('/admin/moderation') ? 'var(--primary-gradient)' : 'transparent',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            <ShieldAlert size={15} />
+            <span>Moderation</span>
+          </Link>
+
+          <Link
+            href="/admin/system"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              color: isActive('/admin/system') ? '#fff' : 'var(--text-secondary)',
+              background: isActive('/admin/system') ? 'var(--primary-gradient)' : 'transparent',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            <Activity size={15} />
+            <span>System</span>
           </Link>
 
           <Link

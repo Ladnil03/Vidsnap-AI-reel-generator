@@ -41,6 +41,17 @@ class CreateVideoRequest(BaseModel):
     is_draft: bool = Field(default=False, description="Whether to save as draft instead of publishing")
 
 
+class CreateVideoFromKeyRequest(BaseModel):
+    """Schema for registering a video post directly from a presigned uploaded key."""
+    key: str = Field(..., min_length=5, description="Storage key of the uploaded video")
+    title: str = Field(..., min_length=1, max_length=150, description="Headline title for the video")
+    description: str = Field(default="", max_length=2000, description="Detailed video description")
+    hashtags: list[str] = Field(default_factory=list, description="Associated discovery tags")
+    visibility: ContentVisibility = Field(default=ContentVisibility.PUBLIC)
+    scheduled_at: datetime | None = Field(default=None, description="Future release timestamp if scheduled")
+    is_draft: bool = Field(default=False, description="Whether to save as draft instead of publishing")
+
+
 class UpdateVideoRequest(BaseModel):
     """Schema for updating an existing video post or draft."""
     title: str | None = Field(default=None, min_length=1, max_length=150)

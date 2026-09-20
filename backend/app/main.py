@@ -4,27 +4,36 @@ Initializes lifespan, routes, CORS middleware, security headers, and health endp
 """
 
 import logging
+import time
+import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.app.admin.routes import router as admin_router
+from backend.app.ai_companion.routes import router as companion_router
+from backend.app.business.routes import router as business_router
 from backend.app.content.routes import router as content_router
 from backend.app.core.config import settings
 from backend.app.core.database import connect_db, disconnect_db, ping_db
 from backend.app.core.logging_config import setup_logging
+from backend.app.core.metrics import generate_prometheus_output, record_http_request
 from backend.app.core.redis import connect_redis, disconnect_redis, ping_redis
+from backend.app.creator.routes import router as creator_router
 from backend.app.discovery.routes import router as discovery_router
 from backend.app.feed.routes import router as feed_router
 from backend.app.feedback.routes import router as feedback_router
+from backend.app.gamification.routes import router as gamification_router
 from backend.app.identity.routes import router as identity_router
 from backend.app.media.routes import router as media_router
+from backend.app.moderation.routes import router as moderation_router
 from backend.app.notifications.routes import router as notifications_router
 from backend.app.recsys.routes import router as recsys_router
 from backend.app.reel_studio.routes import router as reel_studio_router
+from backend.app.rooms.routes import router as rooms_router
 from backend.app.social.routes import router as social_router
 
 # Configure application logging
@@ -69,8 +78,14 @@ app.add_middleware(
     allow_origins=settings.allowed_origins_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With", "If-None-Match"],
+    expose_headers=["ETag", "Content-Disposition", "Cache-Control"],
 )
+
+# Edge Caching Middleware
+from backend.app.core.cache_middleware import CacheControlMiddleware  # noqa: E402
+
+app.add_middleware(CacheControlMiddleware)
 
 
 @app.middleware("http")
@@ -81,6 +96,31 @@ async def security_headers_middleware(request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    return response
+
+
+@app.middleware("http")
+async def request_tracing_and_metrics_middleware(request, call_next):
+    """Inject X-Trace-ID correlation identifier and track request latency metrics."""
+    trace_id = request.headers.get("X-Request-ID") or request.headers.get("X-Trace-ID") or uuid.uuid4().hex
+    request.state.trace_id = trace_id
+
+    start_time = time.perf_counter()
+    response = await call_next(request)
+    duration = time.perf_counter() - start_time
+
+    response.headers["X-Trace-ID"] = trace_id
+
+    # Record Prometheus metrics (skip metrics endpoint itself to avoid self-monitoring loop)
+    if not request.url.path.startswith("/metrics"):
+        record_http_request(
+            method=request.method,
+            path=request.url.path,
+            status_code=response.status_code,
+            duration_seconds=duration,
+        )
+
     return response
 
 
@@ -99,6 +139,12 @@ app.include_router(recsys_router)
 app.include_router(notifications_router)
 app.include_router(feedback_router)
 app.include_router(admin_router)
+app.include_router(rooms_router)
+app.include_router(companion_router)
+app.include_router(gamification_router)
+app.include_router(creator_router)
+app.include_router(business_router)
+app.include_router(moderation_router)
 
 # ==============================================================================
 # BACKWARD COMPATIBILITY ALIASES (For existing Flask frontend compatibility)
@@ -147,3 +193,12 @@ async def root_status() -> dict[str, str]:
         "environment": settings.environment,
         "status": "online",
     }
+
+
+@app.get("/metrics", tags=["Observability"])
+async def prometheus_metrics() -> Response:
+    """Prometheus exposition metrics endpoint for platform observability."""
+    return Response(
+        content=generate_prometheus_output(),
+        media_type="text/plain; version=0.0.4; charset=utf-8",
+    )

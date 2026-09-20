@@ -7,6 +7,7 @@ import io
 import logging
 import os
 import uuid
+from typing import Any
 
 from fastapi import HTTPException, status
 from PIL import Image
@@ -169,3 +170,46 @@ class MediaService:
         )
         presigned["public_url"] = storage.get_public_url(key)
         return presigned
+
+    @staticmethod
+    async def create_video_upload_target(
+        user_id: str,
+        filename: str,
+        content_type: str,
+        size_bytes: int,
+    ) -> dict[str, Any]:
+        """
+        Generate a presigned upload URL for a native video.
+        Validates video extension, maximum size limit (50MB), and checks user storage quota.
+        """
+        _, ext = os.path.splitext(filename)
+        safe_ext = ext.lower()
+        if safe_ext not in {".mp4", ".webm", ".mov"}:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported video format '{safe_ext}'. Allowed: .mp4, .webm, .mov",
+            )
+
+        if size_bytes > settings.max_video_size_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"'{filename}' exceeds the maximum allowed video size of {settings.max_video_size_mb} MB.",
+            )
+
+        # Enforce storage quota before issuing presigned upload ticket
+        await MediaService.check_user_storage_quota(user_id, size_bytes)
+
+        storage = get_storage_adapter()
+        unique_id = uuid.uuid4().hex[:12]
+        key = f"videos/{user_id}/{unique_id}{safe_ext}"
+
+        presigned = await storage.generate_presigned_upload_url(
+            key=key,
+            content_type=content_type,
+            expires_in=3600,
+        )
+        presigned["public_url"] = storage.get_public_url(key)
+        presigned["content_type"] = content_type
+        presigned["max_size_bytes"] = settings.max_video_size_bytes
+        return presigned
+

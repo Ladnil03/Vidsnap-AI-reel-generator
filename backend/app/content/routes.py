@@ -11,6 +11,7 @@ from fastapi import (
     Depends,
     File,
     Form,
+    HTTPException,
     Query,
     UploadFile,
     status,
@@ -21,6 +22,7 @@ from backend.app.content.models import (
     CommentCreateRequest,
     CommentResponse,
     ContentVisibility,
+    CreateVideoFromKeyRequest,
     CreateVideoRequest,
     HashtagSuggestionRequest,
     HashtagSuggestionResponse,
@@ -54,6 +56,68 @@ async def create_video(
         author_name=current_user.get("name", "Creator"),
         request=request,
     )
+
+
+@router.post(
+    "/videos/from-key",
+    response_model=VideoResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit(max_requests=20, window_seconds=60))],
+)
+async def create_video_from_key(
+    request: CreateVideoFromKeyRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+) -> VideoResponse:
+    """
+    Register a video post directly from a presigned-uploaded storage key.
+    Validates that the object exists in storage, records the asset,
+    creates the video record, and enqueues transcode processing.
+    """
+    storage = get_storage_adapter()
+    exists = await storage.head_object(request.key)
+    if not exists:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Storage object with key '{request.key}' was not found. Please upload the video first.",
+        )
+
+    # Track asset metadata
+    cache_meta = await storage.get_cache_metadata(request.key)
+    size_bytes = int(cache_meta.get("content_length", 0)) if cache_meta else 0
+    await MediaService.record_asset(
+        user_id=current_user["user_id"],
+        key=request.key,
+        size_bytes=size_bytes,
+        asset_type="native_video",
+    )
+
+    create_req = CreateVideoRequest(
+        title=request.title,
+        description=request.description,
+        hashtags=request.hashtags,
+        visibility=request.visibility,
+        scheduled_at=request.scheduled_at,
+        video_key=request.key,
+        is_draft=request.is_draft,
+    )
+
+    video_resp = await ContentService.create_video(
+        user_id=current_user["user_id"],
+        author_name=current_user.get("name", "Creator"),
+        request=create_req,
+    )
+
+    # Enqueue background transcode & thumbnail generation via ARQ
+    queue = get_queue_adapter()
+    await queue.enqueue(
+        "process_native_video_job",
+        video_id=video_resp.video_id,
+        user_id=current_user["user_id"],
+        video_key=request.key,
+    )
+
+    return video_resp
+
 
 
 @router.post(

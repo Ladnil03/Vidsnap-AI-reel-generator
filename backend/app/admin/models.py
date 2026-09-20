@@ -30,3 +30,21 @@ class AdminReelItem(BaseModel):
 class AdminTokenUpdate(BaseModel):
     """Admin token balance adjustment."""
     tokens: int = Field(..., ge=0, le=100000, description="New token balance")
+
+
+class AdminSystemStats(BaseModel):
+    """Aggregated platform health and activity overview."""
+    total_users: int
+    total_creators: int
+    total_businesses: int
+    total_reels: int
+    total_views: int
+    active_rooms: int
+    pending_reports: int
+    tokens_circulating: int
+
+
+class AdminRoleUpdate(BaseModel):
+    """User role promotion or demotion request."""
+    role: str = Field(..., description="Role name e.g. creator, business, moderator, admin")
+    action: str = Field("add", description="'add' or 'remove'")

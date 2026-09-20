@@ -7,7 +7,13 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from backend.app.admin.models import AdminReelItem, AdminTokenUpdate, AdminUserItem
+from backend.app.admin.models import (
+    AdminReelItem,
+    AdminRoleUpdate,
+    AdminSystemStats,
+    AdminTokenUpdate,
+    AdminUserItem,
+)
 from backend.app.admin.service import AdminService
 from backend.app.identity.dependencies import get_current_admin
 
@@ -51,6 +57,37 @@ async def update_user_tokens(
             "updated": True,
             "user_id": user_id,
             "tokens_remaining": new_balance,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+
+
+@router.get("/stats", response_model=AdminSystemStats)
+async def get_system_overview(
+    admin_user: dict[str, Any] = Depends(get_current_admin),
+) -> AdminSystemStats:
+    """Get aggregated system adoption, content metrics, and operational health."""
+    return await AdminService.get_system_stats()
+
+
+@router.patch("/users/{user_id}/roles", response_model=dict[str, Any])
+async def update_user_roles(
+    user_id: str,
+    request: AdminRoleUpdate,
+    admin_user: dict[str, Any] = Depends(get_current_admin),
+) -> dict[str, Any]:
+    """Grant or revoke an administrative or platform role from a user."""
+    try:
+        updated_roles = await AdminService.update_user_role(
+            user_id=user_id,
+            role=request.role,
+            action=request.action,
+            admin_email=admin_user["email"],
+        )
+        return {
+            "updated": True,
+            "user_id": user_id,
+            "roles": updated_roles,
         }
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e

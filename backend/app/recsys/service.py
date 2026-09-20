@@ -15,6 +15,7 @@ from typing import Any
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
+from backend.app.ai_companion.tools import MOOD_TAG_MAP
 from backend.app.content.models import ContentStatus, ContentVisibility
 from backend.app.core.config import settings
 from backend.app.core.database import get_db
@@ -50,6 +51,7 @@ class RecSysService:
         user_id: str | None = None,
         session_reel_count: int = 0,
         limit: int = 10,
+        mood: str | None = None,
     ) -> RecommendationFeedResponse:
         """
         Generate personalized feed stream with transparent explainability tags
@@ -205,15 +207,30 @@ class RecSysService:
             trending_score = math.log1p(engagement) / math.pow(max(0.0, hours_old) + 2.0, 1.2)
 
             # Combined Multi-Objective Score
-            final_score = (
-                (0.40 * norm_sim)
-                + (0.25 * social_boost)
-                + (0.20 * category_score)
-                + (0.15 * min(1.0, trending_score))
-            )
+            mood_tags = MOOD_TAG_MAP.get(mood.lower(), []) if mood else []
+            has_mood_match = any(t.lower().strip("#") in mood_tags for t in c["tags"])
+            mood_boost = 1.0 if has_mood_match else 0.0
+
+            if mood:
+                final_score = (
+                    (0.35 * norm_sim)
+                    + (0.20 * social_boost)
+                    + (0.15 * category_score)
+                    + (0.15 * min(1.0, trending_score))
+                    + (0.15 * mood_boost)
+                )
+            else:
+                final_score = (
+                    (0.40 * norm_sim)
+                    + (0.25 * social_boost)
+                    + (0.20 * category_score)
+                    + (0.15 * min(1.0, trending_score))
+                )
 
             # Determine Transparent Explainability Tag
-            if social_boost > 0:
+            if has_mood_match and mood:
+                explain_tag = f"✨ Tuned to your {mood.title()} vibe"
+            elif social_boost > 0:
                 explain_tag = f"👥 From creators you follow ({c['author_name']})"
             elif matched_tags:
                 explain_tag = f"✨ Because you like #{matched_tags[0].lower().strip('#')}"

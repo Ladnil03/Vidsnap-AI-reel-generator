@@ -28,6 +28,7 @@ def get_recsys_service() -> RecSysService:
 async def get_recommended_feed(
     session_reel_count: int = Query(0, ge=0, description="Number of reels watched so far in current session"),
     limit: int = Query(10, ge=1, le=30),
+    mood: str | None = Query(None, description="Optional active mood vibe for tailored recommendations"),
     current_user: Annotated[dict[str, Any] | None, Depends(get_optional_current_user)] = None,
     service: RecSysService = Depends(get_recsys_service),
 ) -> RecommendationFeedResponse:
@@ -41,6 +42,7 @@ async def get_recommended_feed(
         user_id=user_id,
         session_reel_count=session_reel_count,
         limit=limit,
+        mood=mood,
     )
 
 

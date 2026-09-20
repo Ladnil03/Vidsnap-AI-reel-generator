@@ -1,0 +1,17 @@
+{
+  "name": "VidSnap.AI - Next-Gen AI Reel Generator",
+  "short_name": "VidSnap.AI",
+  "description": "AI-Powered Short Video & Reel Entertainment Studio",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

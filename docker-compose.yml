@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vidsnap_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_DB=vidsnap
+      - REDIS_URL=redis://redis:6379/0
+      - STORAGE_PROVIDER=local
+      - EMAIL_PROVIDER=console
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5000,http://localhost:5173
+    volumes:
+      - ./media_storage:/app/media_storage
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  media-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vidsnap_media_worker
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=development
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_DB=vidsnap
+      - REDIS_URL=redis://redis:6379/0
+      - STORAGE_PROVIDER=local
+      - WORKER_CONCURRENCY=2
+      - FFMPEG_PRESET=veryfast
+      - FFMPEG_THREADS=2
+    volumes:
+      - ./media_storage:/app/media_storage
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: arq backend.workers.media_worker.WorkerSettings
+
+  mongodb:
+    image: mongo:7.0
+    container_name: vidsnap_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: vidsnap_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 512mb --maxmemory-policy volatile-lru --save 900 1
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo_data:
+  redis_data:

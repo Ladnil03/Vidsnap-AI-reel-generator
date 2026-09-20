@@ -31,7 +31,7 @@ class LocalStorageAdapter(StoragePort):
         # Clean path to prevent path traversal
         clean_key = os.path.normpath(key).lstrip("/\\")
         resolved = (self.base_dir / clean_key).resolve()
-        if not str(resolved).startswith(str(self.base_dir.resolve())):
+        if not resolved.is_relative_to(self.base_dir.resolve()):
             raise ValueError(f"Path traversal detected for key: {key}")
         return resolved
 

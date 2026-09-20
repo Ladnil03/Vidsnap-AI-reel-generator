@@ -141,6 +141,166 @@ async def test_reel_studio_own_image_key_accepted(async_client: AsyncClient, moc
         app.dependency_overrides.pop(get_current_user, None)
 
 
+# ───── Integration: POST /videos create with foreign video_key/thumbnail_key -> 403 ─────
+
+@pytest.mark.asyncio
+async def test_create_video_foreign_video_key_rejected(async_client: AsyncClient, mock_db):
+    """Creating a video with another user's video_key must return 403 (W1-2)."""
+    await mock_db.users.insert_one({
+        "user_id": USER_A,
+        "name": "User A",
+        "email": "a@test.com",
+        "roles": ["user"],
+        "tokens_remaining": 5,
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    app.dependency_overrides[get_current_user] = _make_user_override(USER_A)
+    try:
+        res = await async_client.post(
+            "/api/v1/content/videos",
+            json={
+                "title": "Stolen Video",
+                "description": "",
+                "visibility": "public",
+                "video_key": f"videos/{USER_B}/stolen_video.mp4",
+            },
+        )
+        assert res.status_code == 403, f"Expected 403, got {res.status_code}: {res.text}"
+        # Must NOT have persisted the video doc
+        assert await mock_db.videos.count_documents({}) == 0
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+
+@pytest.mark.asyncio
+async def test_create_video_foreign_thumbnail_key_rejected(async_client: AsyncClient, mock_db):
+    """Own video key but a foreign thumbnail_key must still return 403 (W1-2)."""
+    await mock_db.users.insert_one({
+        "user_id": USER_A,
+        "name": "User A",
+        "email": "a@test.com",
+        "roles": ["user"],
+        "tokens_remaining": 5,
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    app.dependency_overrides[get_current_user] = _make_user_override(USER_A)
+    try:
+        res = await async_client.post(
+            "/api/v1/content/videos",
+            json={
+                "title": "My Own Video",
+                "video_key": f"videos/{USER_A}/my_video.mp4",
+                "thumbnail_key": f"videos/{USER_B}/stolen_thumb.jpg",
+            },
+        )
+        assert res.status_code == 403, f"Expected 403, got {res.status_code}: {res.text}"
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+
+@pytest.mark.asyncio
+async def test_create_video_own_keys_accepted(async_client: AsyncClient, mock_db):
+    """Own keys must NOT be rejected by the ownership check (W1-2)."""
+    await mock_db.users.insert_one({
+        "user_id": USER_A,
+        "name": "User A",
+        "email": "a@test.com",
+        "roles": ["user"],
+        "tokens_remaining": 5,
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    app.dependency_overrides[get_current_user] = _make_user_override(USER_A)
+    try:
+        res = await async_client.post(
+            "/api/v1/content/videos",
+            json={
+                "title": "My Own Video",
+                "video_key": f"videos/{USER_A}/my_video.mp4",
+            },
+        )
+        assert res.status_code == 201, f"Own keys wrongly rejected: {res.text}"
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+
+# ───── Worker defense-in-depth: re-check via central helper ─────
+
+@pytest.mark.asyncio
+async def test_worker_rejects_traversal_key_with_own_user_prefix(async_client: AsyncClient, mock_db):
+    """
+    W1-2: the worker must use the central ownership helper. A key like
+    'uploads/{user_a}/..\\{user_b}/x.png' passes the old ad-hoc parts[1] check
+    (parts[1] == user_id, no '..' component) but must be rejected as traversal.
+    """
+    from unittest.mock import AsyncMock
+
+    import backend.app.reel_studio.tts_service as tts_module
+    from backend.workers.media_worker import process_reel_job
+
+    user_a = USER_A
+    await mock_db.users.insert_one({
+        "user_id": user_a,
+        "name": "User A",
+        "email": "a@test.com",
+        "roles": ["user"],
+        "tokens_remaining": 4,  # 1 token already consumed when the job was queued
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    evil_key = f"uploads/{user_a}/..\\{USER_B}/x.png"
+    await mock_db.jobs.insert_one({
+        "job_id": "job-ownership-recheck",
+        "user_id": user_a,
+        "status": "queued",
+        "stage": "queued",
+        "voiceover_text": "Some narration text for a reel.",
+        "image_keys": [evil_key],
+        "voice": "en-US-AriaNeural",
+        "image_duration": 3,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    })
+
+    with patch.object(tts_module, "generate_speech", new_callable=AsyncMock):
+        await process_reel_job({}, "job-ownership-recheck")
+
+    job = await mock_db.jobs.find_one({"job_id": "job-ownership-recheck"})
+    assert job["status"] == "failed", f"Job should be failed, got {job['status']}"
+    assert "Key ownership violation" in job.get("error_msg", ""), f"Got: {job.get('error_msg')}"
+
+    # Token must be refunded exactly once (back to the pre-consumption balance)
+    user = await mock_db.users.find_one({"user_id": user_a})
+    assert user["tokens_remaining"] == 5
+
+    refund_count = await mock_db.credit_ledger.count_documents(
+        {"user_id": user_a, "reference_id": "job-ownership-recheck", "amount": 1}
+    )
+    assert refund_count == 1
+
+
+# ───── Cloudinary signed upload must restrict resource/format/size ─────
+
+@pytest.mark.asyncio
+async def test_cloudinary_presigned_signature_restricts_upload(mock_db):
+    """W1-2: Cloudinary signed upload params must pin resource_type, allowed_formats, max_file_size."""
+    from backend.app.core.adapters.storage_cloudinary import CloudinaryStorageAdapter
+
+    adapter = CloudinaryStorageAdapter()
+    target = await adapter.generate_presigned_upload_url(
+        key=f"videos/{USER_A}/clip.mp4",
+        content_type="video/mp4",
+    )
+    fields = target["fields"]
+    assert "resource_type" in fields, f"resource_type missing from signed fields: {fields}"
+    assert fields["resource_type"] == "video"
+    assert fields.get("allowed_formats") == "mp4", f"allowed_formats wrong: {fields.get('allowed_formats')}"
+    assert int(fields["max_file_size"]) > 0, f"max_file_size missing: {fields}"
+    assert f"/videos/{USER_A}/" in fields["public_id"], f"public_id not under user prefix: {fields}"
+
+
 # ───── Integration: Content from-key foreign key -> 403 ─────
 
 @pytest.mark.asyncio

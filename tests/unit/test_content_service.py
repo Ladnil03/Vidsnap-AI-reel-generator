@@ -26,7 +26,7 @@ async def test_create_video_published_and_draft(mock_db):
         description="A great video description",
         hashtags=["#Epic", "#Viral"],
         visibility=ContentVisibility.PUBLIC,
-        video_key="videos/user1/test.mp4",
+        video_key=f"videos/{user_id}/test.mp4",
         duration=15.5,
     )
     video = await ContentService.create_video(user_id, author_name, req)
@@ -54,7 +54,7 @@ async def test_create_video_published_and_draft(mock_db):
 async def test_toggle_like_and_save_atomic_counters(mock_db):
     """Test liking, unliking, saving, and unsaving with atomic counter increments."""
     user_id = "user_like_1"
-    req = CreateVideoRequest(title="Like Me Video", video_key="videos/u/vid.mp4")
+    req = CreateVideoRequest(title="Like Me Video", video_key=f"videos/{user_id}/vid.mp4")
     video = await ContentService.create_video(user_id, "User One", req)
 
     # 1. Like
@@ -82,7 +82,7 @@ async def test_toggle_like_and_save_atomic_counters(mock_db):
 async def test_comment_creation_and_listing(mock_db):
     """Test commenting on a video and retrieving comments."""
     user_id = "commenter_1"
-    req = CreateVideoRequest(title="Commentable Reel", video_key="videos/u/vid.mp4")
+    req = CreateVideoRequest(title="Commentable Reel", video_key=f"videos/{user_id}/vid.mp4")
     video = await ContentService.create_video(user_id, "Creator", req)
 
     # Add comments

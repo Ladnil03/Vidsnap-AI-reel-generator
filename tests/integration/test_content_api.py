@@ -43,7 +43,7 @@ async def test_content_video_crud_and_drafts(async_client: AsyncClient, mock_db)
             "description": "Stunning 4K nature vertical reel",
             "hashtags": ["#Nature", "#Travel"],
             "visibility": "public",
-            "video_key": "videos/sarah/vid1.mp4",
+            "video_key": f"videos/{user_id}/vid1.mp4",
             "duration": 22.0,
             "is_draft": False,
         }

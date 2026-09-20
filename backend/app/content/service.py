@@ -22,6 +22,7 @@ from backend.app.content.models import (
 )
 from backend.app.core.adapters.factory import get_storage_adapter
 from backend.app.core.database import get_db
+from backend.app.media.ownership import assert_key_owned
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,12 @@ class ContentService:
         db = get_db()
         now = datetime.now(timezone.utc)
         video_id = str(uuid.uuid4())
+
+        # Validate ownership of any client-supplied storage keys (IDOR prevention)
+        if request.video_key:
+            assert_key_owned(user_id, request.video_key)
+        if request.thumbnail_key:
+            assert_key_owned(user_id, request.thumbnail_key)
 
         # Determine initial status
         if request.is_draft:

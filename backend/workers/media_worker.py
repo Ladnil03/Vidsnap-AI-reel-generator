@@ -26,6 +26,7 @@ from backend.app.core.adapters.factory import get_storage_adapter
 from backend.app.core.config import settings
 from backend.app.core.database import connect_db, disconnect_db, get_db
 from backend.app.core.logging_config import setup_logging
+from backend.app.media.ownership import is_key_owned
 from backend.app.reel_studio.ffmpeg_builder import generate_thumbnail, render_video
 from backend.app.reel_studio.models import JobStage
 from backend.app.reel_studio.tts_service import generate_speech
@@ -73,8 +74,7 @@ async def process_reel_job(ctx: dict[str, Any], job_id: str) -> None:
     # Re-validate image key ownership inside the worker (defense-in-depth)
     user_id = job["user_id"]
     for key in job.get("image_keys", []):
-        parts = key.split("/")
-        if len(parts) < 3 or parts[1] != user_id or ".." in parts:
+        if not is_key_owned(user_id, key):
             logger.error("[%s] Key ownership violation: key '%s' does not belong to user '%s'", job_id, key, user_id)
             await db.jobs.update_one(
                 {"job_id": job_id},
@@ -207,6 +207,26 @@ async def process_native_video_job(
     db = get_db()
     storage = get_storage_adapter()
     scratch_dir = Path(tempfile.mkdtemp(prefix=f"native_vid_{video_id}_"))
+
+    # Re-validate video key ownership inside the worker (defense-in-depth)
+    if not is_key_owned(user_id, video_key):
+        logger.error(
+            "[%s] Key ownership violation: video_key '%s' does not belong to user '%s'",
+            video_id,
+            video_key,
+            user_id,
+        )
+        await db.videos.update_one(
+            {"video_id": video_id},
+            {
+                "$set": {
+                    "status": "failed",
+                    "error_msg": "Key ownership violation",
+                    "updated_at": datetime.now(timezone.utc),
+                }
+            },
+        )
+        return
 
     try:
         logger.info("[%s] Starting native video pipeline for %s...", video_id, video_key)

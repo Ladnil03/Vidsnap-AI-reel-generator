@@ -17,6 +17,32 @@ _OWNED_PREFIXES = (
 )
 
 
+def is_key_owned(user_id: str, key: str) -> bool:
+    """
+    Non-raising variant of ``assert_key_owned``.
+
+    Returns True when the key is well-formed (owned prefix, safe path) and its
+    second path component equals ``user_id``. Used by background workers for
+    defense-in-depth re-checks where an HTTPException is not appropriate.
+    """
+    if not key or not isinstance(key, str):
+        return False
+
+    # Normalize: reject traversal, backslashes, and absolute paths (a leading
+    # "/" yields an empty first component, which no owned prefix matches)
+    if "\\" in key or ".." in key.split("/"):
+        return False
+
+    parts = key.split("/")
+    if len(parts) < 3:
+        return False
+
+    if parts[0] + "/" not in _OWNED_PREFIXES:
+        return False
+
+    return parts[1] == user_id
+
+
 def assert_key_owned(user_id: str, key: str) -> None:
     """
     Validate that a storage key is owned by the given user_id.

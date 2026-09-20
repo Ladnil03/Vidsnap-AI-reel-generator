@@ -95,16 +95,29 @@ class CloudinaryStorageAdapter(StoragePort):
         """
         Generate signed parameters and direct upload endpoint for client-side POST upload to Cloudinary.
         Returns upload_url, key, method='POST', content_type, and signed form fields.
+
+        The signature pins the server-derived public_id (always under the caller's
+        per-user folder), the resource_type, an allowed-formats allow-list, and a
+        hard byte cap so a client cannot upload arbitrary content under another
+        user's prefix or abuse the free tier.
         """
         res_type = self._get_resource_type(key, content_type)
         upload_endpoint_type = res_type if res_type in ("video", "image") else "auto"
         upload_url = f"https://api.cloudinary.com/v1_1/{self.cloud_name}/{upload_endpoint_type}/upload"
+
+        # Server-controlled constraints derived from the storage key
+        ext = Path(key).suffix.lstrip(".").lower() or None
+        allowed_formats = ext if ext in {"jpg", "jpeg", "png", "webp", "gif", "mp4", "webm", "mov", "mkv"} else None
+        max_file_size = settings.max_video_size_bytes if res_type == "video" else settings.max_image_size_bytes
 
         timestamp = int(time.time())
         public_id = self._key_to_public_id(key)
 
         params_to_sign = {
             "public_id": public_id,
+            "resource_type": res_type,
+            "allowed_formats": allowed_formats,
+            "max_file_size": max_file_size,
             "timestamp": timestamp,
         }
         signature = cloudinary.utils.api_sign_request(params_to_sign, self.api_secret)
@@ -114,6 +127,9 @@ class CloudinaryStorageAdapter(StoragePort):
             "timestamp": str(timestamp),
             "signature": signature,
             "public_id": public_id,
+            "resource_type": res_type,
+            "allowed_formats": allowed_formats,
+            "max_file_size": str(max_file_size),
         }
 
         return {

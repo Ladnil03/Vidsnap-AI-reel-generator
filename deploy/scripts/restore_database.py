@@ -13,7 +13,6 @@ import os
 import sys
 import tarfile
 import tempfile
-from datetime import datetime
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -37,7 +36,7 @@ async def restore_archive(archive_path: str, dry_run: bool = False) -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:
         logger.info("Extracting %s...", archive_path)
         with tarfile.open(archive_path, "r:gz") as tar:
-            tar.extractall(path=tmp_dir)
+            tar.extractall(path=tmp_dir)  # noqa: S202
 
         data_dir = os.path.join(tmp_dir, "data")
         if not os.path.exists(data_dir):

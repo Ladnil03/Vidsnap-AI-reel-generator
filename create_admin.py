@@ -82,12 +82,12 @@ async def create_admin_user() -> None:
 
     # Insert into database
     try:
-        result = await db.users.insert_one(admin_doc)
-        print(f"\n✅ Admin user created successfully!")
+        await db.users.insert_one(admin_doc)
+        print("\n✅ Admin user created successfully!")
         print(f"   User ID: {admin_doc['user_id']}")
         print(f"   Email: {email}")
         print(f"   Tokens: {admin_doc['tokens_remaining']}")
-        print(f"   Admin: Yes\n")
+        print("   Admin: Yes\n")
     except Exception as error:
         print(f"❌ Failed to create admin user: {error}")
     finally:

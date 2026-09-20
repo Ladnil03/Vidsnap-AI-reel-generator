@@ -24,7 +24,7 @@ from backend.app.ai_companion.models import (
     UpdateDailyPlanRequest,
 )
 from backend.app.ai_companion.service import CompanionService
-from backend.app.core.rate_limiter import rate_limit
+from backend.app.core.rate_limiter import rate_limit, rate_limit_per_user
 from backend.app.identity.dependencies import get_current_user, get_optional_current_user
 
 router = APIRouter(prefix="/api/v1/companion", tags=["AI Companion & Personalization"])
@@ -34,7 +34,7 @@ router = APIRouter(prefix="/api/v1/companion", tags=["AI Companion & Personaliza
     "/chat",
     response_model=CompanionChatResponse,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(rate_limit(max_requests=20, window_seconds=60))],
+    dependencies=[Depends(rate_limit_per_user(max_requests=20, window_seconds=60))],
 )
 async def chat_with_companion(
     request: CompanionChatRequest,

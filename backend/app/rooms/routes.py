@@ -13,7 +13,7 @@ from fastapi import (
     status,
 )
 
-from backend.app.core.rate_limiter import rate_limit
+from backend.app.core.rate_limiter import rate_limit, rate_limit_per_user
 from backend.app.identity.dependencies import get_current_user, get_optional_current_user
 from backend.app.rooms.models import (
     ChatMessage,
@@ -36,7 +36,7 @@ router = APIRouter(prefix="/api/v1/rooms", tags=["Watch Together Rooms"])
     "",
     response_model=RoomResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(rate_limit(max_requests=10, window_seconds=60))],
+    dependencies=[Depends(rate_limit_per_user(max_requests=10, window_seconds=60))],
 )
 async def create_room(
     request: CreateRoomRequest,

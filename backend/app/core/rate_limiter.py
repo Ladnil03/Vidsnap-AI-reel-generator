@@ -8,8 +8,9 @@ import logging
 import time
 from collections import defaultdict
 from collections.abc import Callable
+from typing import Any
 
-from fastapi import HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 
 from backend.app.core.config import settings
 from backend.app.core.redis import get_redis
@@ -123,20 +124,69 @@ def rate_limit_per_user(
     max_requests: int = 60,
     window_seconds: int = 60,
 ):
-    """Rate limit keyed by authenticated user ID (for job creation, room creation, etc.)."""
-    def key_func(request: Request) -> str:
-        # User ID is injected by get_current_user; fall back to IP
-        return getattr(request.state, "user_id", _get_client_ip(request))
-    return rate_limit(max_requests=max_requests, window_seconds=window_seconds, key_func=key_func)
+    """
+    Rate limit keyed by the authenticated user ID.
+
+    Used for authenticated flows (job creation, room creation, assistant prompts)
+    where no single shared identifier (shared NAT IP, datacenter egress) should be
+    able to throttle all users behind it.
+    """
+    from backend.app.identity.dependencies import get_current_user
+
+    async def dependency(
+        request: Request,
+        current_user: dict[str, Any] = Depends(get_current_user),
+    ) -> None:
+        route_key = f"ratelimit:{request.url.path}:user:{current_user['user_id']}"
+        limited = await is_rate_limited(route_key, max_requests, window_seconds)
+        if limited:
+            logger.warning(
+                "Rate limit exceeded for user %s on %s",
+                current_user["user_id"],
+                request.url.path,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many requests. Please try again later.",
+                headers={"Retry-After": str(window_seconds)},
+            )
+
+    return dependency
+
+
+async def _extract_email_from_body(request: Request) -> str | None:
+    """Best-effort extraction of a normalized email from a JSON request body."""
+    try:
+        data = await request.json()
+        email = data.get("email", "") if isinstance(data, dict) else ""
+        email = str(email).strip()
+        return email or None
+    except Exception:
+        return None
 
 
 def rate_limit_per_email(
     max_requests: int = 10,
     window_seconds: int = 3600,
 ):
-    """Rate limit keyed by SHA-256 of email (for login, signup, OTP endpoints)."""
-    def key_func(request: Request) -> str:
-        # Try to get email from request body (parsed by FastAPI)
-        # Fall back to IP-based limiting
-        return _get_client_ip(request)
-    return rate_limit(max_requests=max_requests, window_seconds=window_seconds, key_func=key_func)
+    """
+    Rate limit keyed by SHA-256 of the normalized email from the request body.
+
+    Used for login, signup, OTP request and OTP verify so an attacker cannot
+    bypass a per-account cap by rotating source IPs. Falls back to the client IP
+    when the body has no readable email.
+    """
+    async def dependency(request: Request) -> None:
+        email = await _extract_email_from_body(request)
+        identifier = f"email:{_sha256_key(email)}" if email else f"ip:{_get_client_ip(request)}"
+        route_key = f"ratelimit:{request.url.path}:{identifier}"
+        limited = await is_rate_limited(route_key, max_requests, window_seconds)
+        if limited:
+            logger.warning("Rate limit exceeded on %s for identifier '%s'", request.url.path, identifier)
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many requests. Please try again later.",
+                headers={"Retry-After": str(window_seconds)},
+            )
+
+    return dependency

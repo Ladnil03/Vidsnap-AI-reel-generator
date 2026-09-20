@@ -7,7 +7,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from backend.app.core.config import settings
-from backend.app.core.rate_limiter import rate_limit
+from backend.app.core.rate_limiter import rate_limit, rate_limit_per_email
 from backend.app.identity.dependencies import get_current_user
 from backend.app.identity.models import (
     AuthResponse,
@@ -27,7 +27,10 @@ router = APIRouter(tags=["Authentication & Identity"])
     "/api/v1/auth/signup",
     response_model=AuthResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(rate_limit(max_requests=10, window_seconds=60))],
+    dependencies=[
+        Depends(rate_limit_per_email(max_requests=10, window_seconds=3600)),
+        Depends(rate_limit(max_requests=10, window_seconds=60)),
+    ],
 )
 async def signup(request: SignupRequest, response: Response) -> AuthResponse:
     """Register a new user account and issue session tokens."""
@@ -50,7 +53,10 @@ async def signup(request: SignupRequest, response: Response) -> AuthResponse:
 @router.post(
     "/api/v1/auth/login",
     response_model=AuthResponse,
-    dependencies=[Depends(rate_limit(max_requests=15, window_seconds=60))],
+    dependencies=[
+        Depends(rate_limit_per_email(max_requests=20, window_seconds=3600)),
+        Depends(rate_limit(max_requests=15, window_seconds=60)),
+    ],
 )
 async def login(request: LoginRequest, response: Response) -> AuthResponse:
     """Authenticate with email and password and issue session tokens."""
@@ -118,7 +124,10 @@ async def logout(request: Request, response: Response) -> dict[str, str]:
 @router.post(
     "/api/v1/auth/forgot-password",
     response_model=dict[str, str],
-    dependencies=[Depends(rate_limit(max_requests=5, window_seconds=300))],
+    dependencies=[
+        Depends(rate_limit_per_email(max_requests=5, window_seconds=300)),
+        Depends(rate_limit(max_requests=5, window_seconds=300)),
+    ],
 )
 async def forgot_password(request: ForgotPasswordRequest) -> dict[str, str]:
     """Request a 6-digit password reset verification code."""
@@ -132,7 +141,10 @@ async def forgot_password(request: ForgotPasswordRequest) -> dict[str, str]:
 @router.post(
     "/api/v1/auth/reset-password",
     response_model=dict[str, str],
-    dependencies=[Depends(rate_limit(max_requests=5, window_seconds=300))],
+    dependencies=[
+        Depends(rate_limit_per_email(max_requests=5, window_seconds=300)),
+        Depends(rate_limit(max_requests=5, window_seconds=300)),
+    ],
 )
 async def reset_password(request: ResetPasswordRequest) -> dict[str, str]:
     """Verify OTP code and set new password."""

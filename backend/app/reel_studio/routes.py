@@ -18,7 +18,7 @@ from fastapi import (
 
 from backend.app.core.adapters.factory import get_storage_adapter
 from backend.app.core.config import settings
-from backend.app.core.rate_limiter import rate_limit
+from backend.app.core.rate_limiter import rate_limit_per_user
 from backend.app.identity.dependencies import get_current_user
 from backend.app.media.service import MediaService
 from backend.app.reel_studio.models import (
@@ -38,7 +38,7 @@ router = APIRouter(tags=["Reel Studio"])
     "/api/v1/reel-studio/jobs",
     response_model=JobCreatedResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(rate_limit(max_requests=10, window_seconds=60))],
+    dependencies=[Depends(rate_limit_per_user(max_requests=10, window_seconds=60))],
 )
 async def create_job_from_keys(
     request: CreateJobRequest,
@@ -55,7 +55,7 @@ async def create_job_from_keys(
     "/api/v1/reel-studio/jobs/upload",
     response_model=JobCreatedResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(rate_limit(max_requests=10, window_seconds=60))],
+    dependencies=[Depends(rate_limit_per_user(max_requests=10, window_seconds=60))],
 )
 async def create_job_multipart(
     voiceover_text: Annotated[str, Form(min_length=5, max_length=900)],

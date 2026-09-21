@@ -5,15 +5,64 @@ import styles from './ui.module.css';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ error, className = '', ...props }, ref) => {
+  ({ error, leftIcon, rightIcon, className = '', style, ...props }, ref) => {
+    if (leftIcon || rightIcon) {
+      return (
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', ...style }}>
+          {leftIcon && (
+            <span
+              style={{
+                position: 'absolute',
+                left: 'var(--space-3)',
+                display: 'flex',
+                alignItems: 'center',
+                pointerEvents: 'none',
+                color: 'var(--text-muted)',
+                zIndex: 1,
+              }}
+            >
+              {leftIcon}
+            </span>
+          )}
+          <input
+            ref={ref}
+            aria-invalid={error ? 'true' : undefined}
+            className={`${styles.input} ${error ? styles.inputError : ''} ${className}`}
+            style={{
+              paddingLeft: leftIcon ? 'calc(var(--space-3) + 24px)' : undefined,
+              paddingRight: rightIcon ? 'calc(var(--space-3) + 24px)' : undefined,
+            }}
+            {...props}
+          />
+          {rightIcon && (
+            <span
+              style={{
+                position: 'absolute',
+                right: 'var(--space-3)',
+                display: 'flex',
+                alignItems: 'center',
+                color: 'var(--text-muted)',
+                zIndex: 1,
+              }}
+            >
+              {rightIcon}
+            </span>
+          )}
+        </div>
+      );
+    }
+
     return (
       <input
         ref={ref}
         aria-invalid={error ? 'true' : undefined}
         className={`${styles.input} ${error ? styles.inputError : ''} ${className}`}
+        style={style}
         {...props}
       />
     );

@@ -12,6 +12,7 @@ export interface ModalProps {
   description?: string;
   children: React.ReactNode;
   variant?: 'modal' | 'sheet';
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
@@ -22,6 +23,7 @@ export function Modal({
   description,
   children,
   variant = 'modal',
+  size = 'md',
   className = '',
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -85,6 +87,14 @@ export function Modal({
   if (!isOpen) return null;
 
   const contentClass = variant === 'sheet' ? styles.sheetContent : styles.modalContent;
+  const sizeStyle: React.CSSProperties =
+    variant === 'sheet'
+      ? {}
+      : size === 'sm'
+      ? { maxWidth: '420px' }
+      : size === 'lg'
+      ? { maxWidth: '720px' }
+      : { maxWidth: '520px' };
 
   return (
     <div className={styles.modalBackdrop} onClick={onClose} role="presentation">
@@ -95,6 +105,7 @@ export function Modal({
         aria-labelledby={title ? 'modal-title' : undefined}
         aria-describedby={description ? 'modal-description' : undefined}
         className={`${contentClass} ${className}`}
+        style={sizeStyle}
         onClick={(e) => e.stopPropagation()}
         tabIndex={-1}
       >

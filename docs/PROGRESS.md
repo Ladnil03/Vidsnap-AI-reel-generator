@@ -47,3 +47,6 @@
 - S4 Core Experience: DONE
   - Key files changed: frontend/src/app/page.tsx, frontend/src/app/feed/page.tsx, frontend/src/app/feed/feed.module.css, frontend/src/components/EngagementBar.tsx, frontend/src/components/MoodSelector.tsx, frontend/src/app/explore/page.tsx, frontend/src/app/create/page.tsx, frontend/src/components/ui/Button.tsx, frontend/src/components/ui/Tabs.tsx.
   - Notes: Redesigned landing, 100dvh snap feed with dark Forest-900 player surface, engagement rail with comments drawer, explore grid, and dual-mode studio with neural TTS & native multipart upload. Production build and typecheck green.
+- S5 Social & Realtime Experience: DONE
+  - Key files changed: frontend/src/app/rooms/page.tsx, frontend/src/app/rooms/[id]/page.tsx, frontend/src/app/rooms/rooms.module.css, frontend/src/app/communities/page.tsx, frontend/src/app/communities/communities.module.css, frontend/src/components/ui/Card.tsx, frontend/src/components/ui/Input.tsx, frontend/src/components/ui/EmptyState.tsx, frontend/src/components/ui/Modal.tsx.
+  - Notes: Redesigned Watch Party lobby with passcode modal, live theater player with 100% preserved WebSocket/drift-correction logic, dark Forest-900 surface in both themes, AI Catch-Up modal, quick emoji reactions, and communities tribes directory with category pills. Production build and typecheck green.

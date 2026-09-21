@@ -1,12 +1,13 @@
-'use client';
-
 import React from 'react';
 import styles from './ui.module.css';
+import { Button } from './Button';
 
 export interface EmptyStateProps {
   title: string;
   description?: string;
   action?: React.ReactNode;
+  actionLabel?: string;
+  onAction?: () => void;
   icon?: React.ReactNode;
   className?: string;
 }
@@ -15,6 +16,8 @@ export function EmptyState({
   title,
   description,
   action,
+  actionLabel,
+  onAction,
   icon,
   className = '',
 }: EmptyStateProps) {
@@ -52,7 +55,15 @@ export function EmptyState({
 
       <h3 className={styles.emptyStateTitle}>{title}</h3>
       {description && <p className={styles.emptyStateDescription}>{description}</p>}
-      {action && <div style={{ marginTop: 'var(--space-2)' }}>{action}</div>}
+      {action ? (
+        <div style={{ marginTop: 'var(--space-4)' }}>{action}</div>
+      ) : actionLabel && onAction ? (
+        <div style={{ marginTop: 'var(--space-4)' }}>
+          <Button variant="primary" onClick={onAction}>
+            {actionLabel}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

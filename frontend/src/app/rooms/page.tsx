@@ -3,6 +3,7 @@
 /**
  * VidSnap.AI Watch Parties Lobby
  * Discover and join live Watch Together rooms, or host your own watch party.
+ * Redesigned in the Forest & Paper design system.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -18,15 +19,25 @@ import {
   Search,
   Crown,
   Play,
-  Volume2,
-  X,
-  Loader2,
   Radio,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../components/Toast';
 import { api } from '../../lib/api';
 import { Room, CreateRoomRequest } from '../../lib/types';
+import {
+  Button,
+  Card,
+  Badge,
+  Input,
+  Textarea,
+  Select,
+  FormField,
+  Modal,
+  Spinner,
+  EmptyState,
+  useToast,
+} from '@/components/ui';
+import styles from './rooms.module.css';
 
 export default function RoomsLobbyPage() {
   const router = useRouter();
@@ -131,33 +142,29 @@ export default function RoomsLobbyPage() {
   };
 
   return (
-    <div className="container" style={{ padding: '40px 16px 80px 16px' }}>
+    <div className={styles.container}>
       {/* Header Banner */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '20px',
-        marginBottom: '36px',
-      }}>
+      <div className={styles.header}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <span className="badge badge-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              <Radio size={12} className="spin" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+            <Badge variant="sage" size="sm">
+              <Radio size={12} style={{ animation: 'pulse 2s infinite', marginRight: '4px' }} />
               <span>Real-Time Sync</span>
+            </Badge>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+              Sub-Second Drift Correction
             </span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Drift-Corrected Sub-Second Latency</span>
           </div>
-          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '6px' }}>
-            Watch Parties & Live Rooms
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', maxWidth: '640px', fontSize: '0.95rem' }}>
-            Watch viral reels, YouTube Shorts, and creative clips in sync with friends. Includes real-time chat, emoji reactions, LiveKit audio lounge, and 30-second AI recaps.
+          <h1 className={styles.headerTitle}>Watch Parties & Live Rooms</h1>
+          <p className={styles.headerDesc}>
+            Watch viral reels, YouTube Shorts, and creative clips in sync with friends. Includes real-time chat,
+            emoji reactions, and 30-second AI summaries.
           </p>
         </div>
 
-        <button
+        <Button
+          variant="primary"
+          leftIcon={<Plus size={18} />}
           onClick={() => {
             if (!user) {
               toastError('Please sign in to host a Watch Party.');
@@ -166,22 +173,17 @@ export default function RoomsLobbyPage() {
             }
             setCreateModalOpen(true);
           }}
-          className="btn btn-primary"
-          style={{ padding: '12px 22px', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px' }}
         >
-          <Plus size={18} />
-          <span>Host Watch Party</span>
-        </button>
+          Host Watch Party
+        </Button>
       </div>
 
       {/* Search Bar */}
-      <div style={{ position: 'relative', marginBottom: '32px', maxWidth: '540px' }}>
-        <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-        <input
+      <div className={styles.searchWrap}>
+        <Input
           type="text"
           placeholder="Search rooms by title or host..."
-          className="form-input"
-          style={{ paddingLeft: '44px', height: '46px', borderRadius: 'var(--radius-full)' }}
+          leftIcon={<Search size={18} />}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -189,325 +191,254 @@ export default function RoomsLobbyPage() {
 
       {/* Rooms Grid */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0' }}>
-          <Loader2 size={32} className="spin" color="var(--primary-light)" style={{ margin: '0 auto 12px auto' }} />
+        <div style={{ textAlign: 'center', padding: 'var(--space-16) 0' }}>
+          <Spinner size="lg" style={{ margin: '0 auto var(--space-4) auto' }} />
           <p style={{ color: 'var(--text-muted)' }}>Scanning active watch parties...</p>
         </div>
       ) : rooms.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: 'center', padding: '60px 24px', maxWidth: '520px', margin: '0 auto' }}>
-          <Tv size={48} color="var(--primary-light)" style={{ margin: '0 auto 16px auto', opacity: 0.8 }} />
-          <h3 style={{ fontSize: '1.3rem', marginBottom: '8px' }}>No Active Rooms Found</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px' }}>
-            {searchQuery ? `No rooms match '${searchQuery}'. Try another search.` : 'Be the first to create a Watch Party and invite your community!'}
-          </p>
-          <button
-            onClick={() => {
-              if (!user) {
-                router.push('/login');
-              } else {
-                setCreateModalOpen(true);
-              }
-            }}
-            className="btn btn-primary"
-            style={{ margin: '0 auto' }}
-          >
-            <Plus size={16} />
-            <span>Create First Room</span>
-          </button>
-        </div>
+        <EmptyState
+          icon={<Tv size={40} />}
+          title={searchQuery ? 'No Matching Rooms' : 'No Active Rooms'}
+          description={
+            searchQuery
+              ? `No rooms match '${searchQuery}'. Try another search term.`
+              : 'Be the first to create a Watch Together party and invite friends!'
+          }
+          actionLabel="Host Watch Party"
+          onAction={() => {
+            if (!user) {
+              router.push('/login');
+            } else {
+              setCreateModalOpen(true);
+            }
+          }}
+        />
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: '24px',
-        }}>
+        <div className={styles.grid}>
           {rooms.map((room) => (
-            <div
-              key={room.room_id}
-              className="glass-card"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                border: '1px solid var(--glass-border)',
-                transition: 'transform 0.2s ease, border-color 0.2s ease',
-              }}
-            >
+            <Card key={room.room_id} variant="raised" className={styles.roomCard}>
               <div>
                 {/* Badges row */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <span className={`badge ${room.room_type === 'public' ? 'badge-primary' : 'badge-amber'}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {room.room_type === 'public' ? <Globe size={11} /> : <Lock size={11} />}
+                <div className={styles.badgeRow}>
+                  <Badge variant={room.room_type === 'public' ? 'sage' : 'warning'} size="sm">
+                    {room.room_type === 'public' ? <Globe size={11} style={{ marginRight: '4px' }} /> : <Lock size={11} style={{ marginRight: '4px' }} />}
                     <span>{room.room_type.toUpperCase()}</span>
-                  </span>
+                  </Badge>
 
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <Users size={13} color="var(--accent-cyan)" />
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Users size={13} style={{ color: 'var(--color-moss-500)' }} />
                     <span>{room.participant_count} online</span>
                   </span>
                 </div>
 
-                {/* Room Title */}
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '6px' }}>
-                  {room.name}
-                </h3>
-                {room.description && (
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', marginBottom: '14px', lineHeight: 1.4 }}>
-                    {room.description}
-                  </p>
-                )}
+                {/* Room Title & Description */}
+                <h2 className={styles.roomTitle}>{room.name}</h2>
+                {room.description && <p className={styles.roomDesc}>{room.description}</p>}
 
                 {/* Currently playing card */}
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '10px 12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  marginBottom: '16px',
-                }}>
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    background: 'var(--primary-gradient)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}>
-                    <Play size={14} color="#fff" style={{ marginLeft: '2px' }} />
+                <div className={styles.playingMedia}>
+                  <div className={styles.playCircle}>
+                    <Play size={14} style={{ marginLeft: '2px' }} />
                   </div>
-                  <div style={{ overflow: 'hidden' }}>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  <div style={{ overflow: 'hidden', flex: 1 }}>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                       {room.watch_state.state === 'playing' ? '🟢 Playing Now' : '⏸️ Paused'}
                     </div>
-                    <div style={{
-                      fontSize: '0.88rem',
-                      fontWeight: 600,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--text-sm)',
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        color: 'var(--text-primary)',
+                      }}
+                    >
                       {room.watch_state.media_title || 'Ready for stream'}
                     </div>
                   </div>
                 </div>
 
                 {/* Host Info */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                  <Crown size={14} color="var(--accent-amber)" />
-                  <span>Host: <strong style={{ color: 'var(--text-primary)' }}>{room.host_name}</strong></span>
+                <div className={styles.hostInfo}>
+                  <Crown size={14} style={{ color: 'var(--color-moss-500)' }} />
+                  <span>
+                    Host: <strong style={{ color: 'var(--text-primary)' }}>{room.host_name}</strong>
+                  </span>
                 </div>
               </div>
 
               {/* Action Button */}
-              <button
+              <Button
+                variant={room.room_type === 'private' ? 'secondary' : 'primary'}
+                size="md"
+                style={{ width: '100%', justifyContent: 'center' }}
                 onClick={() => handleJoinClick(room)}
-                className="btn btn-secondary"
-                style={{ width: '100%', justifyContent: 'center', padding: '10px 16px' }}
               >
-                <span>{room.room_type === 'private' ? 'Enter Passcode' : 'Join Watch Party'}</span>
-              </button>
-            </div>
+                {room.room_type === 'private' ? 'Enter Passcode' : 'Join Watch Party'}
+              </Button>
+            </Card>
           ))}
         </div>
       )}
 
       {/* CREATE ROOM MODAL */}
-      {createModalOpen && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1100,
-          padding: '16px',
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '520px', padding: '28px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Tv size={22} color="var(--primary-light)" />
-                <h2 style={{ fontSize: '1.35rem', fontWeight: 700 }}>Host Watch Party</h2>
-              </div>
-              <button onClick={() => setCreateModalOpen(false)} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>
-                <X size={20} />
-              </button>
-            </div>
+      <Modal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        title="Host Watch Party"
+        size="md"
+      >
+        <form onSubmit={handleCreateRoom} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <FormField label="Room Name" required>
+            <Input
+              type="text"
+              required
+              placeholder="e.g. Late Night Tech Reel Binge"
+              value={newRoomName}
+              onChange={(e) => setNewRoomName(e.target.value)}
+            />
+          </FormField>
 
-            <form onSubmit={handleCreateRoom} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div>
-                <label className="form-label">Room Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Late Night Tech Reel Binge"
-                  className="form-input"
-                  value={newRoomName}
-                  onChange={(e) => setNewRoomName(e.target.value)}
-                />
-              </div>
+          <FormField label="Description (Optional)">
+            <Textarea
+              rows={2}
+              placeholder="Tell friends what you're watching..."
+              value={newRoomDesc}
+              onChange={(e) => setNewRoomDesc(e.target.value)}
+            />
+          </FormField>
 
-              <div>
-                <label className="form-label">Description (Optional)</label>
-                <textarea
-                  rows={2}
-                  placeholder="Tell friends what you're watching tonight..."
-                  className="form-textarea"
-                  value={newRoomDesc}
-                  onChange={(e) => setNewRoomDesc(e.target.value)}
-                />
-              </div>
+          <FormField label="Initial Video URL (Optional)">
+            <Input
+              type="text"
+              placeholder="Paste direct MP4 or YouTube Short link"
+              value={initialMediaUrl}
+              onChange={(e) => {
+                setInitialMediaUrl(e.target.value);
+                if (!initialMediaTitle && e.target.value) {
+                  setInitialMediaTitle('Featured Reel');
+                }
+              }}
+            />
+          </FormField>
 
-              {/* Initial Video (Optional) */}
-              <div>
-                <label className="form-label">Initial Video URL / Title (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="Paste direct MP4 URL or YouTube Short URL"
-                  className="form-input"
-                  value={initialMediaUrl}
-                  onChange={(e) => {
-                    setInitialMediaUrl(e.target.value);
-                    if (!initialMediaTitle && e.target.value) {
-                      setInitialMediaTitle('Watch Party Featured Reel');
-                    }
-                  }}
-                  style={{ marginBottom: '8px' }}
-                />
-                <input
-                  type="text"
-                  placeholder="Video Title"
-                  className="form-input"
-                  value={initialMediaTitle}
-                  onChange={(e) => setInitialMediaTitle(e.target.value)}
-                />
-              </div>
+          {initialMediaUrl && (
+            <FormField label="Video Title">
+              <Input
+                type="text"
+                placeholder="Video Title"
+                value={initialMediaTitle}
+                onChange={(e) => setInitialMediaTitle(e.target.value)}
+              />
+            </FormField>
+          )}
 
-              {/* Room Privacy & Control Mode */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div>
-                  <label className="form-label">Privacy</label>
-                  <select
-                    className="form-select"
-                    value={isPrivate ? 'private' : 'public'}
-                    onChange={(e) => setIsPrivate(e.target.value === 'private')}
-                  >
-                    <option value="public" style={{ background: '#0e131f' }}>Public Room</option>
-                    <option value="private" style={{ background: '#0e131f' }}>Private (Passcode)</option>
-                  </select>
-                </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+            <FormField label="Privacy">
+              <Select
+                value={isPrivate ? 'private' : 'public'}
+                onChange={(e) => setIsPrivate(e.target.value === 'private')}
+                options={[
+                  { value: 'public', label: 'Public Room' },
+                  { value: 'private', label: 'Private (Passcode)' },
+                ]}
+              />
+            </FormField>
 
-                <div>
-                  <label className="form-label">Playback Control</label>
-                  <select
-                    className="form-select"
-                    value={controlMode}
-                    onChange={(e) => setControlMode(e.target.value as any)}
-                  >
-                    <option value="host_only" style={{ background: '#0e131f' }}>👑 Host Only</option>
-                    <option value="democratic" style={{ background: '#0e131f' }}>🗳️ Anyone Can Control</option>
-                  </select>
-                </div>
-              </div>
-
-              {isPrivate && (
-                <div>
-                  <label className="form-label">Room Passcode *</label>
-                  <input
-                    type="password"
-                    required
-                    placeholder="Enter a secret passcode"
-                    className="form-input"
-                    value={newPasscode}
-                    onChange={(e) => setNewPasscode(e.target.value)}
-                  />
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
-                <button
-                  type="button"
-                  onClick={() => setCreateModalOpen(false)}
-                  className="btn btn-secondary"
-                  style={{ flex: 1 }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={creating || !newRoomName.trim()}
-                  className="btn btn-primary"
-                  style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                >
-                  {creating ? <Loader2 size={18} className="spin" /> : <Sparkles size={18} />}
-                  <span>Launch Watch Party</span>
-                </button>
-              </div>
-            </form>
+            <FormField label="Playback Control">
+              <Select
+                value={controlMode}
+                onChange={(e) => setControlMode(e.target.value as 'host_only' | 'democratic')}
+                options={[
+                  { value: 'host_only', label: '👑 Host Only' },
+                  { value: 'democratic', label: '🗳️ Anyone Can Control' },
+                ]}
+              />
+            </FormField>
           </div>
-        </div>
-      )}
 
-      {/* PRIVATE ROOM PASSCODE PROMPT */}
-      {joiningRoom && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1100,
-          padding: '16px',
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '400px', padding: '28px', textAlign: 'center' }}>
-            <Lock size={36} color="var(--accent-amber)" style={{ margin: '0 auto 12px auto' }} />
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '6px' }}>Private Watch Party</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '20px' }}>
-              '{joiningRoom.name}' requires a secret passcode to enter.
-            </p>
-
-            <form onSubmit={handleJoinPrivate} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <input
+          {isPrivate && (
+            <FormField label="Room Passcode" required>
+              <Input
                 type="password"
                 required
-                autoFocus
-                placeholder="Enter passcode"
-                className="form-input"
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                style={{ textAlign: 'center', fontSize: '1rem', letterSpacing: '0.1em' }}
+                placeholder="Enter secret passcode"
+                value={newPasscode}
+                onChange={(e) => setNewPasscode(e.target.value)}
               />
+            </FormField>
+          )}
 
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  type="button"
-                  onClick={() => setJoiningRoom(null)}
-                  className="btn btn-secondary"
-                  style={{ flex: 1 }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={joiningLoading || !passcode.trim()}
-                  className="btn btn-primary"
-                  style={{ flex: 1 }}
-                >
-                  {joiningLoading ? <Loader2 size={16} className="spin" /> : 'Enter'}
-                </button>
-              </div>
-            </form>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setCreateModalOpen(false)}
+              style={{ flex: 1 }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={creating}
+              disabled={creating || !newRoomName.trim()}
+              leftIcon={<Sparkles size={16} />}
+              style={{ flex: 2 }}
+            >
+              Launch Watch Party
+            </Button>
           </div>
+        </form>
+      </Modal>
+
+      {/* PRIVATE ROOM PASSCODE MODAL */}
+      <Modal
+        isOpen={Boolean(joiningRoom)}
+        onClose={() => setJoiningRoom(null)}
+        title="Private Watch Party"
+        size="sm"
+      >
+        <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
+          <Lock size={32} style={{ color: 'var(--color-forest-700)', margin: '0 auto var(--space-2) auto' }} />
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+            &apos;{joiningRoom?.name}&apos; requires a secret passcode to enter.
+          </p>
         </div>
-      )}
+
+        <form onSubmit={handleJoinPrivate} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <Input
+            type="password"
+            required
+            autoFocus
+            placeholder="Enter passcode"
+            value={passcode}
+            onChange={(e) => setPasscode(e.target.value)}
+            style={{ textAlign: 'center', letterSpacing: '0.1em' }}
+          />
+
+          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setJoiningRoom(null)}
+              style={{ flex: 1 }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={joiningLoading}
+              disabled={joiningLoading || !passcode.trim()}
+              style={{ flex: 1 }}
+            >
+              Enter
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -29,11 +29,13 @@ Card.displayName = 'Card';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: 'default' | 'primary' | 'sage' | 'moss' | 'success' | 'warning' | 'danger';
+  size?: 'sm' | 'md';
   icon?: React.ReactNode;
 }
 
 export function Badge({
   variant = 'default',
+  size = 'md',
   icon,
   children,
   className = '',

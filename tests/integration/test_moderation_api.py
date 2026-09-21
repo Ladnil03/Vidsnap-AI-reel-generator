@@ -89,6 +89,7 @@ async def test_admin_moderation_queue_and_action_flow(
 
     # 2. Admin operations
     app.dependency_overrides[get_current_admin] = lambda: admin_user
+    app.dependency_overrides[get_current_user] = lambda: admin_user
     try:
         # Fetch queue
         queue_res = await async_client.get("/api/v1/moderation/queue?status=pending")

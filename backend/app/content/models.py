@@ -23,6 +23,8 @@ class ContentStatus(str, Enum):
     DRAFT = "draft"
     SCHEDULED = "scheduled"
     PROCESSING = "processing"
+    IN_REVIEW = "in_review"
+    REJECTED = "rejected"
     PUBLISHED = "published"
     ARCHIVED = "archived"
     DELETED = "deleted"
@@ -75,6 +77,7 @@ class VideoResponse(BaseModel):
     duration: float
     visibility: ContentVisibility
     status: ContentStatus
+    moderation_status: str = "approved"
     scheduled_at: datetime | None = None
     likes_count: int = 0
     saves_count: int = 0
@@ -99,6 +102,7 @@ class CommentResponse(BaseModel):
     user_id: str
     user_name: str
     text: str
+    is_hidden: bool = False
     created_at: datetime
 
 

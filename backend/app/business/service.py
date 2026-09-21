@@ -119,6 +119,25 @@ class BusinessService:
         db = get_db()
         profile = await cls.get_or_create_profile(user_id)
 
+        # Content Moderation check for campaign brief
+        c_status = CampaignStatus.ACTIVE
+        try:
+            from backend.app.moderation.service import ModerationService
+            brief_text = f"{request.title} {request.description} {' '.join(request.requirements)}".strip()
+            mod_result = ModerationService.scan_content_text(brief_text)
+            if mod_result.recommendation == "block":
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Campaign brief contains prohibited content.",
+                )
+            elif mod_result.recommendation == "flag_for_review":
+                c_status = CampaignStatus.IN_REVIEW
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning("Moderation check on campaign brief error: %s", e)
+            c_status = CampaignStatus.IN_REVIEW
+
         campaign_id = f"cmp_{uuid.uuid4().hex[:10]}"
         campaign = Campaign(
             campaign_id=campaign_id,
@@ -131,7 +150,7 @@ class BusinessService:
             target_creators_count=request.target_creators_count,
             requirements=request.requirements,
             deadline=request.deadline,
-            status=CampaignStatus.ACTIVE,
+            status=c_status,
         )
 
         await db["campaigns"].insert_one(campaign.model_dump())

@@ -116,6 +116,7 @@ class RecSysService:
         native_cursor = self.db["videos"].find({
             "status": ContentStatus.PUBLISHED.value,
             "visibility": ContentVisibility.PUBLIC.value,
+            "moderation_status": {"$in": ["approved", None]},
             "deleted": {"$ne": True},
         }).sort("created_at", -1).limit(40)
         native_docs = await native_cursor.to_list(length=40)

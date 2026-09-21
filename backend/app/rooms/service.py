@@ -462,6 +462,21 @@ class RoomService:
         msg_id = f"msg_{uuid.uuid4().hex[:12]}"
         now = datetime.now(timezone.utc)
 
+        # Content Moderation check for user-generated chat messages
+        if not is_system and not is_assistant:
+            try:
+                from backend.app.moderation.service import ModerationService
+                mod_result = ModerationService.scan_content_text(text)
+                if mod_result.recommendation == "block":
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Message violates community safety guidelines.",
+                    )
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.debug("Moderation check on chat message error: %s", e)
+
         msg = ChatMessage(
             message_id=msg_id,
             room_id=room_id,

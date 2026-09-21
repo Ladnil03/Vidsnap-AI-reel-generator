@@ -6,7 +6,8 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from backend.app.identity.dependencies import get_current_admin, get_current_user
+from backend.app.identity.dependencies import get_current_user, require_role
+from backend.app.identity.models import UserRole
 from backend.app.moderation.models import (
     AutomatedModerationResult,
     ContentReport,
@@ -21,6 +22,8 @@ from backend.app.moderation.models import (
 from backend.app.moderation.service import ModerationService
 
 router = APIRouter(prefix="/api/v1/moderation", tags=["Moderation"])
+
+get_current_moderator = require_role(UserRole.MODERATOR.value, UserRole.ADMIN.value)
 
 
 # ==============================================================================
@@ -63,7 +66,7 @@ async def list_moderation_queue(
     target_type: ReportTargetType | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
-    admin_user: dict[str, Any] = Depends(get_current_admin),
+    mod_user: dict[str, Any] = Depends(get_current_moderator),
 ) -> list[ContentReport]:
     """List flagged content reports ordered by urgency priority."""
     return await ModerationService.list_reports(
@@ -77,7 +80,7 @@ async def list_moderation_queue(
 @router.get("/reports/{report_id}", response_model=ContentReport)
 async def get_report_details(
     report_id: str,
-    admin_user: dict[str, Any] = Depends(get_current_admin),
+    mod_user: dict[str, Any] = Depends(get_current_moderator),
 ) -> ContentReport:
     """Inspect full report details along with target metadata preview."""
     try:
@@ -90,12 +93,12 @@ async def get_report_details(
 async def execute_moderation_action(
     report_id: str,
     request: TakeActionRequest,
-    admin_user: dict[str, Any] = Depends(get_current_admin),
+    mod_user: dict[str, Any] = Depends(get_current_moderator),
 ) -> ModerationAction:
     """Execute an enforcement action (warn, hide, delete, ban, dismiss)."""
     try:
         return await ModerationService.take_action(
-            moderator_id=admin_user["user_id"],
+            moderator_id=mod_user["user_id"],
             report_id=report_id,
             request=request,
         )
@@ -105,7 +108,7 @@ async def execute_moderation_action(
 
 @router.get("/stats", response_model=ModerationStats)
 async def get_moderation_overview_stats(
-    admin_user: dict[str, Any] = Depends(get_current_admin),
+    mod_user: dict[str, Any] = Depends(get_current_moderator),
 ) -> ModerationStats:
     """Get platform moderation overview metrics."""
     return await ModerationService.get_moderation_stats()

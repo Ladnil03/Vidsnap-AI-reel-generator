@@ -54,6 +54,7 @@ class ContentService:
             duration=doc.get("duration", 0.0),
             visibility=ContentVisibility(doc.get("visibility", ContentVisibility.PUBLIC.value)),
             status=ContentStatus(doc.get("status", ContentStatus.PUBLISHED.value)),
+            moderation_status=doc.get("moderation_status", "approved"),
             scheduled_at=doc.get("scheduled_at"),
             likes_count=doc.get("likes_count", 0),
             saves_count=doc.get("saves_count", 0),
@@ -92,6 +93,27 @@ class ContentService:
         else:
             v_status = ContentStatus.PUBLISHED
 
+        # Content Moderation Pre-Check
+        moderation_status = "approved"
+        try:
+            from backend.app.moderation.service import ModerationService
+            mod_text = f"{request.title} {request.description}".strip()
+            mod_result = ModerationService.scan_content_text(mod_text)
+            if mod_result.recommendation == "block":
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Content violates community safety guidelines and cannot be published.",
+                )
+            elif mod_result.recommendation == "flag_for_review":
+                moderation_status = "flagged"
+                v_status = ContentStatus.IN_REVIEW
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning("Moderation service failed during create_video, failing closed: %s", e)
+            moderation_status = "pending"
+            v_status = ContentStatus.IN_REVIEW
+
         storage = get_storage_adapter()
         video_url = storage.get_public_url(request.video_key) if request.video_key else ""
         thumbnail_url = storage.get_public_url(request.thumbnail_key) if request.thumbnail_key else None
@@ -110,6 +132,7 @@ class ContentService:
             "duration": request.duration,
             "visibility": request.visibility.value,
             "status": v_status.value,
+            "moderation_status": moderation_status,
             "scheduled_at": request.scheduled_at,
             "likes_count": 0,
             "saves_count": 0,
@@ -147,13 +170,19 @@ class ContentService:
         if not doc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found.")
 
-        # Check visibility
+        # Check visibility and moderation status
         is_owner = current_user_id and current_user_id == doc["user_id"]
-        if doc["visibility"] == ContentVisibility.PRIVATE.value and not is_owner:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This video is private.")
-
-        if doc["status"] == ContentStatus.DRAFT.value and not is_owner:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This draft is private.")
+        if not is_owner:
+            if doc.get("status") in (
+                ContentStatus.DRAFT.value,
+                ContentStatus.IN_REVIEW.value,
+                ContentStatus.REJECTED.value,
+            ):
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found.")
+            if doc.get("moderation_status") != "approved":
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found.")
+            if doc["visibility"] == ContentVisibility.PRIVATE.value:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This video is private.")
 
         # Increment views atomically
         await db.videos.update_one({"video_id": video_id}, {"$inc": {"views_count": 1}})
@@ -187,18 +216,20 @@ class ContentService:
         if user_id:
             query["user_id"] = user_id
             if user_id != current_user_id:
-                # Viewing someone else's profile — only public published
+                # Viewing someone else's profile — only public published & approved
                 query["visibility"] = ContentVisibility.PUBLIC.value
                 query["status"] = ContentStatus.PUBLISHED.value
+                query["moderation_status"] = {"$in": ["approved", None]}
             else:
                 if visibility:
                     query["visibility"] = visibility.value
                 if status_filter:
                     query["status"] = status_filter.value
         else:
-            # Main public discovery feed
+            # Main public discovery feed — only public, published & approved
             query["visibility"] = ContentVisibility.PUBLIC.value
             query["status"] = ContentStatus.PUBLISHED.value
+            query["moderation_status"] = {"$in": ["approved", None]}
 
         cursor = db.videos.find(query).sort("created_at", -1).skip(skip).limit(min(limit, 100))
         docs = await cursor.to_list(limit)
@@ -391,21 +422,41 @@ class ContentService:
         now = datetime.now(timezone.utc)
         comment_id = str(uuid.uuid4())
 
+        # Content Moderation Pre-Check
+        is_hidden = False
+        try:
+            from backend.app.moderation.service import ModerationService
+            mod_result = ModerationService.scan_content_text(text)
+            if mod_result.recommendation == "block":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Comment violates community guidelines.",
+                )
+            elif mod_result.recommendation == "flag_for_review":
+                is_hidden = True
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning("Moderation check on comment failed, defaulting to hidden: %s", e)
+            is_hidden = True
+
         doc = {
             "comment_id": comment_id,
             "video_id": video_id,
             "user_id": user_id,
             "user_name": user_name,
             "text": text,
+            "is_hidden": is_hidden,
             "created_at": now,
         }
         await db.video_comments.insert_one(doc)
-        await db.videos.update_one({"video_id": video_id}, {"$inc": {"comments_count": 1}})
+        if not is_hidden:
+            await db.videos.update_one({"video_id": video_id}, {"$inc": {"comments_count": 1}})
 
         # Dispatch notification to video creator
         try:
             video_doc = await db.videos.find_one({"video_id": video_id})
-            if video_doc and video_doc.get("user_id") != user_id:
+            if video_doc and video_doc.get("user_id") != user_id and not is_hidden:
                 from backend.app.notifications.service import NotificationsService
                 notif_svc = NotificationsService(db)
                 snippet = text[:50] + "..." if len(text) > 50 else text
@@ -421,16 +472,17 @@ class ContentService:
             logger.debug("Comment notification dispatch skipped: %s", e)
 
         # Award XP for commenting on reel (server-derived key per video+user to prevent comment spamming)
-        try:
-            from backend.app.gamification.models import XPAction
-            from backend.app.gamification.service import GamificationService
-            await GamificationService.award_xp(
-                user_id=user_id,
-                action=XPAction.COMMENT_REEL,
-                idempotency_key=f"comment_reel:{user_id}:{video_id}",
-            )
-        except Exception as e:
-            logger.debug("Gamification XP award on comment skipped: %s", e)
+        if not is_hidden:
+            try:
+                from backend.app.gamification.models import XPAction
+                from backend.app.gamification.service import GamificationService
+                await GamificationService.award_xp(
+                    user_id=user_id,
+                    action=XPAction.COMMENT_REEL,
+                    idempotency_key=f"comment_reel:{user_id}:{video_id}",
+                )
+            except Exception as e:
+                logger.debug("Gamification XP award on comment skipped: %s", e)
 
         return CommentResponse(
             comment_id=comment_id,
@@ -438,14 +490,17 @@ class ContentService:
             user_id=user_id,
             user_name=user_name,
             text=text,
+            is_hidden=is_hidden,
             created_at=now,
         )
 
     @classmethod
     async def list_comments(cls, video_id: str, skip: int = 0, limit: int = 50) -> list[CommentResponse]:
-        """List comments for a video ordered by recency."""
+        """List comments for a video ordered by recency (excluding hidden/moderated)."""
         db = get_db()
-        cursor = db.video_comments.find({"video_id": video_id}).sort("created_at", -1).skip(skip).limit(min(limit, 100))
+        cursor = db.video_comments.find(
+            {"video_id": video_id, "is_hidden": {"$ne": True}}
+        ).sort("created_at", -1).skip(skip).limit(min(limit, 100))
         docs = await cursor.to_list(limit)
         return [
             CommentResponse(
@@ -454,6 +509,7 @@ class ContentService:
                 user_id=d["user_id"],
                 user_name=d.get("user_name", "User"),
                 text=d["text"],
+                is_hidden=d.get("is_hidden", False),
                 created_at=d["created_at"],
             )
             for d in docs

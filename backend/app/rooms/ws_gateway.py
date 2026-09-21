@@ -207,19 +207,22 @@ async def room_websocket_endpoint(websocket: WebSocket, room_id: str, token: str
             elif msg_type == "chat":
                 text = msg.get("text", "").strip()
                 if text:
-                    saved_msg = await RoomService.add_chat_message(
-                        room_id=room_id,
-                        user_id=user_id,
-                        user_name=user_name,
-                        text=text,
-                    )
-                    await manager.broadcast(
-                        room_id,
-                        {
-                            "type": "chat",
-                            "message": saved_msg.model_dump(),
-                        },
-                    )
+                    try:
+                        saved_msg = await RoomService.add_chat_message(
+                            room_id=room_id,
+                            user_id=user_id,
+                            user_name=user_name,
+                            text=text,
+                        )
+                        await manager.broadcast(
+                            room_id,
+                            {
+                                "type": "chat",
+                                "message": saved_msg.model_dump(),
+                            },
+                        )
+                    except HTTPException as e:
+                        await websocket.send_json({"type": "error", "message": e.detail})
 
             # Floating emoji reaction burst
             elif msg_type == "reaction":

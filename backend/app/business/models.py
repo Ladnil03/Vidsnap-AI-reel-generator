@@ -49,6 +49,7 @@ class CampaignStatus(str, Enum):
 
     DRAFT = "draft"
     ACTIVE = "active"
+    IN_REVIEW = "in_review"
     PAUSED = "paused"
     COMPLETED = "completed"
 

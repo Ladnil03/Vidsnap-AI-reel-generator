@@ -88,8 +88,11 @@ class Settings(BaseSettings):
     hls_abr_enabled: bool = False
     rate_limit_per_minute: int = 60
     auth_rate_limit_per_minute: int = 10
+    signup_rate_limit_per_hour: int = 3
     trusted_proxy_count: int = 0
     metrics_token: str | None = None
+    captcha_enabled: bool = False
+    captcha_secret: str | None = None
 
     # Worker & FFmpeg Pipeline Settings
     worker_concurrency: int = 2

@@ -13,11 +13,13 @@ from backend.app.identity.models import (
     AuthResponse,
     ForgotPasswordRequest,
     LoginRequest,
+    ResendVerificationRequest,
     ResetPasswordRequest,
     SignupRequest,
     TokenRefreshRequest,
     UpdateProfileRequest,
     UserResponse,
+    VerifyEmailRequest,
 )
 from backend.app.identity.service import IdentityService
 
@@ -30,7 +32,7 @@ router = APIRouter(tags=["Authentication & Identity"])
     status_code=status.HTTP_201_CREATED,
     dependencies=[
         Depends(rate_limit_per_email(max_requests=10, window_seconds=3600)),
-        Depends(rate_limit(max_requests=10, window_seconds=60)),
+        Depends(rate_limit(max_requests=settings.signup_rate_limit_per_hour, window_seconds=3600)),
     ],
 )
 async def signup(request: SignupRequest, response: Response) -> AuthResponse:
@@ -49,6 +51,33 @@ async def signup(request: SignupRequest, response: Response) -> AuthResponse:
             path="/api/v1/auth",
         )
     return auth_resp
+
+
+@router.post(
+    "/api/v1/auth/verify-email",
+    status_code=status.HTTP_200_OK,
+    dependencies=[
+        Depends(rate_limit_per_email(max_requests=10, window_seconds=3600)),
+        Depends(rate_limit(max_requests=30, window_seconds=60)),
+    ],
+)
+async def verify_email(request: VerifyEmailRequest) -> dict[str, Any]:
+    """Confirm email verification OTP code and grant free tier signup tokens."""
+    return await IdentityService.verify_email(request)
+
+
+@router.post(
+    "/api/v1/auth/resend-verification",
+    status_code=status.HTTP_200_OK,
+    dependencies=[
+        Depends(rate_limit_per_email(max_requests=5, window_seconds=3600)),
+        Depends(rate_limit(max_requests=10, window_seconds=60)),
+    ],
+)
+async def resend_verification(request: ResendVerificationRequest) -> dict[str, str]:
+    """Request a fresh email verification OTP code."""
+    await IdentityService.request_email_verification(request.email)
+    return {"message": "Verification code sent if email exists."}
 
 
 @router.post(

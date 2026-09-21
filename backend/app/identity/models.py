@@ -23,6 +23,7 @@ class SignupRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=100, description="Full name")
     email: EmailStr = Field(..., description="Valid email address")
     password: str = Field(..., min_length=8, max_length=128, description="Password (min 8 chars)")
+    captcha_token: str | None = Field(None, description="Optional CAPTCHA token")
 
     @field_validator("email")
     @classmethod
@@ -70,6 +71,27 @@ class ResetPasswordRequest(BaseModel):
         return v.strip().lower()
 
 
+class VerifyEmailRequest(BaseModel):
+    """Payload for verifying email OTP."""
+    email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6, description="6-digit verification code")
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return v.strip().lower()
+
+
+class ResendVerificationRequest(BaseModel):
+    """Payload for requesting email verification OTP."""
+    email: EmailStr
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return v.strip().lower()
+
+
 class TokenRefreshRequest(BaseModel):
     """Optional payload for clients that cannot use httpOnly cookies."""
     refresh_token: str | None = Field(None, description="Rotating refresh token string")
@@ -82,6 +104,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     roles: list[str]
     tokens_remaining: int
+    email_verified: bool = False
     timezone: str = "UTC"
     created_at: datetime
 

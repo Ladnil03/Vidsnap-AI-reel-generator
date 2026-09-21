@@ -21,7 +21,8 @@ async def test_user_signup_and_duplicate_handling(async_client: AsyncClient):
     data = response.json()
     assert "access_token" in data
     assert data["user"]["email"] == "alex@vidsnap.ai"
-    assert data["user"]["tokens_remaining"] == 5
+    assert data["user"]["tokens_remaining"] == 0
+    assert data["user"]["email_verified"] is False
 
     # Cookie was set
     assert "refresh_token" in response.cookies or "set-cookie" in response.headers

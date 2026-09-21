@@ -34,6 +34,7 @@ from backend.app.identity.models import (
     UpdateProfileRequest,
     UserResponse,
     UserRole,
+    VerifyEmailRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,6 +57,16 @@ class IdentityService:
                 detail="An account with this email already exists.",
             )
 
+        # Check CAPTCHA if enabled
+        if settings.captcha_enabled:
+            from backend.app.identity.captcha import verify_captcha
+            valid_captcha = await verify_captcha(request.captcha_token)
+            if not valid_captcha:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="CAPTCHA verification failed. Please try again.",
+                )
+
         user_id = str(uuid.uuid4())
         hashed_password = hash_password(request.password)
         now = datetime.now(timezone.utc)
@@ -66,26 +77,18 @@ class IdentityService:
             "email": email,
             "password_hash": hashed_password,
             "roles": [UserRole.USER.value],
-            "tokens_remaining": settings.free_tokens_on_signup,
+            "tokens_remaining": 0,
+            "email_verified": False,
             "timezone": "UTC",
             "created_at": now,
             "updated_at": now,
         }
         await db.users.insert_one(user_doc)
 
-        # Record signup token bonus in credit ledger
-        if settings.free_tokens_on_signup > 0:
-            ledger_doc = {
-                "ledger_id": str(uuid.uuid4()),
-                "user_id": user_id,
-                "amount": settings.free_tokens_on_signup,
-                "balance_after": settings.free_tokens_on_signup,
-                "transaction_type": TransactionType.SIGNUP_BONUS.value,
-                "reference_id": None,
-                "memo": "Welcome signup bonus",
-                "created_at": now,
-            }
-            await db.credit_ledger.insert_one(ledger_doc)
+        # Dispatch email verification OTP
+        await IdentityService.request_email_verification(
+            email, user_id=user_id, user_name=request.name.strip()
+        )
 
         logger.info("User registered successfully: %s (%s)", email, user_id)
         return await IdentityService.create_session(user_doc)
@@ -103,6 +106,14 @@ class IdentityService:
                 detail="Invalid email or password.",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+
+        # Grandfathering existing users without email_verified
+        if "email_verified" not in user:
+            await db.users.update_one(
+                {"user_id": user["user_id"]},
+                {"$set": {"email_verified": True}},
+            )
+            user["email_verified"] = True
 
         return user
 
@@ -139,6 +150,7 @@ class IdentityService:
             email=user["email"],
             roles=roles,
             tokens_remaining=user.get("tokens_remaining", 0),
+            email_verified=user.get("email_verified", False),
             timezone=user.get("timezone", "UTC"),
             created_at=user["created_at"],
         )
@@ -322,4 +334,137 @@ class IdentityService:
         if not updated_user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
         return updated_user
+
+    @classmethod
+    async def request_email_verification(
+        cls, email: str, user_id: str | None = None, user_name: str | None = None
+    ) -> None:
+        """Generate and send email verification OTP code."""
+        db = get_db()
+        email = email.strip().lower()
+        now = datetime.now(timezone.utc)
+
+        user = await db.users.find_one({"email": email})
+        if not user:
+            return
+
+        if user.get("email_verified") is True:
+            return
+
+        existing = await db.otps.find_one({"email": email, "type": "email_verification"})
+        if existing:
+            created_at = existing["created_at"]
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
+            if now - created_at < timedelta(seconds=60):
+                return
+            if existing.get("attempts", 0) >= 5:
+                return
+
+        otp_code = generate_secure_otp()
+        salt = secrets.token_hex(16)
+        hashed_otp = hash_otp(otp_code, salt)
+
+        await db.otps.update_one(
+            {"email": email, "type": "email_verification"},
+            {
+                "$set": {
+                    "user_id": user["user_id"],
+                    "email": email,
+                    "hashed_otp": hashed_otp,
+                    "salt": salt,
+                    "type": "email_verification",
+                    "created_at": now,
+                },
+                "$setOnInsert": {"attempts": 0},
+            },
+            upsert=True,
+        )
+
+        email_adapter = get_email_adapter()
+        await email_adapter.send_otp_email(
+            recipient_email=email,
+            recipient_name=user_name or user.get("name", "User"),
+            otp_code=otp_code,
+        )
+        logger.info("Email verification OTP dispatched for: %s", email)
+
+    @classmethod
+    async def verify_email(cls, request: VerifyEmailRequest) -> dict[str, Any]:
+        """Verify OTP for email verification and grant free tokens."""
+        db = get_db()
+        email = request.email.lower()
+        now = datetime.now(timezone.utc)
+
+        otp_record = await db.otps.find_one({"email": email, "type": "email_verification"})
+        if not otp_record:
+            otp_record = await db.otps.find_one({"email": email})
+        if not otp_record:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired verification code.",
+            )
+
+        if otp_record.get("attempts", 0) >= 5:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Too many failed verification attempts. Please request a new code.",
+            )
+
+        otp_created = otp_record["created_at"]
+        if otp_created.tzinfo is None:
+            otp_created = otp_created.replace(tzinfo=timezone.utc)
+        if now - otp_created > timedelta(minutes=10):
+            await db.otps.delete_one({"_id": otp_record["_id"]})
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Verification code has expired. Please request a new one.",
+            )
+
+        is_valid = verify_otp_hash(
+            plain_otp=request.otp,
+            stored_hash=otp_record["hashed_otp"],
+            salt=otp_record["salt"],
+        )
+        if not is_valid:
+            await db.otps.update_one({"_id": otp_record["_id"]}, {"$inc": {"attempts": 1}})
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid verification code.",
+            )
+
+        # Delete verified OTP
+        await db.otps.delete_one({"_id": otp_record["_id"]})
+
+        user = await db.users.find_one({"email": email})
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
+        if user.get("email_verified") is True:
+            return {"email_verified": True, "tokens_granted": 0, "message": "Email already verified."}
+
+        bonus = settings.free_tokens_on_signup
+        await db.users.update_one(
+            {"email": email},
+            {
+                "$set": {"email_verified": True, "updated_at": now},
+                "$inc": {"tokens_remaining": bonus},
+            },
+        )
+
+        if bonus > 0:
+            ledger_doc = {
+                "ledger_id": str(uuid.uuid4()),
+                "user_id": user["user_id"],
+                "amount": bonus,
+                "balance_after": user.get("tokens_remaining", 0) + bonus,
+                "transaction_type": TransactionType.SIGNUP_BONUS.value,
+                "reference_id": None,
+                "memo": "Welcome signup bonus (email verified)",
+                "created_at": now,
+            }
+            await db.credit_ledger.insert_one(ledger_doc)
+
+        logger.info("Email verified successfully for user: %s (bonus: %d)", email, bonus)
+        return {"email_verified": True, "tokens_granted": bonus, "message": "Email verified successfully."}
 

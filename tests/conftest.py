@@ -22,6 +22,7 @@ os.environ["MONGODB_DB"] = "test_vidsnap"
 
 import backend.app.core.database as database_module
 from backend.app.core.database import ensure_indexes
+from backend.app.core.rate_limiter import _in_memory_windows
 from backend.app.main import app
 
 
@@ -60,6 +61,8 @@ async def mock_db():
 @pytest_asyncio.fixture(scope="function")
 async def async_client(mock_db) -> AsyncGenerator[AsyncClient, None]:
     """Provide an asynchronous HTTP client bound to the FastAPI application."""
+    _in_memory_windows.clear()
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
+    _in_memory_windows.clear()

@@ -14,3 +14,11 @@
 | W1-8 | DONE | Restricted /xp/award to admin-only; wired server-authoritative XP awards on video create/publish, like, comment, watch >=5s, and room creation; enforce atomic daily caps via find_one_and_update; server-side timezone-aware streak date derivation; PATCH /users/me for user timezone setting; 9 security regression tests in tests/security/test_gamification_security.py. Commit 723efa3. |
 | W1-9 | DONE | Wired ModerationService into video creation/update (422 on block, in_review on flag/error fail-closed), comments (400 on block, is_hidden on flag), rooms chat (400 on block), brand briefs (422 on block, in_review on flag); filtered feeds and recsys to published + approved; enabled 'moderator' and 'admin' RBAC on review queue endpoints; 11 security tests in tests/security/test_moderation_enforcement.py. Commit 0e1f63b. |
 | W1-10 | DONE | Restricted AI companion tool_search_reels, playlist generation, and chat discovery to published, moderation-approved videos that are either public or owned by the authenticated caller; 5 security regression tests in tests/security/test_companion_visibility.py. Commit ab2d179. |
+
+## Wave 2: High Priority
+
+| Task | Status | Notes |
+|------|--------|-------|
+| W2-1 | DONE | Fixed WebSocket double delivery: added INSTANCE_ID origin tag to Redis pubsub envelopes; subscriber skips self-originated messages; single global psubscribe(room_channel:*) per process replaces per-room subscriptions. Commit e1cd283. |
+| W2-2 | DONE | WebSocket hardening: 4KB frame size limit, 500-char chat text cap with control char stripping, unknown message type rejection with error frame, host-only sync guard (already in service), expired token rejection (already in decode_access_token). 6 tests in tests/security/test_ws_hardening.py. Commit e1cd283. |
+| W2-3 | DONE | Hardened LLM router: replaced unbounded dict cache with size-bounded (256) and TTL (300s) LRU cache, included max_tokens and temperature in SHA-256 cache key, excluded offline fallback from caching, added per-provider circuit breaker with 60s cooldown, added per-user daily quota enforcement (llm_daily_quota_per_user). 5 security tests in tests/security/test_llm_router_hardening.py. |

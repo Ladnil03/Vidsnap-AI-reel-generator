@@ -73,6 +73,7 @@ class Settings(BaseSettings):
     groq_api_key: str | None = None
     gemini_api_key: str | None = None
     openrouter_api_key: str | None = None
+    llm_daily_quota_per_user: int = 50
 
     # Quotas & Limits
     free_tokens_on_signup: int = 5

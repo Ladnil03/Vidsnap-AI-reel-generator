@@ -12,6 +12,9 @@ Fallback Chain:
 import hashlib
 import logging
 import re
+import time
+from collections import OrderedDict
+from datetime import datetime, timezone
 from typing import Any
 
 import httpx
@@ -20,16 +23,78 @@ from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Simple in-memory response cache: sha256 -> response_text
-_COMPLETION_CACHE: dict[str, str] = {}
+
+# ---------------------------------------------------------------------------
+# TTL + Size-Bounded Cache (inline, no external dependency)
+# ---------------------------------------------------------------------------
+
+class _TTLCache:
+    """Simple TTL + size-bounded LRU cache."""
+
+    def __init__(self, maxsize: int = 256, ttl: int = 300):
+        self.maxsize = maxsize
+        self.ttl = ttl
+        self._data: OrderedDict[str, tuple[str, float]] = OrderedDict()
+
+    def get(self, key: str) -> str | None:
+        if key in self._data:
+            value, ts = self._data[key]
+            if time.monotonic() - ts < self.ttl:
+                self._data.move_to_end(key)
+                return value
+            else:
+                del self._data[key]
+        return None
+
+    def set(self, key: str, value: str) -> None:
+        if key in self._data:
+            self._data.move_to_end(key)
+        self._data[key] = (value, time.monotonic())
+        while len(self._data) > self.maxsize:
+            self._data.popitem(last=False)
+
+    def clear(self) -> None:
+        self._data.clear()
+        _circuit_breakers.clear()
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+
+# Module-level state (importable for tests)
+_completion_cache = _TTLCache(maxsize=256, ttl=300)
+_COMPLETION_CACHE = _completion_cache
+
+# Per-provider circuit breaker: provider_name -> failure_timestamp
+_circuit_breakers: dict[str, float] = {}
+_CIRCUIT_BREAKER_COOLDOWN = 60  # seconds
+
+# Per-user daily quota: "user_id:YYYY-MM-DD" -> count
+_user_quota: dict[str, int] = {}
+
+
+def _is_circuit_open(provider: str) -> bool:
+    """Check if a provider's circuit breaker is open (should be skipped)."""
+    fail_ts = _circuit_breakers.get(provider)
+    if fail_ts is None:
+        return False
+    if time.monotonic() - fail_ts > _CIRCUIT_BREAKER_COOLDOWN:
+        del _circuit_breakers[provider]
+        return False
+    return True
+
+
+def _trip_circuit(provider: str) -> None:
+    """Record a failure for a provider, opening its circuit breaker."""
+    _circuit_breakers[provider] = time.monotonic()
 
 
 class LLMRouter:
     """Intelligent multi-provider LLM router with automatic free-tier failover."""
 
     @staticmethod
-    def _compute_cache_key(prompt: str, system_prompt: str) -> str:
-        content = f"{system_prompt}|||{prompt}"
+    def _compute_cache_key(prompt: str, system_prompt: str, max_tokens: int, temperature: float) -> str:
+        content = f"{system_prompt}|||{prompt}|||{max_tokens}|||{temperature}"
         return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
     @classmethod
@@ -42,45 +107,68 @@ class LLMRouter:
         temperature: float = 0.7,
     ) -> str:
         """Route prompt through the free-tier provider chain with caching and heuristic degradation."""
-        cache_key = cls._compute_cache_key(prompt, system_prompt)
-        if cache_key in _COMPLETION_CACHE:
+
+        # Per-user daily quota check
+        if user_id:
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            quota_key = f"{user_id}:{today}"
+            current_count = _user_quota.get(quota_key, 0)
+            if current_count >= settings.llm_daily_quota_per_user:
+                logger.info("User %s exceeded daily LLM quota (%d)", user_id, settings.llm_daily_quota_per_user)
+                return (
+                    "You've reached your daily AI interaction limit. "
+                    "Your quota resets tomorrow — come back for more!"
+                )
+
+        cache_key = cls._compute_cache_key(prompt, system_prompt, max_tokens, temperature)
+        cached = _completion_cache.get(cache_key)
+        if cached is not None:
             logger.debug("LLM cache hit for key %s", cache_key[:12])
-            return _COMPLETION_CACHE[cache_key]
+            return cached
 
         # 1. Try Groq Free Tier
-        if settings.groq_api_key:
+        if settings.groq_api_key and not _is_circuit_open("groq"):
             try:
                 result = await cls._call_groq(prompt, system_prompt, max_tokens, temperature)
                 if result:
-                    _COMPLETION_CACHE[cache_key] = result
+                    _completion_cache.set(cache_key, result)
+                    if user_id:
+                        _user_quota[quota_key] = _user_quota.get(quota_key, 0) + 1
                     return result
             except Exception as e:
                 logger.warning("Groq completion failed, falling back: %s", e)
+                _trip_circuit("groq")
 
         # 2. Try Google Gemini Free Tier
-        if settings.gemini_api_key:
+        if settings.gemini_api_key and not _is_circuit_open("gemini"):
             try:
                 result = await cls._call_gemini(prompt, system_prompt, max_tokens, temperature)
                 if result:
-                    _COMPLETION_CACHE[cache_key] = result
+                    _completion_cache.set(cache_key, result)
+                    if user_id:
+                        _user_quota[quota_key] = _user_quota.get(quota_key, 0) + 1
                     return result
             except Exception as e:
                 logger.warning("Gemini completion failed, falling back: %s", e)
+                _trip_circuit("gemini")
 
         # 3. Try OpenRouter Free Tier
-        if settings.openrouter_api_key:
+        if settings.openrouter_api_key and not _is_circuit_open("openrouter"):
             try:
                 result = await cls._call_openrouter(prompt, system_prompt, max_tokens, temperature)
                 if result:
-                    _COMPLETION_CACHE[cache_key] = result
+                    _completion_cache.set(cache_key, result)
+                    if user_id:
+                        _user_quota[quota_key] = _user_quota.get(quota_key, 0) + 1
                     return result
             except Exception as e:
                 logger.warning("OpenRouter completion failed, falling back: %s", e)
+                _trip_circuit("openrouter")
 
         # 4. Deterministic Offline Heuristic Fallback
+        #    NEVER cached — so that when providers recover, fresh results are used.
         logger.info("Using offline heuristic response generator (no active LLM key or providers exhausted).")
         offline_result = cls._generate_offline_heuristic(prompt, system_prompt)
-        _COMPLETION_CACHE[cache_key] = offline_result
         return offline_result
 
     @classmethod

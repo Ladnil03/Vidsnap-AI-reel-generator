@@ -8,7 +8,8 @@ import json
 import logging
 from typing import Any
 
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import HTTPException, WebSocket, WebSocketDisconnect
+from starlette.websockets import WebSocketState
 
 from backend.app.core.llm_router import LLMRouter
 from backend.app.core.redis import get_redis
@@ -32,7 +33,8 @@ class RoomConnectionManager:
 
     async def connect(self, websocket: WebSocket, room_id: str, user_data: dict[str, Any]) -> None:
         """Register a new authenticated WebSocket connection."""
-        await websocket.accept()
+        if websocket.client_state == WebSocketState.CONNECTING:
+            await websocket.accept()
         if room_id not in self._rooms:
             self._rooms[room_id] = set()
             # Start Redis pubsub listener for this room if not already running
@@ -170,11 +172,20 @@ async def room_websocket_endpoint(websocket: WebSocket, room_id: str, token: str
         if not user_payload or not user_payload.get("user_id"):
             await websocket.close(code=4001, reason="Authentication failed")
             return
-        await manager.connect(websocket, room_id, user_payload)
-    else:
-        await manager.connect(websocket, room_id, user_payload)
 
-    # 2. Main message dispatch loop
+    # 2. Enforce room access before manager.connect
+    try:
+        await RoomService.assert_room_access(room_id, user_payload["user_id"])
+    except HTTPException as e:
+        code = 4004 if e.status_code == 404 else 4003
+        if websocket.client_state == WebSocketState.CONNECTING:
+            await websocket.accept()
+        await websocket.close(code=code, reason=str(e.detail))
+        return
+
+    await manager.connect(websocket, room_id, user_payload)
+
+    # 3. Main message dispatch loop
     try:
         while True:
             raw_msg = await websocket.receive_text()

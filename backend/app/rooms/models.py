@@ -3,11 +3,19 @@ Rooms Domain Models & Schemas.
 Defines types for Watch Together rooms, server-authoritative playback sync, chat, and WebRTC.
 """
 
+import re
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+_SANITIZE_RE = re.compile(r"<script\b[^>]*>[\s\S]*?</script>|<[^>]*>", re.IGNORECASE)
+
+
+def sanitize_text(value: str) -> str:
+    """Strip HTML/script tags and surrounding whitespace from free-text fields."""
+    return _SANITIZE_RE.sub("", value).strip()
 
 
 class RoomType(str, Enum):
@@ -72,11 +80,25 @@ class CreateRoomRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=100, description="Room display name")
     description: str = Field(default="", max_length=500)
     room_type: RoomType = Field(default=RoomType.PUBLIC)
-    passcode: str | None = Field(default=None, max_length=50, description="Optional secret for private rooms")
+    passcode: str | None = Field(
+        default=None, max_length=50, description="Required secret (min 8 chars) for private rooms"
+    )
     control_mode: ControlMode = Field(default=ControlMode.HOST_ONLY)
     initial_media_url: str | None = None
     initial_media_title: str | None = None
     initial_media_type: MediaType = Field(default=MediaType.NATIVE)
+
+    @model_validator(mode="after")
+    def _validate_room(self) -> Self:
+        self.name = sanitize_text(self.name)
+        if self.description:
+            self.description = sanitize_text(self.description)
+        if self.room_type == RoomType.PRIVATE:
+            if not self.passcode or len(self.passcode) < 8:
+                raise ValueError("Private rooms require a passcode of at least 8 characters")
+        else:
+            self.passcode = None
+        return self
 
 
 class JoinRoomRequest(BaseModel):

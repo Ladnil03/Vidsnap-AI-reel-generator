@@ -4,6 +4,7 @@ Orchestrates Watch Together rooms, server-authoritative playback sync, presence 
 """
 
 import logging
+import secrets
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -15,6 +16,7 @@ from backend.app.core.config import settings
 from backend.app.core.database import get_db
 from backend.app.core.llm_router import LLMRouter
 from backend.app.core.redis import get_redis
+from backend.app.core.security import hash_token
 from backend.app.rooms.models import (
     ChatMessage,
     ControlMode,
@@ -47,6 +49,41 @@ class RoomService:
     """Service handling Watch Together rooms, drift calculation, presence, and chat."""
 
     @classmethod
+    async def _get_room_doc(cls, room_id: str) -> dict[str, Any]:
+        """Fetch an active room or raise 404."""
+        doc = await get_db().rooms.find_one({"room_id": room_id, "is_active": True})
+        if not doc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found.")
+        return doc
+
+    @classmethod
+    async def assert_room_access(cls, room_id: str, user_id: str | None) -> dict[str, Any]:
+        """
+        Validate room existence, active state, and user membership/permissions.
+        Returns the room document if access is granted.
+        Raises 404 if room not found or inactive.
+        Raises 403 if room is private and user is not authenticated or not a member/host.
+        """
+        doc = await cls._get_room_doc(room_id)
+        if doc.get("room_type") == RoomType.PRIVATE.value:
+            if not user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Authentication required to access this private room.",
+                )
+            if doc.get("host_id") == user_id:
+                return doc
+            member = await get_db().room_members.find_one({"room_id": room_id, "user_id": user_id})
+            if not member:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You are not a member of this private room.",
+                )
+        return doc
+
+    require_room_access = assert_room_access
+
+    @classmethod
     async def create_room(
         cls,
         user_id: str,
@@ -74,7 +111,7 @@ class RoomService:
             "name": request.name.strip(),
             "description": request.description.strip(),
             "room_type": request.room_type.value,
-            "passcode": request.passcode.strip() if request.passcode else None,
+            "passcode_hash": hash_token(request.passcode) if request.passcode else None,
             "control_mode": request.control_mode.value,
             "host_id": user_id,
             "host_name": user_name,
@@ -85,18 +122,22 @@ class RoomService:
 
         await db.rooms.insert_one(doc)
 
+        # Persist admission: host is auto-added as member with role="host"
+        await db.room_members.update_one(
+            {"room_id": room_id, "user_id": user_id},
+            {"$set": {"room_id": room_id, "user_id": user_id, "joined_at": now, "role": "host"}},
+            upsert=True,
+        )
+
         # Register host presence
         await cls.update_presence(room_id, user_id, user_name, is_host=True)
 
-        return await cls.get_room(room_id)
+        return await cls.get_room(room_id, requester_user_id=user_id)
 
     @classmethod
-    async def get_room(cls, room_id: str) -> RoomResponse:
+    async def get_room(cls, room_id: str, requester_user_id: str | None = None) -> RoomResponse:
         """Retrieve room details and compute current server-authoritative playback position."""
-        db = get_db()
-        doc = await db.rooms.find_one({"room_id": room_id, "is_active": True})
-        if not doc:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found.")
+        doc = await cls.assert_room_access(room_id, requester_user_id)
 
         watch_dict = doc.get("watch_state", {})
         watch_state = WatchState(**watch_dict)
@@ -175,23 +216,46 @@ class RoomService:
         user_name: str,
         passcode: str | None = None,
     ) -> RoomResponse:
-        """Validate room access and register participant presence."""
+        """Validate room access, record membership for private rooms, and set presence."""
         db = get_db()
-        doc = await db.rooms.find_one({"room_id": room_id, "is_active": True})
-        if not doc:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found.")
+        doc = await cls._get_room_doc(room_id)
 
-        if doc["room_type"] == RoomType.PRIVATE.value:
-            expected = doc.get("passcode")
-            if expected and expected != passcode:
+        is_private = doc["room_type"] == RoomType.PRIVATE.value
+        if is_private:
+            expected_hash = doc.get("passcode_hash")
+            provided = passcode or ""
+            # Lazy migration for existing plaintext passcode
+            if not expected_hash and doc.get("passcode"):
+                old_passcode = doc.get("passcode")
+                if secrets.compare_digest(provided, old_passcode):
+                    expected_hash = hash_token(old_passcode)
+                    await db.rooms.update_one(
+                        {"room_id": room_id},
+                        {"$set": {"passcode_hash": expected_hash}, "$unset": {"passcode": ""}},
+                    )
+            if not expected_hash or not secrets.compare_digest(hash_token(provided), expected_hash):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Invalid room passcode. Please check credentials and try again.",
                 )
 
+        role = "host" if doc["host_id"] == user_id else "member"
+        await db.room_members.update_one(
+            {"room_id": room_id, "user_id": user_id},
+            {
+                "$setOnInsert": {
+                    "room_id": room_id,
+                    "user_id": user_id,
+                    "joined_at": datetime.now(timezone.utc),
+                    "role": role,
+                }
+            },
+            upsert=True,
+        )
+
         is_host = (doc["host_id"] == user_id)
         await cls.update_presence(room_id, user_id, user_name, is_host=is_host)
-        return await cls.get_room(room_id)
+        return await cls.get_room(room_id, requester_user_id=user_id)
 
     @classmethod
     async def update_presence(
@@ -221,13 +285,26 @@ class RoomService:
 
     @classmethod
     async def leave_room(cls, room_id: str, user_id: str) -> None:
-        """Remove participant presence upon room departure."""
+        """Remove participant presence upon room departure and clean up private memberships."""
         redis = get_redis()
         if redis:
             await redis.delete(f"presence:{room_id}:{user_id}")
         else:
             if room_id in _MEM_PRESENCE:
                 _MEM_PRESENCE[room_id].pop(user_id, None)
+
+        db = get_db()
+        doc = await db.rooms.find_one({"room_id": room_id, "is_active": True})
+        if not doc or doc["room_type"] != RoomType.PRIVATE.value:
+            return
+
+        await db.room_members.delete_one({"room_id": room_id, "user_id": user_id})
+
+        # A private room with no remaining members is cleaned up entirely
+        member_count = await db.room_members.count_documents({"room_id": room_id})
+        if member_count == 0:
+            await db.room_members.delete_many({"room_id": room_id})
+            await db.rooms.update_one({"room_id": room_id}, {"$set": {"is_active": False}})
 
     @classmethod
     async def get_active_participants(cls, room_id: str) -> list[RoomParticipant]:
@@ -290,12 +367,11 @@ class RoomService:
     ) -> WatchState:
         """
         Apply a playback action to the room's server-authoritative state.
-        Enforces host permission in HOST_ONLY control mode.
+        Enforces room access and host permission in HOST_ONLY control mode.
         """
+        await cls.require_room_access(room_id, user_id)
         db = get_db()
-        doc = await db.rooms.find_one({"room_id": room_id, "is_active": True})
-        if not doc:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found.")
+        doc = await cls._get_room_doc(room_id)
 
         # Permission check: host-only control mode guard
         is_host = (doc["host_id"] == user_id)
@@ -390,8 +466,12 @@ class RoomService:
         return msg
 
     @classmethod
-    async def get_chat_history(cls, room_id: str, limit: int = 50) -> list[ChatMessage]:
+    async def get_chat_history(
+        cls, room_id: str, limit: int = 50, requester_user_id: str | None = None
+    ) -> list[ChatMessage]:
         """Fetch recent chat messages ordered chronologically."""
+        if requester_user_id is not None:
+            await cls.assert_room_access(room_id, requester_user_id)
         db = get_db()
         cursor = db.room_messages.find({"room_id": room_id}).sort([("created_at", -1), ("_id", -1)]).limit(limit)
         messages: list[ChatMessage] = []
@@ -401,8 +481,9 @@ class RoomService:
         return messages
 
     @classmethod
-    def get_rtc_credentials(cls, room_id: str, user_id: str, user_name: str) -> LiveKitTokenResponse:
+    async def get_rtc_credentials(cls, room_id: str, user_id: str, user_name: str) -> LiveKitTokenResponse:
         """Issue signed LiveKit WebRTC credentials for room voice/video participation."""
+        await cls.assert_room_access(room_id, user_id)
         adapter = get_rtc_adapter()
         token = adapter.generate_token(
             room_name=room_id,
@@ -418,10 +499,10 @@ class RoomService:
         )
 
     @classmethod
-    async def generate_room_recap(cls, room_id: str) -> RoomSummaryResponse:
+    async def generate_room_recap(cls, room_id: str, requester_user_id: str | None = None) -> RoomSummaryResponse:
         """Generate a 30-second AI catch-up recap of recent room discussions and reactions."""
-        room = await cls.get_room(room_id)
-        history = await cls.get_chat_history(room_id, limit=30)
+        room = await cls.get_room(room_id, requester_user_id=requester_user_id)
+        history = await cls.get_chat_history(room_id, limit=30, requester_user_id=requester_user_id)
         messages_dicts = [m.model_dump() for m in history]
 
         recap = await LLMRouter.generate_room_summary(

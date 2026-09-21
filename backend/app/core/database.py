@@ -218,6 +218,33 @@ async def ensure_indexes(db: AsyncIOMotorDatabase) -> None:
         name="idx_digital_twins_creator_unique",
     )
 
+    # Phase 7: Watch Together Rooms & Chat
+    rooms = db["rooms"]
+    await rooms.create_index([("room_id", ASCENDING)], unique=True, name="idx_rooms_room_id_unique")
+    await rooms.create_index(
+        [("is_active", ASCENDING), ("room_type", ASCENDING), ("created_at", DESCENDING)],
+        name="idx_rooms_active_type_created",
+    )
+
+    room_members = db["room_members"]
+    await room_members.create_index(
+        [("room_id", ASCENDING), ("user_id", ASCENDING)],
+        unique=True,
+        name="idx_rm_pair_unique",
+    )
+    await room_members.create_index([("user_id", ASCENDING)], name="idx_rm_user_id")
+
+    room_messages = db["room_messages"]
+    await room_messages.create_index(
+        [("room_id", ASCENDING), ("created_at", DESCENDING)],
+        name="idx_room_messages_room_created",
+    )
+    await room_messages.create_index(
+        [("created_at", ASCENDING)],
+        expireAfterSeconds=604800,
+        name="idx_room_messages_ttl_7d",
+    )
+
     # Phase 9: Gamification & Engagement Indexes
     xp_ledger = db["xp_ledger"]
     await xp_ledger.create_index([("idempotency_key", ASCENDING)], unique=True, name="idx_xp_idempotency_unique")

@@ -14,7 +14,7 @@ from fastapi import (
 )
 
 from backend.app.core.rate_limiter import rate_limit, rate_limit_per_user
-from backend.app.identity.dependencies import get_current_user, get_optional_current_user
+from backend.app.identity.dependencies import get_current_user
 from backend.app.rooms.models import (
     ChatMessage,
     CreateRoomRequest,
@@ -75,9 +75,15 @@ async def list_rooms(
     response_model=RoomResponse,
     dependencies=[Depends(rate_limit(max_requests=60, window_seconds=60))],
 )
-async def get_room_details(room_id: str) -> RoomResponse:
+async def get_room_details(
+    room_id: str,
+    current_user: dict[str, Any] = Depends(get_current_user),
+) -> RoomResponse:
     """Get room details, current server-authoritative playback position, and participants."""
-    return await RoomService.get_room(room_id)
+    return await RoomService.get_room(
+        room_id,
+        requester_user_id=current_user["user_id"],
+    )
 
 
 @router.post(
@@ -138,9 +144,12 @@ async def sync_playback_action(
 async def get_room_messages(
     room_id: str,
     limit: int = Query(50, ge=1, le=100),
+    current_user: dict[str, Any] = Depends(get_current_user),
 ) -> list[ChatMessage]:
     """Fetch chronological chat history for a room."""
-    return await RoomService.get_chat_history(room_id, limit=limit)
+    return await RoomService.get_chat_history(
+        room_id, limit=limit, requester_user_id=current_user["user_id"]
+    )
 
 
 @router.post(
@@ -153,7 +162,7 @@ async def get_room_rtc_token(
     current_user: dict[str, Any] = Depends(get_current_user),
 ) -> LiveKitTokenResponse:
     """Generate signed LiveKit WebRTC credentials for audio/video room participation."""
-    return RoomService.get_rtc_credentials(
+    return await RoomService.get_rtc_credentials(
         room_id=room_id,
         user_id=current_user["user_id"],
         user_name=current_user.get("name", "Speaker"),
@@ -163,14 +172,16 @@ async def get_room_rtc_token(
 @router.post(
     "/{room_id}/summary",
     response_model=RoomSummaryResponse,
-    dependencies=[Depends(rate_limit(max_requests=10, window_seconds=60))],
+    dependencies=[Depends(rate_limit_per_user(max_requests=10, window_seconds=60))],
 )
 async def get_room_ai_summary(
     room_id: str,
-    current_user: dict[str, Any] = Depends(get_optional_current_user),
+    current_user: dict[str, Any] = Depends(get_current_user),
 ) -> RoomSummaryResponse:
     """Generate a 30-second AI Room Assistant catch-up summary."""
-    return await RoomService.generate_room_recap(room_id)
+    return await RoomService.generate_room_recap(
+        room_id, requester_user_id=current_user["user_id"]
+    )
 
 
 # WebSocket Gateway Route

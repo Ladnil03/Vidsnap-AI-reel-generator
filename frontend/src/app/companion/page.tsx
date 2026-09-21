@@ -1,19 +1,54 @@
 'use client';
 
+/**
+ * VidSnap.AI AI Companion & Personalization Studio (/companion)
+ * Chat co-pilot, Entertainment Journeys, Daily Watch Planner, and Creator Digital Twin.
+ * Redesigned in the Forest & Paper design system.
+ */
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  Sparkles,
+  Send,
+  Trash2,
+  Compass,
+  Calendar,
+  UserCheck,
+  Bot,
+  MessageSquare,
+  Play,
+  Clock,
+  CheckCircle2,
+  RefreshCw,
+  Zap,
+} from 'lucide-react';
 import { api } from '@/lib/api';
 import {
   CompanionMessage,
   DailyPlan,
-  DailyPlanSlot,
   DigitalTwinProfile,
   EntertainmentJourney,
   MoodType,
 } from '@/lib/types';
 import { MoodSelector } from '@/components/MoodSelector';
+import {
+  Button,
+  IconButton,
+  Card,
+  Badge,
+  Input,
+  Textarea,
+  FormField,
+  Spinner,
+  EmptyState,
+  useToast,
+} from '@/components/ui';
+import styles from './companion.module.css';
 
 export default function CompanionPage() {
+  const { error: toastError, success: toastSuccess } = useToast();
+
   const [activeTab, setActiveTab] = useState<'chat' | 'journeys' | 'planner' | 'twin'>('chat');
   const [activeMood, setActiveMood] = useState<MoodType | null>(null);
 
@@ -30,7 +65,6 @@ export default function CompanionPage() {
 
   // Journeys state
   const [journeys, setJourneys] = useState<EntertainmentJourney[]>([]);
-  const [activeJourney, setActiveJourney] = useState<EntertainmentJourney | null>(null);
 
   // Daily Plan state
   const [dailyPlan, setDailyPlan] = useState<DailyPlan | null>(null);
@@ -51,7 +85,7 @@ export default function CompanionPage() {
   const [twinPrompt, setTwinPrompt] = useState('');
   const [twinReply, setTwinReply] = useState('');
   const [twinLoading, setTwinLoading] = useState(false);
-  const [twinSaved, setTwinSaved] = useState(false);
+  const [twinSaving, setTwinSaving] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -136,19 +170,22 @@ export default function CompanionPage() {
           timestamp: new Date().toISOString(),
         },
       ]);
+      toastSuccess('Chat history cleared.');
     } catch {
       // ignore
     }
   };
 
   const handleSaveDigitalTwin = async () => {
+    setTwinSaving(true);
     try {
       const updated = await api.companion.updateDigitalTwin(digitalTwin);
       setDigitalTwin(updated);
-      setTwinSaved(true);
-      setTimeout(() => setTwinSaved(false), 3000);
+      toastSuccess('Digital Twin persona updated successfully!');
     } catch {
-      // ignore
+      toastError('Failed to save Digital Twin.');
+    } finally {
+      setTwinSaving(false);
     }
   };
 
@@ -166,508 +203,427 @@ export default function CompanionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pt-20 pb-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header Banner */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-8 rounded-3xl bg-gradient-to-r from-indigo-900/40 via-purple-900/30 to-pink-900/40 border border-slate-800/80 backdrop-blur-xl shadow-2xl relative overflow-hidden">
-          <div className="space-y-3 z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-semibold uppercase tracking-wider border border-indigo-500/30">
-              <span>✨ Phase 8</span>
-              <span>•</span>
+    <div className={styles.container}>
+      {/* Header Banner */}
+      <div className={styles.banner}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Badge variant="sage" size="sm">
+              <Sparkles size={12} style={{ marginRight: '4px' }} />
               <span>AI Personalization Studio</span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-              Entertainment Companion & Mood Studio
-            </h1>
-            <p className="text-slate-300 text-sm sm:text-base max-w-2xl leading-relaxed">
-              Tailor your viewing universe with real-time mood tuning, smart dynamic playlists, structured journeys, and consented digital twins.
-            </p>
+            </Badge>
           </div>
+          <h1 className={styles.bannerTitle}>Entertainment Companion &amp; Mood Studio</h1>
+          <p className={styles.bannerDesc}>
+            Tailor your viewing universe with real-time mood tuning, smart dynamic playlists, structured journeys, and
+            consented digital twins.
+          </p>
+        </div>
 
-          <div className="z-10 bg-slate-900/80 p-4 rounded-2xl border border-slate-700/60 max-w-sm w-full">
-            <MoodSelector
-              currentMood={activeMood}
-              onMoodChange={(m) => {
-                setActiveMood(m);
-                handleSendMessage(`Switching my vibe to ${m}!`);
+        <div className={styles.moodCard}>
+          <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 'var(--space-2)' }}>
+            CURRENT VIBE
+          </div>
+          <MoodSelector
+            currentMood={activeMood}
+            onMoodChange={(m) => {
+              setActiveMood(m);
+              handleSendMessage(`Switching my vibe to ${m}!`);
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className={styles.tabBar}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('chat')}
+          className={`${styles.tabBtn} ${activeTab === 'chat' ? styles.tabBtnActive : ''}`}
+        >
+          <MessageSquare size={16} />
+          <span>AI Companion Chat</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('journeys')}
+          className={`${styles.tabBtn} ${activeTab === 'journeys' ? styles.tabBtnActive : ''}`}
+        >
+          <Compass size={16} />
+          <span>Entertainment Journeys</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('planner')}
+          className={`${styles.tabBtn} ${activeTab === 'planner' ? styles.tabBtnActive : ''}`}
+        >
+          <Calendar size={16} />
+          <span>Daily Watch Planner</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('twin')}
+          className={`${styles.tabBtn} ${activeTab === 'twin' ? styles.tabBtnActive : ''}`}
+        >
+          <Bot size={16} />
+          <span>Creator Digital Twin</span>
+        </button>
+      </div>
+
+      {/* TAB 1: AI Companion Chat */}
+      {activeTab === 'chat' && (
+        <div className={styles.chatGrid}>
+          {/* Main Chat Box */}
+          <div className={styles.chatBox}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: 'var(--space-3)',
+                borderBottom: '1px solid var(--border-subtle)',
+                marginBottom: 'var(--space-3)',
               }}
-            />
-          </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-2 border-b border-slate-800/80 pb-3 overflow-x-auto scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setActiveTab('chat')}
-            className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer flex items-center gap-2 ${
-              activeTab === 'chat'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
-            }`}
-          >
-            <span>💬</span>
-            <span>AI Companion Chat</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('journeys')}
-            className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer flex items-center gap-2 ${
-              activeTab === 'journeys'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
-            }`}
-          >
-            <span>🚀</span>
-            <span>Entertainment Journeys</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('planner')}
-            className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer flex items-center gap-2 ${
-              activeTab === 'planner'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
-            }`}
-          >
-            <span>📅</span>
-            <span>Daily Watch Planner</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('twin')}
-            className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer flex items-center gap-2 ${
-              activeTab === 'twin'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
-            }`}
-          >
-            <span>👤</span>
-            <span>Creator Digital Twin</span>
-          </button>
-        </div>
-
-        {/* TAB 1: AI Companion Chat */}
-        {activeTab === 'chat' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 rounded-3xl bg-slate-900/70 border border-slate-800/80 p-6 flex flex-col h-[600px] shadow-xl">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-800/60">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-lg shadow-md">
-                    ✨
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-white text-base">VidSnap Companion Chat</h3>
-                    <p className="text-xs text-slate-400">Conversational intent parsing with local tool calling</p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleClearHistory}
-                  className="px-3 py-1.5 text-xs text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition"
-                >
-                  Clear History 🗑️
-                </button>
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <Badge variant="sage" size="sm">
+                  Online
+                </Badge>
+                <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>VidSnap Companion</span>
               </div>
-
-              {/* Chat messages */}
-              <div className="flex-1 overflow-y-auto py-4 space-y-4 scrollbar-thin">
-                {messages.map((msg) => {
-                  const isUser = msg.role === 'user';
-                  return (
-                    <div key={msg.message_id} className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
-                      <div
-                        className={`max-w-[80%] rounded-2xl p-4 text-sm leading-relaxed ${
-                          isUser
-                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
-                            : 'bg-slate-800/90 text-slate-200 border border-slate-700/60 shadow-md'
-                        }`}
-                      >
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
-
-                        {/* Tool Execution Embedded Cards */}
-                        {msg.reels && msg.reels.length > 0 && (
-                          <div className="mt-3.5 space-y-2 border-t border-slate-700/80 pt-3">
-                            <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider block">
-                              🎬 Recommended Reels from Tool Search:
-                            </span>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {msg.reels.map((reel) => (
-                                <Link
-                                  key={reel.reel_id}
-                                  href={`/feed?video=${reel.reel_id}`}
-                                  className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-900/80 hover:bg-slate-900 border border-slate-700/50 transition group"
-                                >
-                                  <div className="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center text-sm overflow-hidden shrink-0">
-                                    {reel.thumbnail_url ? (
-                                      <img src={reel.thumbnail_url} alt="" className="w-full h-full object-cover" />
-                                    ) : (
-                                      '▶️'
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-medium text-white truncate group-hover:text-indigo-300">
-                                      {reel.title}
-                                    </p>
-                                    <p className="text-[11px] text-slate-400 truncate">{reel.creator_name}</p>
-                                  </div>
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-[10px] text-slate-500 mt-1 px-1">
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  );
-                })}
-
-                {chatLoading && (
-                  <div className="flex items-center gap-2 text-xs text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-2 rounded-xl w-fit">
-                    <span className="animate-spin">✨</span>
-                    <span>AI Companion is thinking & searching...</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Suggestions */}
-              <div className="flex items-center gap-2 py-2 overflow-x-auto scrollbar-none border-t border-slate-800/60">
-                {suggestedActions.map((act, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => handleSendMessage(act)}
-                    className="whitespace-nowrap px-3 py-1.5 text-xs rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50 transition cursor-pointer shrink-0"
-                  >
-                    {act}
-                  </button>
-                ))}
-              </div>
-
-              {/* Chat Input */}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSendMessage();
-                }}
-                className="flex items-center gap-2 pt-3"
-              >
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask your companion to find reels, create a playlist, or change your vibe..."
-                  className="flex-1 bg-slate-800/90 text-sm text-white placeholder-slate-400 px-4 py-3 rounded-xl border border-slate-700/60 focus:outline-none focus:border-indigo-500 transition"
-                />
-                <button
-                  type="submit"
-                  disabled={!input.trim() || chatLoading}
-                  className="px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium text-sm hover:opacity-95 active:scale-95 disabled:opacity-40 transition cursor-pointer"
-                >
-                  Send
-                </button>
-              </form>
+              <IconButton
+                icon={<Trash2 size={16} />}
+                aria-label="Clear chat history"
+                variant="ghost"
+                size="sm"
+                onClick={handleClearHistory}
+              />
             </div>
 
-            {/* Side Tools & Quick Actions */}
-            <div className="space-y-6">
-              <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 space-y-4">
-                <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <span>⚡ Quick Inspiration Prompts</span>
-                </h4>
-                <div className="space-y-2">
-                  {[
-                    'Find 3 motivational reels for morning workout',
-                    'Show me relaxing drone videos with nature sounds',
-                    'Create a 10-minute focus playlist for coding',
-                    'Give me the best comedy clips trending today',
-                  ].map((p, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleSendMessage(p)}
-                      className="w-full text-left p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/40 text-xs text-slate-300 hover:text-white transition cursor-pointer"
-                    >
-                      💡 {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-950/40 to-slate-900/80 border border-indigo-500/20 space-y-3">
-                <h4 className="text-sm font-semibold text-indigo-300 flex items-center gap-2">
-                  <span>🛡️ Privacy & Free-Tier Guard</span>
-                </h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Your conversations are stored in MongoDB with 30-day auto-purging. Zero biometric surveillance is performed. All LLM queries leverage our free-tier router with offline heuristic fallback.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: Entertainment Journeys */}
-        {activeTab === 'journeys' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {journeys.map((j) => (
+            {/* Chat Feed */}
+            <div className={styles.chatFeed}>
+              {messages.map((m) => (
                 <div
-                  key={j.journey_id}
-                  className="p-6 rounded-3xl bg-slate-900/70 border border-slate-800/80 flex flex-col justify-between hover:border-indigo-500/40 transition-all duration-300 group shadow-lg"
+                  key={m.message_id}
+                  className={m.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant}
                 >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                        {j.total_duration_minutes} Minutes
-                      </span>
-                      <span className="text-xs uppercase font-bold text-slate-500">{j.mood}</span>
-                    </div>
-                    <h3 className="text-lg font-bold text-white group-hover:text-indigo-300 transition">
-                      {j.title}
-                    </h3>
-                    <p className="text-xs text-slate-400 leading-relaxed line-clamp-3">
-                      {j.description}
-                    </p>
-                  </div>
-
-                  <div className="pt-6 space-y-3">
-                    <div className="text-[11px] text-slate-500 font-medium">
-                      {j.steps.length} sequential steps
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveJourney(j)}
-                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium text-xs hover:opacity-95 transition cursor-pointer"
-                    >
-                      Start Journey 🚀
-                    </button>
-                  </div>
+                  <div>{m.content}</div>
+                  <span
+                    style={{
+                      display: 'block',
+                      fontSize: '10px',
+                      opacity: 0.7,
+                      marginTop: 'var(--space-1)',
+                      textAlign: m.role === 'user' ? 'right' : 'left',
+                    }}
+                  >
+                    {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
                 </div>
+              ))}
+              {chatLoading && (
+                <div className={styles.bubbleAssistant} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  <Spinner size="sm" />
+                  <span>Curating mood recommendations...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Suggested Prompt Chips */}
+            <div className={styles.chipsRow}>
+              {suggestedActions.map((act) => (
+                <button
+                  key={act}
+                  type="button"
+                  className={styles.chipBtn}
+                  onClick={() => handleSendMessage(act)}
+                >
+                  {act}
+                </button>
               ))}
             </div>
 
-            {/* Journey Player Modal */}
-            {activeJourney && (
-              <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-                <div className="w-full max-w-2xl bg-slate-900 border border-slate-700/60 rounded-3xl p-6 space-y-6 shadow-2xl">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-white">{activeJourney.title}</h3>
-                      <p className="text-xs text-slate-400">{activeJourney.description}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveJourney(null)}
-                      className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
-                    >
-                      ✕
-                    </button>
+            {/* Input Bar */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendMessage();
+              }}
+              style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}
+            >
+              <Input
+                type="text"
+                placeholder="Ask companion to find reels, create a journey, or summarize topics..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <IconButton
+                type="submit"
+                icon={<Send size={16} />}
+                aria-label="Send message"
+                variant="primary"
+                disabled={chatLoading || !input.trim()}
+              />
+            </form>
+          </div>
+
+          {/* Side Panel: Context & Quick Actions */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <Card variant="raised">
+              <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
+                🎯 Mood Alignment
+              </h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', lineHeight: 1.5 }}>
+                Your current vibe is{' '}
+                <strong style={{ color: 'var(--text-primary)', textTransform: 'capitalize' }}>
+                  {activeMood || 'Chill'}
+                </strong>
+                . Companion automatically biasses discovery search and feed recommendations toward this frequency.
+              </p>
+            </Card>
+
+            <Card variant="raised">
+              <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
+                ⚡ Fast Commands
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  style={{ justifyContent: 'flex-start' }}
+                  onClick={() => handleSendMessage('Create a 10-minute focus journey for coding')}
+                >
+                  🎧 10m Focus Coding Session
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  style={{ justifyContent: 'flex-start' }}
+                  onClick={() => handleSendMessage('Give me 3 top trending nature reels')}
+                >
+                  🌿 Trending Nature Reels
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  style={{ justifyContent: 'flex-start' }}
+                  onClick={() => handleSendMessage('Show me motivation reels under 30 seconds')}
+                >
+                  🚀 Quick Creator Motivation
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: Entertainment Journeys */}
+      {activeTab === 'journeys' && (
+        <div className={styles.journeysGrid}>
+          {journeys.length === 0 ? (
+            <EmptyState
+              icon={<Compass size={40} />}
+              title="No Journeys Available"
+              description="Ask companion to generate an entertainment journey curated specifically for your mood!"
+              actionLabel="Ask Companion"
+              onAction={() => {
+                setActiveTab('chat');
+                handleSendMessage('Generate a new entertainment journey for me');
+              }}
+            />
+          ) : (
+            journeys.map((j) => (
+              <Card key={j.journey_id} variant="raised" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
+                    <Badge variant="sage" size="sm">
+                      {j.mood.toUpperCase()}
+                    </Badge>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Clock size={12} />
+                      <span>{j.total_duration_minutes} min</span>
+                    </span>
                   </div>
 
-                  <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2 scrollbar-thin">
-                    {activeJourney.steps.map((s) => (
+                  <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
+                    {j.title}
+                  </h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', lineHeight: 1.5, marginBottom: 'var(--space-4)' }}>
+                    {j.description}
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+                    {j.steps.map((step, idx) => (
                       <div
-                        key={s.step_number}
-                        className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/40 flex items-center justify-between gap-4"
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: 'var(--space-2) var(--space-3)',
+                          background: 'var(--bg-sunken)',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: 'var(--text-xs)',
+                        }}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs font-bold">
-                            {s.step_number}
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-semibold text-white">{s.title}</h4>
-                            <p className="text-xs text-slate-400">{s.description}</p>
-                          </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                          <span style={{ fontWeight: 700, color: 'var(--color-forest-700)' }}>{idx + 1}.</span>
+                          <span>{step.title}</span>
                         </div>
-                        <span className="text-xs text-slate-500 whitespace-nowrap">{s.duration_seconds}s</span>
+                        <span style={{ color: 'var(--text-muted)' }}>{Math.max(1, Math.round(step.duration_seconds / 60))}m</span>
                       </div>
                     ))}
                   </div>
-
-                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-                    <Link
-                      href="/feed"
-                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium hover:opacity-95 transition"
-                    >
-                      Begin Watching in Feed ▶️
-                    </Link>
-                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
 
-        {/* TAB 3: Daily Watch Planner */}
-        {activeTab === 'planner' && (
-          <div className="p-8 rounded-3xl bg-slate-900/70 border border-slate-800/80 space-y-6 shadow-xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
-              <div>
-                <h3 className="text-xl font-bold text-white">Daily Entertainment Planner 📅</h3>
-                <p className="text-xs text-slate-400">
-                  Set intentional viewing sessions throughout your day to avoid endless scrolling.
+                <Link href="/feed">
+                  <Button variant="primary" style={{ width: '100%', justifyContent: 'center' }} leftIcon={<Play size={16} />}>
+                    Begin Journey
+                  </Button>
+                </Link>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: Daily Watch Planner */}
+      {activeTab === 'planner' && (
+        <div className={styles.plannerGrid}>
+          {dailyPlan ? (
+            dailyPlan.slots.map((slot, idx) => (
+              <Card key={idx} variant="raised">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
+                  <Badge variant="sage" size="sm">
+                    {slot.time_of_day.toUpperCase()}
+                  </Badge>
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{slot.duration_minutes} min</span>
+                </div>
+
+                <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-1)' }}>
+                  {slot.name}
+                </h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', marginBottom: 'var(--space-4)' }}>
+                  Status: <strong>{slot.is_completed ? 'Completed' : 'Upcoming'}</strong>
                 </p>
-              </div>
-              <div className="text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                Digital Wellbeing Guard Active
-              </div>
-            </div>
 
-            {dailyPlan && (
-              <div className="space-y-4">
-                {dailyPlan.slots.map((slot, index) => (
-                  <div
-                    key={slot.slot_id}
-                    className="p-5 rounded-2xl bg-slate-800/50 border border-slate-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center text-xl">
-                        {slot.time_of_day === 'morning' ? '🌅' : slot.time_of_day === 'afternoon' ? '☀️' : '🌙'}
-                      </div>
-                      <div>
-                        <h4 className="text-base font-semibold text-white">{slot.name}</h4>
-                        <p className="text-xs text-slate-400 capitalize">
-                          {slot.time_of_day} • {slot.duration_minutes} minutes target
-                        </p>
-                      </div>
-                    </div>
+                <Link href="/feed">
+                  <Button variant="secondary" size="sm" style={{ width: '100%', justifyContent: 'center' }}>
+                    Watch Slot
+                  </Button>
+                </Link>
+              </Card>
+            ))
+          ) : (
+            <EmptyState
+              icon={<Calendar size={40} />}
+              title="Daily Planner Generating"
+              description="Your personalized time-of-day slots are computing based on your watch streak and mood preferences."
+            />
+          )}
+        </div>
+      )}
 
-                    <div className="flex items-center gap-3">
-                      <Link
-                        href="/feed"
-                        className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition cursor-pointer"
-                      >
-                        Start Session 🎯
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+      {/* TAB 4: Creator Digital Twin */}
+      {activeTab === 'twin' && (
+        <div className={styles.twinGrid}>
+          <Card variant="raised">
+            <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
+              Configure AI Digital Twin
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-6)' }}>
+              Provide instructions, persona tone, and voice parameters for your AI representative that answers comments
+              and co-hosts watch parties.
+            </p>
 
-        {/* TAB 4: Creator Digital Twin */}
-        {activeTab === 'twin' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="p-8 rounded-3xl bg-slate-900/70 border border-slate-800/80 space-y-6 shadow-xl">
-              <div className="space-y-2 pb-4 border-b border-slate-800">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-500/20 text-[11px] font-semibold uppercase">
-                  Consented AI Persona
-                </div>
-                <h3 className="text-xl font-bold text-white">Digital Twin Configuration</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Allow your audience to chat with an AI representation of yourself. In compliance with Section 4.6, all responses are strictly watermarked with an AI Provenance badge.
-                </p>
-              </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSaveDigitalTwin();
+              }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}
+            >
+              <FormField label="Persona Name" required>
+                <Input
+                  type="text"
+                  required
+                  value={digitalTwin.persona_name}
+                  onChange={(e) => setDigitalTwin({ ...digitalTwin, persona_name: e.target.value })}
+                />
+              </FormField>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                    Persona Name
-                  </label>
-                  <input
-                    type="text"
-                    value={digitalTwin.persona_name}
-                    onChange={(e) => setDigitalTwin({ ...digitalTwin, persona_name: e.target.value })}
-                    className="w-full bg-slate-800 px-4 py-2.5 rounded-xl border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
+              <FormField label="Voice Tone">
+                <Input
+                  type="text"
+                  value={digitalTwin.voice_tone}
+                  onChange={(e) => setDigitalTwin({ ...digitalTwin, voice_tone: e.target.value })}
+                />
+              </FormField>
 
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                    Voice Tone & Style
-                  </label>
-                  <input
-                    type="text"
-                    value={digitalTwin.voice_tone}
-                    onChange={(e) => setDigitalTwin({ ...digitalTwin, voice_tone: e.target.value })}
-                    className="w-full bg-slate-800 px-4 py-2.5 rounded-xl border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
+              <FormField label="Bio / Mission">
+                <Textarea
+                  rows={3}
+                  value={digitalTwin.bio}
+                  onChange={(e) => setDigitalTwin({ ...digitalTwin, bio: e.target.value })}
+                />
+              </FormField>
 
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                    Bio & Context for AI
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={digitalTwin.bio}
-                    onChange={(e) => setDigitalTwin({ ...digitalTwin, bio: e.target.value })}
-                    className="w-full bg-slate-800 px-4 py-2.5 rounded-xl border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
+              <FormField label="Greeting Template">
+                <Input
+                  type="text"
+                  value={digitalTwin.greeting_template}
+                  onChange={(e) => setDigitalTwin({ ...digitalTwin, greeting_template: e.target.value })}
+                />
+              </FormField>
 
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
-                  ⚠️ <strong>Trust & Provenance:</strong> The [AI Digital Twin] badge is permanently affixed to all messages generated by this persona.
-                </div>
+              <Button type="submit" variant="primary" loading={twinSaving} style={{ marginTop: 'var(--space-2)' }}>
+                Save Digital Twin Persona
+              </Button>
+            </form>
+          </Card>
 
-                <button
-                  type="button"
-                  onClick={handleSaveDigitalTwin}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-sm hover:opacity-95 transition cursor-pointer"
+          {/* Interactive Sandbox Test */}
+          <Card variant="raised">
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
+              🧪 Twin Sandbox Test
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', marginBottom: 'var(--space-4)' }}>
+              Send a test inquiry to preview how your digital twin answers fans and viewers.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              <Input
+                type="text"
+                placeholder="Ask your twin: 'What camera setup do you use?'"
+                value={twinPrompt}
+                onChange={(e) => setTwinPrompt(e.target.value)}
+              />
+              <Button variant="secondary" onClick={handleTestDigitalTwin} loading={twinLoading}>
+                Simulate Response
+              </Button>
+
+              {twinReply && (
+                <div
+                  style={{
+                    padding: 'var(--space-4)',
+                    background: 'var(--bg-sunken)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-subtle)',
+                    fontSize: 'var(--text-sm)',
+                    lineHeight: 1.5,
+                  }}
                 >
-                  {twinSaved ? 'Saved Successfully! ✅' : 'Save Digital Twin Settings 💾'}
-                </button>
-              </div>
-            </div>
-
-            {/* Test Interactive Digital Twin */}
-            <div className="p-8 rounded-3xl bg-slate-900/70 border border-slate-800/80 space-y-6 shadow-xl flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-                  <h3 className="text-xl font-bold text-white">Live Twin Simulation</h3>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-                    AI Provenance Labeled
-                  </span>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/50 space-y-3">
-                  <p className="text-xs text-slate-400">Ask your digital twin a question to preview its voice:</p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={twinPrompt}
-                      onChange={(e) => setTwinPrompt(e.target.value)}
-                      placeholder="e.g. What inspired you to start making reels?"
-                      className="flex-1 bg-slate-900 px-3.5 py-2 rounded-xl border border-slate-700 text-xs text-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleTestDigitalTwin}
-                      disabled={twinLoading || !twinPrompt.trim()}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-500 transition disabled:opacity-40"
-                    >
-                      {twinLoading ? 'Generating...' : 'Ask'}
-                    </button>
+                  <div style={{ fontWeight: 700, fontSize: 'var(--text-xs)', color: 'var(--color-forest-700)', marginBottom: 'var(--space-1)' }}>
+                    🤖 {digitalTwin.persona_name} replied:
                   </div>
+                  <div>{twinReply}</div>
                 </div>
-
-                {twinReply && (
-                  <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 space-y-2 animate-in fade-in duration-300">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-indigo-300">
-                        🤖 {digitalTwin.persona_name}
-                      </span>
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                        AI Digital Twin
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-200 leading-relaxed">{twinReply}</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="text-[11px] text-slate-500 text-center">
-                Powered by VidSnap Multi-Provider LLM Router with zero-cost fallback.
-              </div>
+              )}
             </div>
-          </div>
-        )}
-      </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

@@ -121,7 +121,12 @@ class CompanionService:
             mood_query = active_mood.value if active_mood else None
             # Extract keywords
             clean_query = " ".join([w for w in text_lower.split() if len(w) >= 3 and w not in search_triggers])
-            tool_reels = await tool_search_reels(query=clean_query, mood=mood_query, limit=3)
+            tool_reels = await tool_search_reels(
+                query=clean_query,
+                mood=mood_query,
+                limit=3,
+                current_user_id=user_id,
+            )
             tool_actions_taken.append({
                 "tool": "search_reels",
                 "query": clean_query,

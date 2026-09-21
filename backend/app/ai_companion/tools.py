@@ -34,6 +34,7 @@ async def tool_search_reels(
     query: str | None = None,
     mood: str | None = None,
     limit: int = 5,
+    current_user_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Search for relevant published native reels and external discovery items."""
     db = get_db()
@@ -58,9 +59,25 @@ async def tool_search_reels(
         tags = MOOD_TAG_MAP[mood.lower()]
         filters.append({"tags": {"$in": tags}})
 
-    mongo_query: dict[str, Any] = {"status": "published"}
+    base_conditions: list[dict[str, Any]] = [
+        {"status": "published"},
+        {"moderation_status": {"$in": ["approved", None]}},
+        {"deleted": {"$ne": True}},
+    ]
+    if current_user_id:
+        base_conditions.append({
+            "$or": [
+                {"visibility": {"$in": ["public", None]}},
+                {"user_id": current_user_id},
+            ]
+        })
+    else:
+        base_conditions.append({"visibility": {"$in": ["public", None]}})
+
     if filters:
-        mongo_query["$and"] = filters
+        base_conditions.extend(filters)
+
+    mongo_query: dict[str, Any] = {"$and": base_conditions}
 
     results: list[dict[str, Any]] = []
     cursor = db.videos.find(mongo_query).sort("views_count", -1).limit(limit)
@@ -107,12 +124,21 @@ async def tool_create_playlist(
     selected_reels: list[dict[str, Any]] = []
     if not reel_ids:
         # Auto-populate reels by mood
-        found = await tool_search_reels(mood=mood, limit=6)
+        found = await tool_search_reels(mood=mood, limit=6, current_user_id=user_id)
         selected_reels = found
         reel_ids = [r["reel_id"] for r in found]
     else:
-        # Look up requested reels
-        cursor = db.videos.find({"video_id": {"$in": reel_ids}})
+        # Look up requested reels (enforcing visibility and moderation status)
+        cursor = db.videos.find({
+            "video_id": {"$in": reel_ids},
+            "status": "published",
+            "moderation_status": {"$in": ["approved", None]},
+            "deleted": {"$ne": True},
+            "$or": [
+                {"visibility": {"$in": ["public", None]}},
+                {"user_id": user_id},
+            ],
+        })
         async for doc in cursor:
             selected_reels.append({
                 "reel_id": doc.get("video_id"),

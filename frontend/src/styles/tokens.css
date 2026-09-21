@@ -1,144 +1,325 @@
 /* ==============================================================================
-   VidSnap.AI Design Tokens (Vanilla CSS)
-   Aesthetic: Deep Space Glassmorphism, Radiant Accents, Precision Typography
+   VidSnap.AI Design Tokens ("Forest and Paper" System)
+   Brand Palette: Cream (#E5D9B6), Sage (#A4BE7B), Moss (#5F8D4E), Forest (#285430)
+   Accessibility: WCAG 2.2 AA compliant contrast pairs
    ============================================================================== */
 
 :root {
-  /* Color System - Dark Cosmic Palette */
-  --bg-base: #07090e;
-  --bg-surface: #0e131f;
-  --bg-surface-elevated: #151c2e;
-  --bg-card: rgba(17, 24, 39, 0.65);
-  --bg-input: rgba(14, 19, 31, 0.85);
+  /* --- RAW PALETTE --- */
+  --raw-cream: #E5D9B6;
+  --raw-sage: #A4BE7B;
+  --raw-moss: #5F8D4E;
+  --raw-forest: #285430;
 
-  /* Glassmorphism Tokens */
-  --glass-bg: rgba(255, 255, 255, 0.04);
-  --glass-bg-hover: rgba(255, 255, 255, 0.07);
-  --glass-bg-active: rgba(255, 255, 255, 0.1);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-border-hover: rgba(255, 255, 255, 0.2);
-  --glass-border-glow: rgba(99, 102, 241, 0.4);
-  --glass-blur: blur(16px);
-  --glass-blur-lg: blur(24px);
+  /* --- DERIVED SCALES (Hex definitions for reliability and cross-platform export) --- */
+  --cream-50: #F7F4EB;
+  --cream-100: #EFE9D5;
+  --cream-200: #E5D9B6;
+  --cream-300: #D6C79A;
+  --cream-400: #C7B57F;
 
-  /* Primary Brand - Electric Indigo to Violet Gradient */
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --primary-active: #4338ca;
-  --primary-light: #818cf8;
-  --primary-glow: rgba(99, 102, 241, 0.4);
-  --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
-  --primary-gradient-subtle: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 50%, rgba(217, 70, 239, 0.15) 100%);
+  --sage-100: #EDF3E4;
+  --sage-200: #DBE7C9;
+  --sage-300: #BDD69D;
+  --sage-400: #A4BE7B;
+  --sage-500: #8CA862;
 
-  /* Secondary Accents */
-  --accent-cyan: #06b6d4;
-  --accent-cyan-glow: rgba(6, 182, 212, 0.35);
-  --accent-pink: #ec4899;
-  --accent-amber: #f59e0b;
-  --accent-emerald: #10b981;
-  --accent-emerald-glow: rgba(16, 185, 129, 0.35);
-  --accent-rose: #f43f5e;
-  --accent-rose-glow: rgba(244, 63, 94, 0.35);
+  --moss-100: #E2ECDD;
+  --moss-200: #C4DAB8;
+  --moss-300: #90B680;
+  --moss-500: #5F8D4E;
+  --moss-700: #426535;
+  --moss-800: #334E2A;
+  --moss-900: #284020;
 
-  /* Neutral Typography */
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-disabled: #475569;
-  --text-inverse: #0f172a;
+  --forest-100: #D2DFD5;
+  --forest-200: #A4BFAB;
+  --forest-300: #6F9776;
+  --forest-500: #285430;
+  --forest-600: #224729;
+  --forest-700: #1C3D22;
+  --forest-800: #152E1A;
+  --forest-900: #0E2012;
+  --forest-950: #08140B;
 
-  /* Typography Scale */
-  --font-family-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-family-heading: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  /* --- SEMANTIC HARMONIZED ACCENTS (Defined once) --- */
+  --raw-danger-light: #9E3324;
+  --raw-danger-dark: #FF9B8A;
+  --raw-warning-light: #8C5300;
+  --raw-warning-dark: #FFC266;
+  --raw-success-light: #1C5E28;
+  --raw-success-dark: #8BE299;
 
-  /* Spacing */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-  --space-20: 5rem;
+  /* --- SPACING SCALE (4px base) --- */
+  --space-0: 0px;
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
 
-  /* Border Radii */
+  /* --- BORDER RADII --- */
   --radius-xs: 4px;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
-  --radius-xl: 22px;
-  --radius-2xl: 30px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 25px var(--primary-glow);
-  --shadow-glow-cyan: 0 0 25px var(--accent-cyan-glow);
+  /* --- TYPOGRAPHY SCALE --- */
+  --font-family-display: var(--font-outfit, 'Outfit', serif);
+  --font-family-body: var(--font-plus-jakarta, 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif);
+  --font-family-devanagari: var(--font-noto-devanagari, 'Noto Sans Devanagari', sans-serif);
+  --font-family-gujarati: var(--font-noto-gujarati, 'Noto Sans Gujarati', sans-serif);
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-  /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --text-xs: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem);      /* 12-13px */
+  --text-sm: clamp(0.8438rem, 0.81rem + 0.17vw, 0.9375rem);    /* 13.5-15px */
+  --text-base: clamp(1rem, 0.97rem + 0.15vw, 1.0625rem);       /* 16-17px */
+  --text-lg: clamp(1.125rem, 1.07rem + 0.28vw, 1.25rem);       /* 18-20px */
+  --text-xl: clamp(1.28rem, 1.2rem + 0.4vw, 1.5rem);          /* 20.5-24px */
+  --text-2xl: clamp(1.5rem, 1.38rem + 0.6vw, 1.875rem);       /* 24-30px */
+  --text-3xl: clamp(1.875rem, 1.68rem + 0.98vw, 2.375rem);    /* 30-38px */
+  --text-4xl: clamp(2.25rem, 1.95rem + 1.5vw, 3rem);          /* 36-48px */
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.2;
+  --line-height-snug: 1.35;
+  --line-height-normal: 1.55;
+  --line-height-relaxed: 1.7;
+
+  /* --- Z-INDEX LAYERS --- */
+  --z-base: 0;
+  --z-card: 1;
+  --z-dropdown: 50;
+  --z-sticky: 100;
+  --z-overlay: 400;
+  --z-modal: 500;
+  --z-toast: 600;
+  --z-tooltip: 700;
+
+  /* --- MOTION --- */
+  --duration-fast: 150ms;
+  --duration-normal: 220ms;
+  --duration-slow: 350ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: var(--duration-fast) var(--ease-out);
+  --transition-normal: var(--duration-normal) var(--ease-out);
+  --transition-slow: var(--duration-slow) var(--ease-out);
+
+  /* --- BREAKPOINTS (documented reference) --- */
+  --breakpoint-mobile: 360px;
+  --breakpoint-tablet: 768px;
+  --breakpoint-desktop: 1024px;
+  --breakpoint-wide: 1440px;
+
+  /* --- ALWAYS-DARK VIDEO SURFACES (Feed & Room players in BOTH themes) --- */
+  --player-bg: var(--forest-950);
+  --player-surface: var(--forest-900);
+  --player-border: rgba(164, 190, 123, 0.18);
+  --player-text-primary: var(--cream-50);
+  --player-text-secondary: var(--cream-200);
+  --player-text-muted: var(--sage-300);
+  /* --- OVERLAY SCRIMS & GLOWS --- */
+  --scrim-heavy: rgba(14, 32, 18, 0.85);
+  --scrim-medium: rgba(14, 32, 18, 0.65);
+  --scrim-light: rgba(14, 32, 18, 0.4);
+  --scrim-darkest: rgba(8, 20, 11, 0.95);
+  --scrim-modal: rgba(8, 20, 11, 0.75);
+  --sage-glow: rgba(164, 190, 123, 0.3);
+  --forest-shadow-tint: rgba(40, 84, 48, 0.25);
+  --forest-shadow-dark: rgba(14, 32, 18, 0.5);
 }
 
 /* ==============================================================================
-   Keyframe Animations
+   THEME 1: LIGHT ("Paper" - Default)
+   Canvas: Cream (#E5D9B6 / #F7F4EB)
+   Cards: Cream-50 (#F7F4EB) with subtle warm depth
+   Primary Text: Forest-900 (#0E2012)
+   CTAs: Forest-500 (#285430) with Cream-50 text
+   Accents: Moss and Sage
    ============================================================================== */
 
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(99, 102, 241, 0.7);
-  }
+:root,
+[data-theme="light"] {
+  --theme-mode: light;
+  color-scheme: light;
+
+  /* Surfaces */
+  --surface-base: var(--cream-100);
+  --surface-paper: var(--cream-50);
+  --surface-raised: #FAF8F2;
+  --surface-sunken: var(--cream-200);
+  --surface-overlay: rgba(247, 244, 235, 0.88);
+  --surface-glass: rgba(247, 244, 235, 0.82);
+  --surface-input: #FFFFFF;
+
+  /* Borders */
+  --border-subtle: rgba(40, 84, 48, 0.12);
+  --border-medium: rgba(40, 84, 48, 0.22);
+  --border-strong: rgba(40, 84, 48, 0.38);
+
+  /* Typography */
+  --text-primary: var(--forest-900);
+  --text-secondary: var(--forest-700);
+  --text-muted: var(--forest-500);
+  --text-disabled: rgba(40, 84, 48, 0.42);
+  --text-inverse: var(--cream-50);
+
+  /* Brand / Interactive */
+  --brand-primary: var(--forest-500);
+  --brand-primary-hover: var(--forest-700);
+  --brand-primary-active: var(--forest-900);
+  --brand-primary-text: var(--cream-50);
+
+  --brand-secondary: var(--sage-200);
+  --brand-secondary-hover: var(--sage-300);
+  --brand-secondary-border: rgba(40, 84, 48, 0.25);
+  --brand-secondary-text: var(--forest-900);
+
+  --accent-fill: var(--moss-500);
+  --accent-fill-hover: var(--moss-700);
+  --accent-fill-text: #FFFFFF;
+  --accent-soft: var(--sage-100);
+  --accent-soft-text: var(--forest-900);
+
+  /* Feedback */
+  --danger: var(--raw-danger-light);
+  --danger-bg: #FDF1EF;
+  --danger-border: rgba(158, 51, 36, 0.3);
+  --danger-text: var(--raw-danger-light);
+
+  --warning: var(--raw-warning-light);
+  --warning-bg: #FFF8EB;
+  --warning-border: rgba(140, 83, 0, 0.3);
+  --warning-text: var(--raw-warning-light);
+
+  --success: var(--raw-success-light);
+  --success-bg: #EDF7EE;
+  --success-border: rgba(28, 94, 40, 0.3);
+  --success-text: var(--raw-success-light);
+
+  /* Focus & Elevation */
+  --focus-ring: var(--forest-700);
+  --focus-ring-offset: var(--surface-paper);
+
+  --shadow-sm: 0 1px 3px rgba(40, 84, 48, 0.08), 0 1px 2px rgba(40, 84, 48, 0.06);
+  --shadow-md: 0 4px 14px rgba(40, 84, 48, 0.09), 0 2px 6px rgba(40, 84, 48, 0.05);
+  --shadow-lg: 0 12px 28px rgba(40, 84, 48, 0.12), 0 4px 10px rgba(40, 84, 48, 0.06);
+  --shadow-glow: 0 0 20px rgba(164, 190, 123, 0.35);
+
+  /* Scrim */
+  --overlay-scrim: rgba(14, 32, 18, 0.6);
+  --skeleton-base: var(--cream-200);
+  --skeleton-shimmer: var(--cream-50);
 }
 
-@keyframes floatAnim {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
+/* ==============================================================================
+   THEME 2: DARK ("Forest")
+   Canvas: Forest-900 (#0E2012)
+   Cards: Forest-800 (#152E1A) with sage hairline borders
+   Primary Text: Cream-50 (#F7F4EB)
+   CTAs: Forest-500 (#285430) with Cream-50 text, Sage accents
+   ============================================================================== */
+
+[data-theme="dark"] {
+  --theme-mode: dark;
+  color-scheme: dark;
+
+  /* Surfaces */
+  --surface-base: var(--forest-950);
+  --surface-paper: var(--forest-900);
+  --surface-raised: var(--forest-800);
+  --surface-sunken: #050D07;
+  --surface-overlay: rgba(14, 32, 18, 0.92);
+  --surface-glass: rgba(21, 46, 26, 0.78);
+  --surface-input: var(--forest-900);
+
+  /* Borders */
+  --border-subtle: rgba(164, 190, 123, 0.14);
+  --border-medium: rgba(164, 190, 123, 0.24);
+  --border-strong: rgba(164, 190, 123, 0.45);
+
+  /* Typography */
+  --text-primary: var(--cream-50);
+  --text-secondary: var(--cream-200);
+  --text-muted: var(--sage-300);
+  --text-disabled: rgba(229, 217, 182, 0.35);
+  --text-inverse: var(--forest-950);
+
+  /* Brand / Interactive */
+  --brand-primary: var(--forest-500);
+  --brand-primary-hover: var(--forest-300);
+  --brand-primary-active: var(--forest-100);
+  --brand-primary-text: var(--cream-50);
+
+  --brand-secondary: var(--forest-700);
+  --brand-secondary-hover: var(--forest-600);
+  --brand-secondary-border: rgba(164, 190, 123, 0.28);
+  --brand-secondary-text: var(--cream-50);
+
+  --accent-fill: var(--moss-500);
+  --accent-fill-hover: var(--moss-300);
+  --accent-fill-text: #FFFFFF;
+  --accent-soft: rgba(164, 190, 123, 0.18);
+  --accent-soft-text: var(--sage-300);
+
+  /* Feedback */
+  --danger: var(--raw-danger-dark);
+  --danger-bg: rgba(158, 51, 36, 0.25);
+  --danger-border: rgba(255, 155, 138, 0.35);
+  --danger-text: var(--raw-danger-dark);
+
+  --warning: var(--raw-warning-dark);
+  --warning-bg: rgba(140, 83, 0, 0.25);
+  --warning-border: rgba(255, 194, 102, 0.35);
+  --warning-text: var(--raw-warning-dark);
+
+  --success: var(--raw-success-dark);
+  --success-bg: rgba(28, 94, 40, 0.25);
+  --success-border: rgba(139, 226, 153, 0.35);
+  --success-text: var(--raw-success-dark);
+
+  /* Focus & Elevation */
+  --focus-ring: var(--sage-400);
+  --focus-ring-offset: var(--surface-raised);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.65);
+  --shadow-glow: 0 0 24px rgba(164, 190, 123, 0.28);
+
+  /* Scrim */
+  --overlay-scrim: rgba(0, 0, 0, 0.78);
+  --skeleton-base: var(--forest-800);
+  --skeleton-shimmer: var(--forest-700);
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-@keyframes spinSlow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes wave {
-  0%, 100% { height: 6px; }
-  50% { height: 26px; }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+/* ==============================================================================
+   Reduced Motion Overrides
+   ============================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0.001ms !important;
+    --duration-normal: 0.001ms !important;
+    --duration-slow: 0.001ms !important;
+    --transition-fast: none !important;
+    --transition-normal: none !important;
+    --transition-slow: none !important;
   }
 }

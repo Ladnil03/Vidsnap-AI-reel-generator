@@ -6,10 +6,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Calendar, Mail, User, Loader2 } from 'lucide-react';
-import { api } from '../../../lib/api';
-import { useToast } from '../../../components/Toast';
-import { FeedbackItem } from '../../../lib/types';
+import { MessageSquare, Calendar } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
+import { FeedbackItem } from '@/lib/types';
+import { Card, EmptyState, Spinner } from '@/components/ui';
+import styles from '../admin.module.css';
 
 export default function AdminFeedbackPage() {
   const { error: toastError } = useToast();
@@ -36,82 +38,84 @@ export default function AdminFeedbackPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '1.4rem', marginBottom: '4px' }}>Feedback & User Reports</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+      <div style={{ marginBottom: 'var(--space-6)' }}>
+        <h2 style={{ fontSize: 'var(--text-xl)', fontFamily: 'var(--font-display)', margin: '0 0 var(--space-1) 0', color: 'var(--color-text)' }}>
+          Feedback & User Reports
+        </h2>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)', margin: 0 }}>
           {feedback.length} messages submitted by registered users.
         </p>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <Loader2 size={32} color="var(--primary-light)" style={{ animation: 'spinSlow 2s linear infinite', margin: '0 auto 12px auto' }} />
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Loading user messages...</p>
-        </div>
-      ) : feedback.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: 'center', padding: '48px 20px' }}>
-          <MessageSquare size={36} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
-          <h3 style={{ fontSize: '1.2rem', marginBottom: '6px' }}>Inbox is Clear</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-            No user feedback or bug reports submitted yet.
+        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+          <Spinner size="lg" />
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-3)' }}>
+            Loading user messages...
           </p>
         </div>
+      ) : feedback.length === 0 ? (
+        <EmptyState
+          icon={<MessageSquare size={40} />}
+          title="Inbox is Clear"
+          description="No user feedback or bug reports submitted yet."
+        />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           {feedback.map((item) => (
-            <div key={item.feedback_id} className="glass-card" style={{ padding: '20px 24px' }}>
+            <Card key={item.feedback_id} variant="default" style={{ padding: 'var(--space-5)' }}>
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '12px',
+                marginBottom: 'var(--space-3)',
                 flexWrap: 'wrap',
-                gap: '10px',
+                gap: 'var(--space-2)',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                   <div style={{
                     width: '32px',
                     height: '32px',
-                    borderRadius: '50%',
-                    background: 'var(--primary-gradient)',
+                    borderRadius: 'var(--radius-full)',
+                    background: 'var(--color-forest-700)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '0.85rem',
+                    fontSize: 'var(--text-xs)',
                     fontWeight: 700,
-                    color: '#fff',
+                    color: 'var(--color-cream-50)',
                   }}>
                     {(item.user_name || 'U').charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                    <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--color-text)' }}>
                       {item.user_name || 'Anonymous User'}
                     </span>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: '8px' }}>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginLeft: 'var(--space-2)' }}>
                       ({item.user_email})
                     </span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
                   <Calendar size={13} />
                   <span>{item.created_at ? new Date(item.created_at).toLocaleString() : 'Recent'}</span>
                 </div>
               </div>
 
               <div style={{
-                background: 'var(--bg-surface-elevated)',
-                padding: '14px 18px',
+                background: 'var(--color-surface-hover)',
+                padding: 'var(--space-3) var(--space-4)',
                 borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--glass-border)',
-                fontSize: '0.9rem',
-                lineHeight: '1.6',
-                color: 'var(--text-primary)',
+                border: '1px solid var(--color-border)',
+                fontSize: 'var(--text-sm)',
+                lineHeight: 1.6,
+                color: 'var(--color-text)',
                 whiteSpace: 'pre-wrap',
               }}>
                 {item.message}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

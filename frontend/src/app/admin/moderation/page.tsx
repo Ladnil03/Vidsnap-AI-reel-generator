@@ -15,19 +15,31 @@ import {
   CheckCircle,
   Filter,
   RefreshCw,
-  Search,
-  ExternalLink,
 } from 'lucide-react';
-import { api } from '../../../lib/api';
+import { api } from '@/lib/api';
 import {
   ContentReport,
   ModerationActionType,
   ModerationStats,
   ReportStatusType,
   ReportTargetType,
-} from '../../../lib/types';
+} from '@/lib/types';
+import {
+  Card,
+  Button,
+  Badge,
+  Modal,
+  Textarea,
+  FormField,
+  Spinner,
+  EmptyState,
+} from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
+import styles from '../admin.module.css';
 
 export default function AdminModerationPage() {
+  const { success: toastSuccess, error: toastError } = useToast();
+
   const [reports, setReports] = useState<ContentReport[]>([]);
   const [stats, setStats] = useState<ModerationStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +65,7 @@ export default function AdminModerationPage() {
       setReports(reps);
       setStats(st);
     } catch {
-      // Handled
+      toastError('Failed to load moderation queue');
     } finally {
       setLoading(false);
     }
@@ -98,216 +110,174 @@ export default function AdminModerationPage() {
             : r
         )
       );
+      toastSuccess(`Moderation action executed: ${selectedAction}`);
       setActionModalReport(null);
       // Refresh stats
       const st = await api.moderation.getStats();
       setStats(st);
     } catch (e: unknown) {
-      alert((e as Error).message || 'Failed to execute moderation action.');
+      toastError((e as Error).message || 'Failed to execute moderation action.');
     } finally {
       setSubmittingAction(false);
     }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
       {/* Header & Refresh */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <div className={styles.toolbar}>
         <div>
-          <h2 style={{ fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ShieldAlert size={22} color="var(--accent-rose)" />
+          <h2 style={{ fontSize: 'var(--text-xl)', fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)', margin: '0 0 var(--space-1) 0', color: 'var(--color-text)' }}>
+            <ShieldAlert size={22} style={{ color: 'var(--color-terracotta-600)' }} />
             <span>Content Moderation Queue</span>
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)', margin: 0 }}>
             Review user-reported reels, comments, and accounts with automated heuristic toxicity scores.
           </p>
         </div>
 
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={fetchReportsAndStats}
-          disabled={loading}
-          className="btn btn-secondary"
-          style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          loading={loading}
+          leftIcon={<RefreshCw size={14} />}
         >
-          <RefreshCw size={14} className={loading ? 'spin' : ''} />
-          <span>Refresh Queue</span>
-        </button>
+          Refresh Queue
+        </Button>
       </div>
 
       {/* Stats Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '16px',
-      }}>
-        <div className="glass-card">
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Pending Review</span>
-          <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--accent-amber)', marginTop: '4px' }}>
+      <div className={styles.kpiGrid}>
+        <Card variant="default" className={styles.kpiCard} style={{ padding: 'var(--space-5)' }}>
+          <span className={styles.kpiLabel}>Pending Review</span>
+          <div className={styles.kpiValue} style={{ color: 'var(--color-ochre-700)' }}>
             {stats ? stats.pending_reports : '...'}
           </div>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Urgent moderator items</span>
-        </div>
+          <span className={styles.kpiSubtext}>Urgent moderator items</span>
+        </Card>
 
-        <div className="glass-card">
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Resolved Reports</span>
-          <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--accent-emerald)', marginTop: '4px' }}>
+        <Card variant="default" className={styles.kpiCard} style={{ padding: 'var(--space-5)' }}>
+          <span className={styles.kpiLabel}>Resolved Reports</span>
+          <div className={styles.kpiValue} style={{ color: 'var(--color-moss-600)' }}>
             {stats ? stats.resolved_reports : '...'}
           </div>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Actioned or dismissed</span>
-        </div>
+          <span className={styles.kpiSubtext}>Actioned or dismissed</span>
+        </Card>
 
-        <div className="glass-card">
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Total Enforcements</span>
-          <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--accent-rose)', marginTop: '4px' }}>
+        <Card variant="default" className={styles.kpiCard} style={{ padding: 'var(--space-5)' }}>
+          <span className={styles.kpiLabel}>Total Enforcements</span>
+          <div className={styles.kpiValue} style={{ color: 'var(--color-terracotta-600)' }}>
             {stats ? stats.total_actions : '...'}
           </div>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Audit actions logged</span>
-        </div>
+          <span className={styles.kpiSubtext}>Audit actions logged</span>
+        </Card>
       </div>
 
       {/* Filter Toolbar */}
-      <div className="glass-card" style={{ padding: '16px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <Card variant="default" style={{ padding: 'var(--space-3) var(--space-4)', display: 'flex', flexWrap: 'wrap', gap: 'var(--space-4)', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-1-5)', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)', fontWeight: 600 }}>
             <Filter size={14} /> Status:
           </span>
           {(['pending', 'reviewing', 'resolved_action_taken', 'resolved_dismissed', ''] as const).map((st) => (
-            <button
+            <Button
               key={st}
+              variant={statusFilter === st ? 'primary' : 'ghost'}
+              size="sm"
               onClick={() => setStatusFilter(st)}
-              className="btn btn-sm"
-              style={{
-                fontSize: '0.78rem',
-                background: statusFilter === st ? 'var(--primary-gradient)' : 'var(--bg-surface-elevated)',
-                color: statusFilter === st ? '#fff' : 'var(--text-secondary)',
-              }}
+              style={{ padding: 'var(--space-1) var(--space-2-5)', fontSize: 'var(--text-xs)' }}
             >
-              {st === '' ? 'All' : st.replace('_', ' ')}
-            </button>
+              {st === '' ? 'All' : st.replace(/_/g, ' ')}
+            </Button>
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.825rem', color: 'var(--text-secondary)' }}>Target:</span>
+        <div style={{ display: 'flex', gap: 'var(--space-1-5)', alignItems: 'center' }}>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontWeight: 600 }}>Target:</span>
           {(['video', 'comment', 'user', ''] as const).map((tt) => (
-            <button
+            <Button
               key={tt}
+              variant={targetFilter === tt ? 'secondary' : 'ghost'}
+              size="sm"
               onClick={() => setTargetFilter(tt)}
-              className="btn btn-sm"
-              style={{
-                fontSize: '0.78rem',
-                background: targetFilter === tt ? 'rgba(6, 182, 212, 0.2)' : 'transparent',
-                borderColor: targetFilter === tt ? 'var(--accent-cyan)' : 'var(--glass-border)',
-                color: targetFilter === tt ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-              }}
+              style={{ padding: 'var(--space-1) var(--space-2-5)', fontSize: 'var(--text-xs)' }}
             >
               {tt === '' ? 'All Types' : tt}
-            </button>
+            </Button>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* Report Cards / List */}
       {loading ? (
-        <div className="glass-card" style={{ textAlign: 'center', padding: '60px' }}>
-          <p style={{ color: 'var(--text-secondary)' }}>Loading moderation queue...</p>
-        </div>
-      ) : reports.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: 'center', padding: '60px' }}>
-          <CheckCircle size={36} color="var(--accent-emerald)" style={{ margin: '0 auto 12px auto' }} />
-          <h3 style={{ fontSize: '1.2rem', marginBottom: '6px' }}>Moderation Queue Clear!</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-            No flagged content requires review under the selected filter.
+        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+          <Spinner size="lg" />
+          <p style={{ color: 'var(--color-text-muted)', marginTop: 'var(--space-3)', fontSize: 'var(--text-sm)' }}>
+            Loading moderation queue...
           </p>
         </div>
+      ) : reports.length === 0 ? (
+        <EmptyState
+          icon={<CheckCircle size={40} />}
+          title="Moderation Queue Clear!"
+          description="No flagged content requires review under the selected filter."
+        />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           {reports.map((rep) => (
-            <div key={rep.report_id} className="glass-card" style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span
-                    style={{
-                      padding: '3px 8px',
-                      borderRadius: 'var(--radius-sm)',
-                      fontSize: '0.72rem',
-                      fontWeight: 600,
-                      background:
-                        rep.priority === 'high'
-                          ? 'rgba(244, 63, 94, 0.2)'
-                          : 'rgba(99, 102, 241, 0.2)',
-                      color:
-                        rep.priority === 'high'
-                          ? 'var(--accent-rose)'
-                          : 'var(--primary-light)',
-                    }}
+            <Card key={rep.report_id} variant="default" style={{ padding: 'var(--space-5)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                  <Badge
+                    variant={rep.priority === 'high' ? 'danger' : 'sage'}
+                    size="sm"
                   >
-                    {rep.priority === 'high' ? '🔥 HIGH PRIORITY' : 'NORMAL'}
-                  </span>
+                    {rep.priority === 'high' ? 'HIGH PRIORITY' : 'NORMAL'}
+                  </Badge>
 
-                  <span
-                    style={{
-                      padding: '3px 8px',
-                      borderRadius: 'var(--radius-sm)',
-                      fontSize: '0.72rem',
-                      background: 'var(--bg-surface-elevated)',
-                      color: 'var(--accent-cyan)',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {rep.target_type}
-                  </span>
+                  <Badge variant="default" size="sm">
+                    {rep.target_type.toUpperCase()}
+                  </Badge>
 
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
                     ID: <code>{rep.report_id}</code>
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: '999px',
-                      fontSize: '0.75rem',
-                      fontWeight: 500,
-                      background:
-                        rep.status === 'pending'
-                          ? 'rgba(245, 158, 11, 0.15)'
-                          : rep.status === 'resolved_action_taken'
-                          ? 'rgba(239, 68, 68, 0.15)'
-                          : 'rgba(16, 185, 129, 0.15)',
-                      color:
-                        rep.status === 'pending'
-                          ? 'var(--accent-amber)'
-                          : rep.status === 'resolved_action_taken'
-                          ? 'var(--accent-rose)'
-                          : 'var(--accent-emerald)',
-                    }}
-                  >
-                    {rep.status}
-                  </span>
-                </div>
+                <Badge
+                  variant={
+                    rep.status === 'pending'
+                      ? 'warning'
+                      : rep.status === 'resolved_action_taken'
+                      ? 'danger'
+                      : 'success'
+                  }
+                  size="sm"
+                >
+                  {rep.status}
+                </Badge>
               </div>
 
               {/* Reason & Content snippet */}
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-primary)' }}>
-                  Reason: <span style={{ color: 'var(--accent-amber)', textTransform: 'capitalize' }}>{rep.reason.replace('_', ' ')}</span>
+              <div style={{ marginBottom: 'var(--space-4)' }}>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, marginBottom: 'var(--space-1)', color: 'var(--color-text)' }}>
+                  Reason: <span style={{ color: 'var(--color-forest-700)', textTransform: 'capitalize' }}>{rep.reason.replace(/_/g, ' ')}</span>
                   {rep.report_count > 1 && (
-                    <span style={{ marginLeft: '8px', fontSize: '0.75rem', color: 'var(--accent-rose)' }}>
+                    <span style={{ marginLeft: 'var(--space-2)', fontSize: 'var(--text-xs)', color: 'var(--color-terracotta-600)' }}>
                       ({rep.report_count} user reports)
                     </span>
                   )}
                 </div>
 
                 {rep.details && (
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px', background: 'var(--bg-surface-elevated)', padding: '8px 12px', borderRadius: 'var(--radius-sm)' }}>
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text)', marginBottom: 'var(--space-2)', background: 'var(--color-surface-hover)', padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', fontStyle: 'italic' }}>
                     &ldquo;{rep.details}&rdquo;
                   </p>
                 )}
 
                 {rep.target_meta && (
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
                     {Boolean(rep.target_meta.title) && <span>Target Title: <strong>{String(rep.target_meta.title)}</strong></span>}
                     {Boolean(rep.target_meta.text) && <span>Target Text: <strong>{String(rep.target_meta.text)}</strong></span>}
                     {Boolean(rep.target_meta.name) && <span>Target User: <strong>{String(rep.target_meta.name)}</strong></span>}
@@ -317,108 +287,86 @@ export default function AdminModerationPage() {
 
               {/* Action Buttons */}
               {rep.status === 'pending' && (
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', borderTop: '1px solid var(--glass-border)', paddingTop: '12px' }}>
-                  <button
+                <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-3)' }}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => handleOpenActionModal(rep, 'hide_content')}
-                    className="btn btn-sm btn-secondary"
-                    style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-amber)' }}
+                    leftIcon={<EyeOff size={13} />}
                   >
-                    <EyeOff size={13} />
-                    <span>Hide Content</span>
-                  </button>
+                    Hide Content
+                  </Button>
 
-                  <button
+                  <Button
+                    variant="danger"
+                    size="sm"
                     onClick={() => handleOpenActionModal(rep, 'delete_content')}
-                    className="btn btn-sm btn-secondary"
-                    style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-rose)' }}
+                    leftIcon={<Trash2 size={13} />}
                   >
-                    <Trash2 size={13} />
-                    <span>Delete Content</span>
-                  </button>
+                    Delete Content
+                  </Button>
 
-                  <button
+                  <Button
+                    variant="danger"
+                    size="sm"
                     onClick={() => handleOpenActionModal(rep, 'ban_user')}
-                    className="btn btn-sm btn-secondary"
-                    style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-rose)' }}
+                    leftIcon={<Ban size={13} />}
                   >
-                    <Ban size={13} />
-                    <span>Ban Creator</span>
-                  </button>
+                    Ban Creator
+                  </Button>
 
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleOpenActionModal(rep, 'dismiss')}
-                    className="btn btn-sm btn-secondary"
-                    style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-emerald)', marginLeft: 'auto' }}
+                    leftIcon={<CheckCircle size={13} />}
+                    style={{ marginLeft: 'auto' }}
                   >
-                    <CheckCircle size={13} />
-                    <span>Dismiss</span>
-                  </button>
+                    Dismiss
+                  </Button>
                 </div>
               )}
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
       {/* Action Confirmation Modal */}
-      {actionModalReport && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(6px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: '16px',
-        }}>
-          <div className="glass-card" style={{ maxWidth: '480px', width: '100%', padding: '24px' }}>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertTriangle size={20} color="var(--accent-amber)" />
-              <span>Confirm Action: {selectedAction.replace('_', ' ').toUpperCase()}</span>
-            </h3>
+      <Modal
+        isOpen={Boolean(actionModalReport)}
+        onClose={() => setActionModalReport(null)}
+        title={actionModalReport ? `Confirm: ${selectedAction.replace(/_/g, ' ').toUpperCase()}` : ''}
+        size="md"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <FormField label="Resolution / Audit Log Note" required hint="Mandatory explanation recorded in audit trail">
+            <Textarea
+              value={resolutionNote}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setResolutionNote(e.target.value)}
+              rows={3}
+              placeholder="Enter mandatory reason for audit trail..."
+            />
+          </FormField>
 
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-              Applying enforcement to <strong>{actionModalReport.target_type}</strong> (ID: <code>{actionModalReport.target_id}</code>).
-            </p>
-
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
-                Resolution / Audit Log Note:
-              </label>
-              <textarea
-                value={resolutionNote}
-                onChange={(e) => setResolutionNote(e.target.value)}
-                rows={3}
-                className="input"
-                style={{ width: '100%', fontSize: '0.85rem' }}
-                placeholder="Enter mandatory reason for audit trail..."
-              />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button
-                onClick={() => setActionModalReport(null)}
-                className="btn btn-secondary"
-                disabled={submittingAction}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleExecuteAction}
-                disabled={submittingAction || !resolutionNote.trim()}
-                className="btn btn-primary"
-              >
-                {submittingAction ? 'Enforcing...' : 'Confirm Action'}
-              </button>
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+            <Button
+              variant="secondary"
+              onClick={() => setActionModalReport(null)}
+              disabled={submittingAction}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleExecuteAction}
+              loading={submittingAction}
+              disabled={!resolutionNote.trim()}
+            >
+              Confirm Action
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

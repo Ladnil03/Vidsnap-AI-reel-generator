@@ -3,14 +3,22 @@
 /**
  * VidSnap.AI User Feedback Page
  * Star ratings, category selectors, and direct API submission.
+ * Redesigned in the Forest & Paper design system.
  */
 
 import React, { useState } from 'react';
-import { MessageSquare, Star, Send, CheckCircle2, Sparkles, AlertCircle } from 'lucide-react';
+import { MessageSquare, Star, Send, CheckCircle2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../components/Toast';
 import { api } from '../../lib/api';
+import {
+  Button,
+  Card,
+  Badge,
+  Textarea,
+  FormField,
+  useToast,
+} from '@/components/ui';
 
 const CATEGORIES = [
   '✨ Feature Idea',
@@ -58,65 +66,75 @@ export default function FeedbackPage() {
   };
 
   return (
-    <div className="container-narrow" style={{ paddingBottom: '60px' }}>
-      <div style={{ textAlign: 'center', marginBottom: '36px' }}>
-        <div style={{
-          width: '52px',
-          height: '52px',
-          borderRadius: 'var(--radius-lg)',
-          background: 'var(--primary-gradient)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          margin: '0 auto 16px auto',
-          boxShadow: '0 4px 16px var(--primary-glow)',
-        }}>
-          <MessageSquare size={26} color="#fff" />
+    <div style={{ maxWidth: '640px', margin: '0 auto', padding: 'var(--space-8) var(--space-4) var(--space-16) var(--space-4)' }}>
+      <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
+        <div
+          style={{
+            width: '52px',
+            height: '52px',
+            borderRadius: 'var(--radius-lg)',
+            background: 'var(--color-forest-800)',
+            color: 'var(--color-cream-100)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto var(--space-4) auto',
+            boxShadow: 'var(--shadow-md)',
+          }}
+        >
+          <MessageSquare size={26} />
         </div>
-        <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Share Your Feedback</h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '520px', margin: '0 auto' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 800, margin: '0 0 var(--space-2) 0' }}>
+          Share Your Feedback
+        </h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-base)', maxWidth: '520px', margin: '0 auto', lineHeight: 1.5 }}>
           Tell us about your reel creation experience, report issues, or request new AI features.
         </p>
       </div>
 
-      <div className="glass-card" style={{ maxWidth: '580px', margin: '0 auto', padding: '36px' }}>
+      <Card variant="raised" style={{ padding: 'var(--space-8)' }}>
         {submitted ? (
-          <div style={{ textAlign: 'center', padding: '32px 0' }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '50%',
-              background: 'rgba(16, 185, 129, 0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px auto',
-              color: 'var(--accent-emerald)',
-            }}>
+          <div style={{ textAlign: 'center', padding: 'var(--space-8) 0' }}>
+            <div
+              style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                background: 'var(--bg-sunken)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto var(--space-4) auto',
+                color: 'var(--success)',
+              }}
+            >
               <CheckCircle2 size={32} />
             </div>
-            <h3 style={{ fontSize: '1.4rem', marginBottom: '8px' }}>Feedback Received!</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px', lineHeight: '1.6' }}>
+            <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 800, marginBottom: 'var(--space-2)' }}>
+              Feedback Received!
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-6)', lineHeight: 1.6 }}>
               We review every comment to continuously improve our video engine and free-tier infrastructure.
             </p>
-            <button
+            <Button
+              variant="secondary"
               onClick={() => {
                 setSubmitted(false);
                 setMessage('');
+                setRating(5);
               }}
-              className="btn btn-secondary"
             >
               Send Another Note
-            </button>
+            </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            {/* Star Rating */}
-            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-              <label className="form-label" style={{ display: 'block', marginBottom: '10px' }}>
-                How would you rate your experience?
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+            {/* Rating Stars */}
+            <div>
+              <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--space-2)' }}>
+                How is your VidSnap.AI experience?
               </label>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
@@ -124,36 +142,42 @@ export default function FeedbackPage() {
                     onClick={() => setRating(star)}
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
-                    style={{ padding: '4px', cursor: 'pointer', transition: 'transform 0.1s' }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      color: (hoverRating || rating) >= star ? 'var(--warning)' : 'var(--border-subtle)',
+                      transition: 'transform var(--motion-duration-fast) var(--motion-ease)',
+                    }}
                   >
-                    <Star
-                      size={28}
-                      color={(hoverRating || rating) >= star ? '#fbbf24' : 'var(--text-muted)'}
-                      fill={(hoverRating || rating) >= star ? '#fbbf24' : 'transparent'}
-                    />
+                    <Star size={28} fill={(hoverRating || rating) >= star ? 'currentColor' : 'none'} />
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Category selection */}
-            <div className="form-group">
-              <label className="form-label">Feedback Category</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {CATEGORIES.map((cat, idx) => (
+            <div>
+              <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--space-2)' }}>
+                Topic Category
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+                {CATEGORIES.map((cat) => (
                   <button
-                    key={idx}
+                    key={cat}
                     type="button"
                     onClick={() => setCategory(cat)}
                     style={{
-                      padding: '6px 12px',
-                      borderRadius: 'var(--radius-full)',
-                      background: category === cat ? 'rgba(99, 102, 241, 0.2)' : 'var(--glass-bg)',
-                      border: `1px solid ${category === cat ? 'var(--primary-light)' : 'var(--glass-border)'}`,
-                      color: category === cat ? 'var(--primary-light)' : 'var(--text-secondary)',
-                      fontSize: '0.8rem',
-                      fontWeight: 500,
-                      transition: 'all var(--transition-fast)',
+                      padding: 'var(--space-2) var(--space-3)',
+                      borderRadius: 'var(--radius-pill)',
+                      border: `1px solid ${category === cat ? 'var(--color-forest-800)' : 'var(--border-subtle)'}`,
+                      background: category === cat ? 'var(--color-forest-800)' : 'var(--bg-sunken)',
+                      color: category === cat ? 'var(--color-cream-100)' : 'var(--text-secondary)',
+                      fontSize: 'var(--text-xs)',
+                      fontWeight: category === cat ? 600 : 500,
+                      cursor: 'pointer',
+                      transition: 'all var(--motion-duration-fast) var(--motion-ease)',
                     }}
                   >
                     {cat}
@@ -162,36 +186,30 @@ export default function FeedbackPage() {
               </div>
             </div>
 
-            {/* Message */}
-            <div className="form-group" style={{ marginTop: '16px' }}>
-              <label className="form-label">Your Message</label>
-              <textarea
-                className="form-textarea"
-                rows={5}
-                placeholder="What did you like? What went wrong? What features should we add next?..."
+            {/* Message Textarea */}
+            <FormField label="Your Message / Request" required>
+              <Textarea
+                rows={4}
+                required
+                placeholder="What did you create today? What can we improve?"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                required
               />
-            </div>
+            </FormField>
 
-            {user && (
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                Submitting as: <span style={{ color: 'var(--text-secondary)' }}>{user.email}</span>
-              </div>
-            )}
-
-            <button
+            <Button
               type="submit"
-              disabled={submitting || !message.trim()}
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '12px' }}
+              variant="primary"
+              loading={submitting}
+              disabled={submitting || message.trim().length < 5}
+              leftIcon={<Send size={16} />}
+              style={{ justifyContent: 'center' }}
             >
-              {submitting ? 'Sending...' : 'Submit Feedback'}
-            </button>
+              Submit Feedback
+            </Button>
           </form>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

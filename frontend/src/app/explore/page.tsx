@@ -1,31 +1,40 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { 
-  Search, 
-  Sparkles, 
-  ExternalLink, 
-  Play, 
-  X, 
-  Eye, 
-  Clock, 
-  CheckCircle2 
+import {
+  Search,
+  Sparkles,
+  ExternalLink,
+  Play,
+  X,
+  Eye,
+  Clock,
+  Compass,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { DiscoveryItem, DiscoverySource } from '@/lib/types';
+import {
+  Button,
+  IconButton,
+  Card,
+  Badge,
+  Input,
+  Modal,
+  Skeleton,
+  EmptyState,
+  PageHeader,
+} from '@/components/ui';
 
 const POPULAR_TAGS = [
   'tech',
   'ai',
-  'coding',
-  'cyberpunk',
   'nature',
+  'coding',
+  'art',
   'fitness',
   'comedy',
-  'dance',
-  'art',
-  'coffee',
+  'travel',
+  'education',
 ];
 
 const SOURCE_FILTERS: { label: string; value: DiscoverySource | 'all' }[] = [
@@ -36,9 +45,9 @@ const SOURCE_FILTERS: { label: string; value: DiscoverySource | 'all' }[] = [
 ];
 
 export default function ExplorePage() {
-  const [query, setQuery] = useState<string>('tech');
+  const [query, setQuery] = useState<string>('nature');
   const [selectedSource, setSelectedSource] = useState<DiscoverySource | 'all'>('all');
-  const [selectedTag, setSelectedTag] = useState<string>('tech');
+  const [selectedTag, setSelectedTag] = useState<string>('nature');
   const [items, setItems] = useState<DiscoveryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [previewItem, setPreviewItem] = useState<DiscoveryItem | null>(null);
@@ -56,8 +65,7 @@ export default function ExplorePage() {
         setItems(res.items);
         setLoading(false);
       })
-      .catch((err) => {
-        console.error('Failed to search discovery catalog:', err);
+      .catch(() => {
         setLoading(false);
       });
   };
@@ -71,581 +79,371 @@ export default function ExplorePage() {
     fetchResults(query, selectedSource, selectedTag);
   };
 
-  const getSourceBadgeColor = (source: DiscoverySource) => {
-    switch (source) {
-      case 'youtube_shorts':
-        return { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', border: 'rgba(239, 68, 68, 0.4)' };
-      case 'pexels':
-        return { bg: 'rgba(16, 185, 129, 0.15)', text: '#34d399', border: 'rgba(16, 185, 129, 0.4)' };
-      case 'pixabay':
-        return { bg: 'rgba(59, 130, 246, 0.15)', text: '#60a5fa', border: 'rgba(59, 130, 246, 0.4)' };
-      default:
-        return { bg: 'rgba(99, 102, 241, 0.15)', text: '#a5b4fc', border: 'rgba(99, 102, 241, 0.4)' };
-    }
-  };
-
   return (
-    <main
-      style={{
-        paddingTop: '80px',
-        minHeight: '100vh',
-        background: '#04060a',
-        color: '#f8fafc',
-        paddingBottom: '4rem',
-      }}
-    >
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.5rem' }}>
-        {/* Header Section */}
-        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 14px',
-              borderRadius: '999px',
-              background: 'rgba(99, 102, 241, 0.12)',
-              border: '1px solid rgba(99, 102, 241, 0.3)',
-              color: 'var(--primary-light)',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              marginBottom: '1rem',
-            }}
-          >
-            <Sparkles size={14} />
-            <span>Legal-by-Design Multi-Source Discovery</span>
-          </div>
-          <h1
-            style={{
-              fontSize: '2.5rem',
-              fontWeight: 800,
-              background: 'linear-gradient(135deg, #fff 40%, #94a3b8 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              marginBottom: '0.75rem',
-            }}
-          >
-            Explore Viral Short Videos
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto', fontSize: '1rem' }}>
-            Search curated vertical reels across YouTube Shorts, Pexels, Pixabay, and our Creator Community.
-            Zero re-hosting, 100% compliant.
-          </p>
-        </div>
+    <div className="container" style={{ paddingBottom: 'var(--space-16)' }}>
+      {/* Header */}
+      <PageHeader
+        title="Explore & Discover Reels"
+        description="Search public short-form content with guaranteed creator attribution and zero tracking."
+      />
 
-        {/* Search Bar Form */}
-        <form
-          onSubmit={handleSearchSubmit}
-          style={{
-            maxWidth: '680px',
-            margin: '0 auto 2rem',
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              left: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              pointerEvents: 'none',
-              color: 'var(--text-secondary)',
-            }}
-          >
-            <Search size={20} />
-          </div>
-          <input
-            type="text"
+      {/* Search Input Bar */}
+      <form
+        onSubmit={handleSearchSubmit}
+        style={{
+          display: 'flex',
+          gap: 'var(--space-2)',
+          maxWidth: '640px',
+          marginBottom: 'var(--space-6)',
+        }}
+      >
+        <div style={{ flex: 1, position: 'relative' }}>
+          <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search keywords like 'cyberpunk', 'python coding', 'nature'..."
-            style={{
-              width: '100%',
-              padding: '14px 120px 14px 48px',
-              background: 'rgba(15, 23, 42, 0.75)',
-              backdropFilter: 'blur(16px)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              borderRadius: '999px',
-              color: '#fff',
-              fontSize: '1rem',
-              outline: 'none',
-              transition: 'border-color 0.2s',
-            }}
+            placeholder="Search topics, creators, or keywords..."
+            aria-label="Search reels"
+            style={{ paddingLeft: 'var(--space-10)' }}
           />
-          <button
-            type="submit"
+          <Search
+            size={18}
             style={{
               position: 'absolute',
-              right: '6px',
-              padding: '9px 20px',
-              background: 'var(--primary-gradient)',
-              border: 'none',
-              borderRadius: '999px',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: '0.9rem',
-              cursor: 'pointer',
+              left: 'var(--space-4)',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: 'var(--text-muted)',
+              pointerEvents: 'none',
             }}
-          >
-            Search
-          </button>
-        </form>
-
-        {/* Source Filter Pills */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            flexWrap: 'wrap',
-            gap: '8px',
-            marginBottom: '1.25rem',
-          }}
-        >
-          {SOURCE_FILTERS.map((s) => {
-            const isSelected = selectedSource === s.value;
-            return (
-              <button
-                key={s.value}
-                onClick={() => setSelectedSource(s.value)}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '999px',
-                  border: isSelected ? '1px solid var(--primary-light)' : '1px solid rgba(255, 255, 255, 0.1)',
-                  background: isSelected ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                  color: isSelected ? 'var(--primary-light)' : 'var(--text-secondary)',
-                  fontSize: '0.85rem',
-                  fontWeight: isSelected ? 600 : 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {s.label}
-              </button>
-            );
-          })}
+          />
         </div>
+        <Button variant="primary" type="submit">
+          Search
+        </Button>
+      </form>
 
-        {/* Popular Tag Chips */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            flexWrap: 'wrap',
-            gap: '6px',
-            marginBottom: '2.5rem',
-          }}
-        >
-          {POPULAR_TAGS.map((tag) => {
-            const isSelected = selectedTag === tag;
-            return (
-              <button
-                key={tag}
-                onClick={() => {
-                  setSelectedTag(isSelected ? '' : tag);
-                  if (!isSelected) setQuery(tag);
-                }}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  border: isSelected ? '1px solid rgba(165, 180, 252, 0.5)' : '1px solid rgba(255, 255, 255, 0.06)',
-                  background: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255, 255, 255, 0.02)',
-                  color: isSelected ? '#a5b4fc' : '#94a3b8',
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                }}
-              >
-                #{tag}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Video Grid */}
-        {loading ? (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '5rem 0',
-              color: 'var(--text-secondary)',
-              gap: '1rem',
-            }}
-          >
-            <div
+      {/* Source Filter Tabs */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+        {SOURCE_FILTERS.map((f) => {
+          const isSelected = selectedSource === f.value;
+          return (
+            <button
+              key={f.value}
+              type="button"
+              onClick={() => setSelectedSource(f.value)}
               style={{
-                width: '44px',
-                height: '44px',
-                border: '3px solid rgba(99, 102, 241, 0.2)',
-                borderTopColor: 'var(--primary-light)',
-                borderRadius: '50%',
-                animation: 'spin 0.8s linear infinite',
+                padding: 'var(--space-1) var(--space-4)',
+                borderRadius: 'var(--radius-pill)',
+                border: '1px solid',
+                borderColor: isSelected ? 'var(--brand-primary)' : 'var(--border-subtle)',
+                backgroundColor: isSelected ? 'var(--brand-primary)' : 'var(--surface-paper)',
+                color: isSelected ? 'var(--brand-primary-text)' : 'var(--text-secondary)',
+                fontSize: 'var(--text-xs)',
+                fontWeight: isSelected ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
+                cursor: 'pointer',
+                transition: 'all var(--transition-fast)',
               }}
-            />
-            <span>Discovering vertical reels...</span>
-          </div>
-        ) : items.length === 0 ? (
-          <div
-            style={{
-              textAlign: 'center',
-              padding: '4rem 1rem',
-              color: 'var(--text-secondary)',
-            }}
-          >
-            <p style={{ fontSize: '1.2rem', color: '#fff', marginBottom: '0.5rem' }}>No discovery items found</p>
-            <p style={{ fontSize: '0.9rem' }}>Try searching for a different topic or select &quot;All Sources&quot;</p>
-          </div>
-        ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-              gap: '1.5rem',
-            }}
-          >
-            {items.map((item) => {
-              const badge = getSourceBadgeColor(item.source);
-              return (
-                <div
-                  key={item.item_id}
-                  onClick={() => setPreviewItem(item)}
-                  style={{
-                    borderRadius: '16px',
-                    overflow: 'hidden',
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s',
-                    position: 'relative',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.4)';
-                    e.currentTarget.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.5)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  {/* Thumbnail Container (9:16 Aspect Ratio) */}
-                  <div
-                    style={{
-                      width: '100%',
-                      aspectRatio: '9 / 16',
-                      background: '#0a0d14',
-                      position: 'relative',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {item.thumbnail_url ? (
-                      <img
-                        src={item.thumbnail_url}
-                        alt={item.title}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: 'linear-gradient(135deg, #1e293b, #0f172a)',
-                        }}
-                      >
-                        <Play size={36} color="rgba(255,255,255,0.4)" />
-                      </div>
-                    )}
+            >
+              {f.label}
+            </button>
+          );
+        })}
+      </div>
 
-                    {/* Source Badge Pill */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '10px',
-                        left: '10px',
-                        background: badge.bg,
-                        border: `1px solid ${badge.border}`,
-                        color: badge.text,
-                        padding: '3px 8px',
-                        borderRadius: '6px',
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        textTransform: 'capitalize',
-                        backdropFilter: 'blur(8px)',
-                      }}
-                    >
-                      {item.source.replace('_', ' ')}
-                    </div>
-
-                    {/* Duration Pill */}
-                    {item.duration > 0 && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '10px',
-                          right: '10px',
-                          background: 'rgba(0, 0, 0, 0.7)',
-                          color: '#fff',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          fontSize: '0.7rem',
-                          fontWeight: 600,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '3px',
-                        }}
-                      >
-                        <Clock size={10} />
-                        <span>{Math.round(item.duration)}s</span>
-                      </div>
-                    )}
-
-                    {/* Play Hover Overlay */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        opacity: 0,
-                        transition: 'opacity 0.2s',
-                      }}
-                      className="play-overlay"
-                    >
-                      <div
-                        style={{
-                          width: '48px',
-                          height: '48px',
-                          borderRadius: '50%',
-                          background: 'rgba(99, 102, 241, 0.9)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <Play size={22} color="#fff" style={{ marginLeft: '3px' }} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Metadata Container */}
-                  <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <h4
-                      style={{
-                        margin: 0,
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
-                        color: '#f8fafc',
-                        lineHeight: 1.3,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {item.title}
-                    </h4>
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', color: '#94a3b8' }}>
-                      <span>@{item.author_name}</span>
-                      {item.views_count > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                          <Eye size={12} />
-                          <span>{item.views_count}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Attribution Line */}
-                    <div
-                      style={{
-                        fontSize: '0.72rem',
-                        color: '#64748b',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        marginTop: '2px',
-                      }}
-                    >
-                      <CheckCircle2 size={11} color="#10b981" />
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {item.attribution_text}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Video Preview Modal */}
-        {previewItem && (
-          <div
-            onClick={() => setPreviewItem(null)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0, 0, 0, 0.85)',
-              backdropFilter: 'blur(12px)',
-              zIndex: 100,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '1.5rem',
-            }}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
+      {/* Popular Tag Chips */}
+      <div
+        style={{
+          display: 'flex',
+          gap: 'var(--space-2)',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+          paddingBottom: 'var(--space-4)',
+          marginBottom: 'var(--space-6)',
+        }}
+      >
+        {POPULAR_TAGS.map((tag) => {
+          const isSelected = selectedTag === tag;
+          return (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => {
+                setSelectedTag(tag);
+                setQuery(tag);
+              }}
               style={{
-                width: '100%',
-                maxWidth: '440px',
-                background: '#090d16',
-                borderRadius: '20px',
+                padding: 'var(--space-1) var(--space-3)',
+                borderRadius: 'var(--radius-pill)',
+                border: '1px solid',
+                borderColor: isSelected ? 'var(--border-medium)' : 'var(--border-subtle)',
+                backgroundColor: isSelected ? 'var(--accent-soft)' : 'transparent',
+                color: isSelected ? 'var(--brand-primary)' : 'var(--text-muted)',
+                fontSize: 'var(--text-xs)',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              #{tag}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Content Grid */}
+      {loading ? (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+            gap: 'var(--space-6)',
+          }}
+        >
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card key={i} style={{ padding: 0, overflow: 'hidden' }}>
+              <Skeleton width="100%" height="320px" borderRadius="0" />
+              <div style={{ padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <Skeleton width="80%" height="16px" />
+                <Skeleton width="50%" height="12px" />
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <Card style={{ padding: 'var(--space-12) var(--space-4)' }}>
+          <EmptyState
+            title="No Matching Reels Found"
+            description="Try adjusting your keywords or source filter to explore more content."
+            action={
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setQuery('nature');
+                  setSelectedTag('nature');
+                  setSelectedSource('all');
+                }}
+              >
+                Reset Search Filters
+              </Button>
+            }
+          />
+        </Card>
+      ) : (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+            gap: 'var(--space-6)',
+          }}
+        >
+          {items.map((item) => (
+            <Card
+              key={item.item_id}
+              variant="raised"
+              interactive
+              style={{
+                padding: 0,
                 overflow: 'hidden',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                boxShadow: '0 24px 48px rgba(0, 0, 0, 0.9)',
                 display: 'flex',
                 flexDirection: 'column',
               }}
+              onClick={() => setPreviewItem(item)}
             >
-              {/* Modal Header */}
+              {/* Media Thumbnail Container (9:16 vertical ratio) */}
               <div
                 style={{
-                  padding: '12px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      color: 'var(--primary-light)',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {previewItem.source.replace('_', ' ')}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setPreviewItem(null)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#94a3b8',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              {/* Player Area (9:16) */}
-              <div
-                style={{
-                  width: '100%',
-                  aspectRatio: '9 / 16',
-                  maxHeight: '65vh',
-                  background: '#000',
                   position: 'relative',
+                  width: '100%',
+                  aspectRatio: '9 / 14',
+                  backgroundColor: 'var(--player-bg)',
+                  overflow: 'hidden',
                 }}
               >
-                {previewItem.player_type === 'iframe' ? (
-                  <iframe
-                    src={`${previewItem.embed_url}?autoplay=1&controls=1&modestbranding=1&rel=0`}
-                    title={previewItem.title}
-                    style={{ width: '100%', height: '100%', border: 'none' }}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
+                {item.thumbnail_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.thumbnail_url}
+                    alt={item.title}
+                    loading="lazy"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      transition: 'transform var(--transition-normal)',
+                    }}
                   />
                 ) : (
-                  <video
-                    src={previewItem.embed_url}
-                    controls
-                    autoPlay
-                    playsInline
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--text-muted)',
+                    }}
+                  >
+                    <Play size={36} />
+                  </div>
+                )}
+
+                {/* Source Badge */}
+                <div style={{ position: 'absolute', top: 'var(--space-3)', left: 'var(--space-3)' }}>
+                  <Badge variant="sage">
+                    {item.source.replace('_', ' ')}
+                  </Badge>
+                </div>
+
+                {/* Duration Badge */}
+                {item.duration && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: 'var(--space-3)',
+                      right: 'var(--space-3)',
+                      backgroundColor: 'var(--scrim-modal)',
+                      color: 'var(--cream-50)',
+                      fontSize: '11px',
+                      padding: '2px 8px',
+                      borderRadius: 'var(--radius-pill)',
+                    }}
+                  >
+                    {item.duration}s
+                  </div>
                 )}
               </div>
 
-              {/* Details & Actions */}
-              <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: '#fff' }}>
-                  {previewItem.title}
-                </h3>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8', lineHeight: 1.4 }}>
-                  {previewItem.description || previewItem.attribution_text}
-                </p>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '6px' }}>
-                  <a
-                    href={previewItem.source_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+              {/* Card Meta Content */}
+              <div
+                style={{
+                  padding: 'var(--space-4)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--space-2)',
+                  flex: 1,
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div>
+                  <h4
                     style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      color: 'var(--primary-light)',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      textDecoration: 'none',
+                      fontSize: 'var(--text-sm)',
+                      fontWeight: 'var(--font-weight-semibold)',
+                      color: 'var(--text-primary)',
+                      lineHeight: 1.4,
+                      marginBottom: '4px',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
                     }}
                   >
-                    <span>View on Source</span>
-                    <ExternalLink size={14} />
-                  </a>
+                    {item.title}
+                  </h4>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                    {item.author_name ? `@${item.author_name}` : 'Creator'}
+                  </div>
+                </div>
 
-                  <Link
-                    href="/feed"
-                    style={{
-                      padding: '8px 16px',
-                      background: 'var(--primary-gradient)',
-                      color: '#fff',
-                      borderRadius: '8px',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      textDecoration: 'none',
-                    }}
-                  >
-                    Open in Feed
-                  </Link>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingTop: 'var(--space-2)',
+                    borderTop: '1px solid var(--border-subtle)',
+                    fontSize: '11px',
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Eye size={12} />
+                    <span>{item.views_count?.toLocaleString() || '1.2k'}</span>
+                  </div>
+
+                  {item.source_url && (
+                    <a
+                      href={item.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '2px',
+                        color: 'var(--brand-primary)',
+                        fontWeight: 'var(--font-weight-semibold)',
+                      }}
+                    >
+                      <span>Open original</span>
+                      <ExternalLink size={11} />
+                    </a>
+                  )}
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      <style jsx global>{`
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-        .play-overlay:hover {
-          opacity: 1 !important;
-        }
-      `}</style>
-    </main>
+      {/* Video Preview Modal */}
+      {previewItem && (
+        <Modal
+          isOpen={Boolean(previewItem)}
+          onClose={() => setPreviewItem(null)}
+          title={previewItem.title}
+          description={`By ${previewItem.author_name || 'Creator'} • ${previewItem.source.replace('_', ' ')}`}
+        >
+          <div
+            style={{
+              width: '100%',
+              aspectRatio: '9 / 16',
+              maxHeight: '480px',
+              backgroundColor: 'var(--player-bg)',
+              borderRadius: 'var(--radius-lg)',
+              overflow: 'hidden',
+              margin: 'var(--space-4) 0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {previewItem.embed_url ? (
+              <video
+                src={previewItem.embed_url}
+                controls
+                autoPlay
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              />
+            ) : (
+              <p style={{ color: 'var(--player-text-muted)' }}>Video playback preview</p>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {previewItem.source_url && (
+              <a
+                href={previewItem.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  color: 'var(--brand-primary)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--font-weight-semibold)',
+                }}
+              >
+                <span>Visit original source</span>
+                <ExternalLink size={14} />
+              </a>
+            )}
+            <Button variant="secondary" onClick={() => setPreviewItem(null)}>
+              Close
+            </Button>
+          </div>
+        </Modal>
+      )}
+    </div>
   );
 }

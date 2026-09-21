@@ -4,9 +4,10 @@
  * VidSnap.AI Watch Together Theater (/rooms/[id])
  * Real-time synchronized video player with sub-second drift correction, live chat,
  * floating reaction bursts, participant presence, and AI Room Assistant.
+ * Redesigned in the Forest & Paper design system.
  */
 
-import React, { useState, useEffect, useRef, use } from 'react';
+import React, { useState, useEffect, useRef, use, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -14,28 +15,32 @@ import {
   Users,
   Play,
   Pause,
-  RotateCcw,
   Sparkles,
   Send,
   Crown,
   Volume2,
   VolumeX,
-  Maximize,
   ArrowLeft,
-  Loader2,
   Radio,
-  Lock,
-  Globe,
-  Settings,
-  X,
   Share2,
   CheckCircle2,
+  RefreshCw,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../../../context/AuthContext';
-import { useToast } from '../../../components/Toast';
 import { api, getStoredToken } from '../../../lib/api';
 import { Room, RoomWatchState, RoomChatMessage, RoomParticipant, RoomSummaryResponse } from '../../../lib/types';
+import {
+  Button,
+  IconButton,
+  Badge,
+  Input,
+  FormField,
+  Modal,
+  Spinner,
+  useToast,
+} from '@/components/ui';
+import styles from '../rooms.module.css';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -61,6 +66,7 @@ export default function WatchTogetherRoomPage({ params }: PageProps) {
   const [messages, setMessages] = useState<RoomChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [wsConnected, setWsConnected] = useState(false);
+  const [reconnectTrigger, setReconnectTrigger] = useState(0);
 
   // Player controls state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -106,8 +112,104 @@ export default function WatchTogetherRoomPage({ params }: PageProps) {
       }
     };
     loadRoom();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [roomId]);
+
+  // Floating reactions trigger
+  const triggerFloatingReaction = useCallback((emoji: string, userName: string) => {
+    const id = `${Date.now()}_${Math.random()}`;
+    setFloatingReactions((prev) => [...prev.slice(-8), { id, emoji, user: userName }]);
+    setTimeout(() => {
+      setFloatingReactions((prev) => prev.filter((r) => r.id !== id));
+    }, 2800);
+
+    // Confetti effect for highlights
+    if (emoji === '🔥' || emoji === '❤️' || emoji === '🌿') {
+      try {
+        confetti({ particleCount: 15, spread: 45, origin: { x: 0.8, y: 0.8 } });
+      } catch {}
+    }
+  }, []);
+
+  // Server-Authoritative Drift Correction Engine
+  const applyServerSyncState = useCallback((serverWatch: RoomWatchState) => {
+    setWatchState(serverWatch);
+    const video = videoRef.current;
+    if (!video) return;
+
+    // A. Sync Media Source if changed
+    if (serverWatch.media_url && video.src !== serverWatch.media_url) {
+      video.src = serverWatch.media_url;
+      video.load();
+    }
+
+    // B. Sync Playback Rate
+    if (video.playbackRate !== serverWatch.playback_rate) {
+      video.playbackRate = serverWatch.playback_rate;
+    }
+
+    // C. Drift Correction: Check discrepancy between client time and server time
+    const targetTime = serverWatch.position_seconds;
+    const drift = Math.abs(video.currentTime - targetTime);
+
+    // If drift exceeds 1.5 seconds, perform smooth seek
+    if (drift > 1.5) {
+      video.currentTime = targetTime;
+      setCurrentTime(targetTime);
+    }
+
+    // D. Sync Play / Pause State
+    if (serverWatch.state === 'playing') {
+      setIsPlaying(true);
+      video.play().catch(() => {
+        // Autoplay policy might require mute
+        video.muted = true;
+        setIsMuted(true);
+        video.play().catch(() => {});
+      });
+    } else {
+      setIsPlaying(false);
+      video.pause();
+    }
+  }, []);
+
+  // Handle WebSocket Events
+  const handleIncomingWsEvent = useCallback(
+    (msg: any) => {
+      switch (msg.type) {
+        case 'chat':
+          if (msg.message) {
+            setMessages((prev) => [...prev, msg.message]);
+          }
+          break;
+
+        case 'reaction':
+          triggerFloatingReaction(msg.emoji, msg.user_name);
+          break;
+
+        case 'sync_state':
+          if (msg.watch_state) {
+            applyServerSyncState(msg.watch_state);
+          }
+          break;
+
+        case 'user_joined':
+          toastInfo(`${msg.user_name} entered the room`);
+          api.rooms.getRoom(roomId).then((r) => setParticipants(r.participants)).catch(() => {});
+          break;
+
+        case 'user_left':
+          api.rooms.getRoom(roomId).then((r) => setParticipants(r.participants)).catch(() => {});
+          break;
+
+        default:
+          break;
+      }
+    },
+    [roomId, triggerFloatingReaction, applyServerSyncState, toastInfo]
+  );
 
   // 2. WebSocket Connection & Event Dispatcher
   useEffect(() => {
@@ -151,82 +253,7 @@ export default function WatchTogetherRoomPage({ params }: PageProps) {
         ws.close();
       }
     };
-  }, [room?.room_id]);
-
-  // 3. Handle WebSocket Events
-  const handleIncomingWsEvent = (msg: any) => {
-    switch (msg.type) {
-      case 'chat':
-        if (msg.message) {
-          setMessages((prev) => [...prev, msg.message]);
-        }
-        break;
-
-      case 'reaction':
-        triggerFloatingReaction(msg.emoji, msg.user_name);
-        break;
-
-      case 'sync_state':
-        if (msg.watch_state) {
-          applyServerSyncState(msg.watch_state);
-        }
-        break;
-
-      case 'user_joined':
-        toastInfo(`${msg.user_name} entered the room`);
-        api.rooms.getRoom(roomId).then((r) => setParticipants(r.participants)).catch(() => {});
-        break;
-
-      case 'user_left':
-        api.rooms.getRoom(roomId).then((r) => setParticipants(r.participants)).catch(() => {});
-        break;
-
-      default:
-        break;
-    }
-  };
-
-  // 4. Server-Authoritative Drift Correction Engine
-  const applyServerSyncState = (serverWatch: RoomWatchState) => {
-    setWatchState(serverWatch);
-    const video = videoRef.current;
-    if (!video) return;
-
-    // A. Sync Media Source if changed
-    if (serverWatch.media_url && video.src !== serverWatch.media_url) {
-      video.src = serverWatch.media_url;
-      video.load();
-    }
-
-    // B. Sync Playback Rate
-    if (video.playbackRate !== serverWatch.playback_rate) {
-      video.playbackRate = serverWatch.playback_rate;
-    }
-
-    // C. Drift Correction: Check discrepancy between client time and server time
-    const targetTime = serverWatch.position_seconds;
-    const drift = Math.abs(video.currentTime - targetTime);
-
-    // If drift exceeds 1.5 seconds, perform smooth seek
-    if (drift > 1.5) {
-      video.currentTime = targetTime;
-      setCurrentTime(targetTime);
-    }
-
-    // D. Sync Play / Pause State
-    if (serverWatch.state === 'playing') {
-      setIsPlaying(true);
-      video.play().catch(() => {
-        // Autoplay policy might require mute
-        video.muted = true;
-        setIsMuted(true);
-        video.play().catch(() => {});
-      });
-    } else {
-      setIsPlaying(false);
-      video.pause();
-    }
-  };
+  }, [room?.room_id, reconnectTrigger, handleIncomingWsEvent, roomId]);
 
   // 5. Send Playback Actions to Room
   const sendSyncAction = (action: 'play' | 'pause' | 'seek' | 'change_media', data: Partial<RoomWatchState> = {}) => {
@@ -313,21 +340,6 @@ export default function WatchTogetherRoomPage({ params }: PageProps) {
     triggerFloatingReaction(emoji, user?.name || 'You');
   };
 
-  const triggerFloatingReaction = (emoji: string, userName: string) => {
-    const id = `${Date.now()}_${Math.random()}`;
-    setFloatingReactions((prev) => [...prev.slice(-8), { id, emoji, user: userName }]);
-    setTimeout(() => {
-      setFloatingReactions((prev) => prev.filter((r) => r.id !== id));
-    }, 2800);
-
-    // Minor confetti effect for 🔥 and ❤️
-    if (emoji === '🔥' || emoji === '❤️') {
-      try {
-        confetti({ particleCount: 15, spread: 45, origin: { x: 0.8, y: 0.8 } });
-      } catch {}
-    }
-  };
-
   // 7. AI Room Assistant "Catch Me Up"
   const handleOpenAiSummary = async () => {
     setSummaryOpen(true);
@@ -344,8 +356,8 @@ export default function WatchTogetherRoomPage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <div className="container" style={{ textAlign: 'center', padding: '100px 16px' }}>
-        <Loader2 size={36} className="spin" color="var(--primary-light)" style={{ margin: '0 auto 16px auto' }} />
+      <div style={{ textAlign: 'center', padding: 'var(--space-20) var(--space-4)' }}>
+        <Spinner size="lg" style={{ margin: '0 auto var(--space-4) auto' }} />
         <p style={{ color: 'var(--text-muted)' }}>Entering Watch Together room...</p>
       </div>
     );
@@ -353,47 +365,72 @@ export default function WatchTogetherRoomPage({ params }: PageProps) {
 
   if (!room) {
     return (
-      <div className="container" style={{ textAlign: 'center', padding: '80px 16px' }}>
-        <h2>Room Not Found</h2>
-        <Link href="/rooms" className="btn btn-primary" style={{ marginTop: '16px' }}>
-          Back to Lobby
+      <div style={{ textAlign: 'center', padding: 'var(--space-20) var(--space-4)' }}>
+        <h2 style={{ marginBottom: 'var(--space-4)' }}>Room Not Found</h2>
+        <Link href="/rooms">
+          <Button variant="primary">Back to Lobby</Button>
         </Link>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '20px 16px 60px 16px', maxWidth: '1440px', margin: '0 auto' }}>
+    <div className={styles.theaterContainer}>
+      {/* Reconnect Banner if disconnected */}
+      {!wsConnected && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: 'var(--space-2) var(--space-4)',
+            background: 'var(--color-forest-900)',
+            border: '1px solid var(--warning)',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: 'var(--space-4)',
+            color: 'var(--color-cream-100)',
+            fontSize: 'var(--text-sm)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Radio size={16} style={{ color: 'var(--warning)', animation: 'pulse 1.5s infinite' }} />
+            <span>Connecting to live sync... Real-time chat &amp; playback drift correction are temporarily paused.</span>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            leftIcon={<RefreshCw size={14} />}
+            onClick={() => setReconnectTrigger((c) => c + 1)}
+          >
+            Reconnect
+          </Button>
+        </div>
+      )}
+
       {/* Top Navigation Bar */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '12px',
-        marginBottom: '20px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Link href="/rooms" className="btn btn-secondary" style={{ padding: '8px 12px', fontSize: '0.85rem' }}>
-            <ArrowLeft size={16} />
-            <span>Lobby</span>
+      <div className={styles.theaterHeader}>
+        <div className={styles.theaterHeaderLeft}>
+          <Link href="/rooms">
+            <Button variant="secondary" size="sm" leftIcon={<ArrowLeft size={16} />}>
+              Lobby
+            </Button>
           </Link>
 
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>
-                {room.name}
-              </h1>
-              <span className={`badge ${room.room_type === 'public' ? 'badge-primary' : 'badge-amber'}`}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <h1 className={styles.theaterTitle}>{room.name}</h1>
+              <Badge variant={room.room_type === 'public' ? 'sage' : 'warning'} size="sm">
                 {room.room_type}
-              </span>
-              <span className={`badge ${wsConnected ? 'badge-emerald' : 'badge-amber'}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Radio size={10} className={wsConnected ? 'spin' : ''} />
-                <span>{wsConnected ? 'Live Sync' : 'Connecting'}</span>
-              </span>
+              </Badge>
+              <Badge variant={wsConnected ? 'success' : 'warning'} size="sm">
+                <Radio size={10} style={{ marginRight: '4px' }} />
+                <span>{wsConnected ? 'Live Sync' : 'Reconnecting'}</span>
+              </Badge>
             </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-              <span>Host: <strong style={{ color: 'var(--text-primary)' }}>{room.host_name}</strong></span>
+            <div className={styles.theaterMeta}>
+              <span>
+                Host: <strong style={{ color: 'var(--text-primary)' }}>{room.host_name}</strong>
+              </span>
               <span>•</span>
               <span>{room.control_mode === 'host_only' ? '👑 Host Controls Only' : '🗳️ Democratic Control'}</span>
             </div>
@@ -401,74 +438,44 @@ export default function WatchTogetherRoomPage({ params }: PageProps) {
         </div>
 
         {/* Action buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           {/* AI Room Assistant Catch Me Up Button */}
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<Sparkles size={15} style={{ color: 'var(--color-moss-400)' }} />}
             onClick={handleOpenAiSummary}
-            className="btn btn-secondary"
-            style={{
-              padding: '8px 14px',
-              fontSize: '0.85rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(6, 182, 212, 0.15))',
-              borderColor: 'rgba(124, 58, 237, 0.3)',
-            }}
           >
-            <Sparkles size={15} color="var(--accent-cyan)" />
-            <span>Catch Me Up ✨</span>
-          </button>
+            Catch Me Up ✨
+          </Button>
 
           {canControl && (
-            <button
-              onClick={() => setChangeMediaOpen(true)}
-              className="btn btn-secondary"
-              style={{ padding: '8px 14px', fontSize: '0.85rem' }}
-            >
-              <span>Change Video</span>
-            </button>
+            <Button variant="secondary" size="sm" onClick={() => setChangeMediaOpen(true)}>
+              Change Video
+            </Button>
           )}
 
-          <button
+          <IconButton
+            icon={<Share2 size={16} />}
+            aria-label="Share Room Link"
+            variant="ghost"
+            size="sm"
             onClick={() => {
               if (navigator.clipboard) {
                 navigator.clipboard.writeText(window.location.href);
                 toastSuccess('Room link copied to clipboard!');
               }
             }}
-            className="btn btn-secondary"
-            style={{ padding: '8px 12px' }}
-            title="Share Room Link"
-          >
-            <Share2 size={16} />
-          </button>
+          />
         </div>
       </div>
 
       {/* Main Grid: Video Player + Chat Drawer */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1.8fr) minmax(320px, 1fr)',
-        gap: '20px',
-        alignItems: 'start',
-      }}>
+      <div className={styles.theaterLayout}>
         {/* Left Column: Synchronized Theater Player */}
-        <div className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div>
           {/* Player Container */}
-          <div style={{
-            position: 'relative',
-            width: '100%',
-            aspectRatio: '16/9',
-            maxHeight: '620px',
-            background: '#04060a',
-            borderRadius: 'var(--radius-md)',
-            overflow: 'hidden',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-          }}>
+          <div className={styles.playerBox}>
             {watchState?.media_type === 'youtube' && watchState.media_url ? (
               <iframe
                 src={`https://www.youtube.com/embed/${extractYouTubeId(watchState.media_url)}?autoplay=1&enablejsapi=1`}
@@ -492,92 +499,53 @@ export default function WatchTogetherRoomPage({ params }: PageProps) {
                 style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               />
             ) : (
-              <div style={{ textAlign: 'center', padding: '40px' }}>
-                <Tv size={48} color="var(--primary-light)" style={{ margin: '0 auto 12px auto', opacity: 0.7 }} />
-                <p style={{ fontWeight: 600, fontSize: '1.1rem', marginBottom: '6px' }}>Ready to Stream</p>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+              <div style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
+                <Tv size={48} style={{ margin: '0 auto var(--space-3) auto', color: 'var(--color-cream-200)', opacity: 0.8 }} />
+                <p style={{ fontWeight: 600, fontSize: 'var(--text-lg)', marginBottom: 'var(--space-1)', color: 'var(--color-cream-100)' }}>
+                  Ready to Stream
+                </p>
+                <p style={{ color: 'var(--color-cream-300)', fontSize: 'var(--text-sm)' }}>
                   {canControl ? 'Click "Change Video" to load a video for the party!' : 'Waiting for host to pick a video...'}
                 </p>
               </div>
             )}
 
             {/* Floating Reactions Overlay */}
-            <div style={{
-              position: 'absolute',
-              bottom: '40px',
-              right: '24px',
-              display: 'flex',
-              flexDirection: 'column-reverse',
-              gap: '8px',
-              pointerEvents: 'none',
-              zIndex: 20,
-            }}>
+            <div className={styles.floatingContainer}>
               {floatingReactions.map((r) => (
-                <div
-                  key={r.id}
-                  style={{
-                    animation: 'floatUp 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'rgba(10, 14, 23, 0.85)',
-                    backdropFilter: 'blur(6px)',
-                    padding: '6px 12px',
-                    borderRadius: '20px',
-                    fontSize: '1.1rem',
-                    border: '1px solid var(--glass-border)',
-                  }}
-                >
+                <div key={r.id} className={styles.floatingItem}>
                   <span>{r.emoji}</span>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{r.user}</span>
+                  <span style={{ fontSize: 'var(--text-xs)', opacity: 0.9 }}>{r.user}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Synchronized Control Bar */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.025)',
-            border: '1px solid var(--glass-border)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '12px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-          }}>
+          <div className={styles.controlBar}>
             {/* Play/Pause */}
-            <button
-              onClick={handleTogglePlay}
+            <IconButton
+              icon={isPlaying ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: '2px' }} />}
+              aria-label={isPlaying ? 'Pause for all' : 'Play for all'}
+              variant="primary"
+              size="md"
               disabled={!canControl}
-              className="btn btn-primary"
-              style={{
-                width: '40px',
-                height: '40px',
-                padding: 0,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: canControl ? 1 : 0.6,
-              }}
-              title={canControl ? (isPlaying ? 'Pause for all' : 'Play for all') : 'Host control only'}
-            >
-              {isPlaying ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: '2px' }} />}
-            </button>
+              onClick={handleTogglePlay}
+            />
 
             {/* Mute Toggle */}
-            <button
+            <IconButton
+              icon={isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+              aria-label={isMuted ? 'Unmute' : 'Mute'}
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 if (videoRef.current) {
                   videoRef.current.muted = !isMuted;
                   setIsMuted(!isMuted);
                 }
               }}
-              style={{ color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer' }}
-              title={isMuted ? 'Unmute' : 'Mute'}
-            >
-              {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-            </button>
+            />
 
             {/* Scrubber */}
             <input
@@ -588,96 +556,90 @@ export default function WatchTogetherRoomPage({ params }: PageProps) {
               value={currentTime}
               disabled={!canControl}
               onChange={(e) => handleSeek(parseFloat(e.target.value))}
-              style={{ flex: 1, cursor: canControl ? 'pointer' : 'default', accentColor: 'var(--primary-light)' }}
+              className={styles.scrubber}
             />
 
             {/* Timestamp */}
-            <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+            <span className={styles.timestamp}>
               {formatTime(currentTime)} / {formatTime(videoDuration)}
             </span>
           </div>
 
           {/* Video Title & Info */}
-          <div>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '4px' }}>
+          <div style={{ marginTop: 'var(--space-4)' }}>
+            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-1)', color: 'var(--text-primary)' }}>
               {watchState?.media_title || 'No video active'}
             </h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
               {room.description || 'Watch party in progress.'}
             </p>
           </div>
         </div>
 
         {/* Right Column: Live Chat & Presence Drawer */}
-        <div className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', height: '660px' }}>
+        <div className={styles.chatDrawer}>
           {/* Chat Header with Participants */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingBottom: '12px',
-            borderBottom: '1px solid var(--glass-border)',
-            marginBottom: '12px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Users size={16} color="var(--accent-cyan)" />
-              <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Live Chat</span>
+          <div className={styles.chatHeader}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <Users size={16} style={{ color: 'var(--color-forest-700)' }} />
+              <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
+                Live Chat
+              </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-emerald)', display: 'inline-block' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+              <span
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: 'var(--success)',
+                  display: 'inline-block',
+                }}
+              />
               <span>{participants.length || 1} online</span>
             </div>
           </div>
 
           {/* Chat Messages Feed */}
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
-            paddingRight: '6px',
-            marginBottom: '12px',
-          }}>
+          <div className={styles.chatFeed}>
             {messages.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                👋 Say hi to the party! Chat messages and emoji reactions sync in real-time.
+              <div style={{ textAlign: 'center', padding: 'var(--space-8) var(--space-2)', color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
+                👋 Say hello! Chat messages and emoji reactions sync instantly.
               </div>
             ) : (
               messages.map((m) => (
                 <div
                   key={m.message_id}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: m.is_assistant
-                      ? 'linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(6, 182, 212, 0.15))'
-                      : m.is_system
-                      ? 'rgba(255, 255, 255, 0.02)'
-                      : 'rgba(255, 255, 255, 0.04)',
-                    border: m.is_assistant ? '1px solid rgba(124, 58, 237, 0.3)' : '1px solid transparent',
-                  }}
+                  className={`${styles.chatBubble} ${m.is_assistant ? styles.chatBubbleAssistant : ''}`}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                    <span style={{
-                      fontWeight: 700,
-                      fontSize: '0.82rem',
-                      color: m.is_assistant ? 'var(--accent-cyan)' : 'var(--primary-light)',
-                    }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', marginBottom: '2px' }}>
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        fontSize: 'var(--text-xs)',
+                        color: m.is_assistant ? 'var(--color-sage-300)' : 'var(--text-primary)',
+                      }}
+                    >
                       {m.user_name}
                     </span>
                     {m.user_id === room.host_id && (
-                      <Crown size={12} color="var(--accent-amber)" />
+                      <Crown size={12} style={{ color: 'var(--color-moss-500)' }} />
                     )}
                     {m.is_assistant && (
-                      <Sparkles size={12} color="var(--accent-cyan)" />
+                      <Sparkles size={12} style={{ color: 'var(--color-sage-300)' }} />
                     )}
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
                       {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                  <div
+                    style={{
+                      fontSize: 'var(--text-sm)',
+                      color: m.is_assistant ? 'var(--color-cream-100)' : 'var(--text-primary)',
+                      lineHeight: 1.4,
+                    }}
+                  >
                     {m.text}
                   </div>
                 </div>
@@ -686,28 +648,14 @@ export default function WatchTogetherRoomPage({ params }: PageProps) {
           </div>
 
           {/* Quick Reaction Bar */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-around',
-            padding: '8px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: 'var(--radius-sm)',
-            marginBottom: '10px',
-          }}>
-            {['❤️', '🔥', '👏', '😂', '😮', '🚀'].map((emoji) => (
+          <div className={styles.reactionBar}>
+            {['❤️', '🔥', '👏', '😂', '😮', '🌿'].map((emoji) => (
               <button
                 key={emoji}
                 type="button"
+                className={styles.reactionBtn}
                 onClick={() => handleSendReaction(emoji)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  fontSize: '1.25rem',
-                  cursor: 'pointer',
-                  transition: 'transform 0.15s ease',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.3)')}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                aria-label={`Send ${emoji} reaction`}
               >
                 {emoji}
               </button>
@@ -715,158 +663,130 @@ export default function WatchTogetherRoomPage({ params }: PageProps) {
           </div>
 
           {/* Chat Input Box */}
-          <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '8px' }}>
-            <input
+          <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            <Input
               type="text"
-              placeholder={user ? "Type a message or @assistant..." : "Sign in to chat..."}
+              placeholder={user ? 'Type a message or @assistant...' : 'Sign in to chat...'}
               disabled={!user}
-              className="form-input"
-              style={{ fontSize: '0.88rem', padding: '10px 14px' }}
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
+              style={{ flex: 1 }}
             />
-            <button
+            <IconButton
               type="submit"
+              icon={<Send size={16} />}
+              aria-label="Send message"
+              variant="primary"
               disabled={!user || !chatInput.trim()}
-              className="btn btn-primary"
-              style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)' }}
-            >
-              <Send size={16} />
-            </button>
+            />
           </form>
         </div>
       </div>
 
       {/* CHANGE MEDIA MODAL */}
-      {changeMediaOpen && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.75)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1100,
-          padding: '16px',
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '480px', padding: '28px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Change Watch Party Video</h3>
-              <button onClick={() => setChangeMediaOpen(false)} style={{ color: 'var(--text-muted)' }}>
-                <X size={20} />
-              </button>
-            </div>
+      <Modal
+        isOpen={changeMediaOpen}
+        onClose={() => setChangeMediaOpen(false)}
+        title="Change Watch Party Video"
+        size="md"
+      >
+        <form onSubmit={handleChangeMediaSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <FormField label="Video URL" required>
+            <Input
+              type="text"
+              required
+              placeholder="Direct MP4 URL or YouTube Shorts link"
+              value={newMediaUrl}
+              onChange={(e) => setNewMediaUrl(e.target.value)}
+            />
+          </FormField>
 
-            <form onSubmit={handleChangeMediaSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label className="form-label">Video URL *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Direct video URL or YouTube Shorts link"
-                  className="form-input"
-                  value={newMediaUrl}
-                  onChange={(e) => setNewMediaUrl(e.target.value)}
-                />
-              </div>
+          <FormField label="Video Title (Optional)">
+            <Input
+              type="text"
+              placeholder="e.g. Crazy Drone Shot in Nature"
+              value={newMediaTitle}
+              onChange={(e) => setNewMediaTitle(e.target.value)}
+            />
+          </FormField>
 
-              <div>
-                <label className="form-label">Video Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Crazy Drone Shot in Tokyo"
-                  className="form-input"
-                  value={newMediaTitle}
-                  onChange={(e) => setNewMediaTitle(e.target.value)}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                <button type="button" onClick={() => setChangeMediaOpen(false)} className="btn btn-secondary" style={{ flex: 1 }}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary" style={{ flex: 2 }}>
-                  Broadcast Video
-                </button>
-              </div>
-            </form>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+            <Button type="button" variant="ghost" onClick={() => setChangeMediaOpen(false)} style={{ flex: 1 }}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" style={{ flex: 2 }}>
+              Broadcast Video
+            </Button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
       {/* AI CATCH ME UP MODAL */}
-      {summaryOpen && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.75)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1100,
-          padding: '16px',
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '500px', padding: '28px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Sparkles size={20} color="var(--accent-cyan)" />
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>AI Room Recap ✨</h3>
-              </div>
-              <button onClick={() => setSummaryOpen(false)} style={{ color: 'var(--text-muted)' }}>
-                <X size={20} />
-              </button>
+      <Modal
+        isOpen={summaryOpen}
+        onClose={() => setSummaryOpen(false)}
+        title="AI Room Recap ✨"
+        size="md"
+      >
+        {summaryLoading ? (
+          <div style={{ textAlign: 'center', padding: 'var(--space-10) 0' }}>
+            <Spinner size="lg" style={{ margin: '0 auto var(--space-3) auto' }} />
+            <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+              Analyzing recent chat &amp; video moments...
+            </p>
+          </div>
+        ) : summaryData ? (
+          <div>
+            <div
+              style={{
+                background: 'var(--bg-sunken)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                padding: 'var(--space-4)',
+                marginBottom: 'var(--space-4)',
+                fontSize: 'var(--text-sm)',
+                lineHeight: 1.5,
+                whiteSpace: 'pre-line',
+                color: 'var(--text-primary)',
+              }}
+            >
+              {summaryData.summary}
             </div>
 
-            {summaryLoading ? (
-              <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                <Loader2 size={32} className="spin" color="var(--accent-cyan)" style={{ margin: '0 auto 12px auto' }} />
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Analyzing recent chat & video moments...</p>
-              </div>
-            ) : summaryData ? (
-              <div>
-                <div style={{
-                  background: 'rgba(124, 58, 237, 0.08)',
-                  border: '1px solid rgba(124, 58, 237, 0.25)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '16px',
-                  marginBottom: '16px',
-                  fontSize: '0.92rem',
-                  lineHeight: 1.5,
-                  whiteSpace: 'pre-line',
-                }}>
-                  {summaryData.summary}
-                </div>
-
-                <div style={{ marginBottom: '20px' }}>
-                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>
-                    Key Highlights
-                  </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {summaryData.highlights.map((h, idx) => (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem' }}>
-                        <CheckCircle2 size={14} color="var(--accent-emerald)" />
-                        <span>{h}</span>
-                      </div>
-                    ))}
+            <div style={{ marginBottom: 'var(--space-6)' }}>
+              <h4
+                style={{
+                  fontSize: 'var(--text-xs)',
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: 'var(--space-2)',
+                }}
+              >
+                Key Highlights
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                {summaryData.highlights.map((h, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-sm)' }}>
+                    <CheckCircle2 size={14} style={{ color: 'var(--success)' }} />
+                    <span>{h}</span>
                   </div>
-                </div>
-
-                <button
-                  onClick={() => setSummaryOpen(false)}
-                  className="btn btn-primary"
-                  style={{ width: '100%', justifyContent: 'center' }}
-                >
-                  Got It, Let's Watch!
-                </button>
+                ))}
               </div>
-            ) : (
-              <p style={{ color: 'var(--text-muted)' }}>No summary available.</p>
-            )}
+            </div>
+
+            <Button
+              variant="primary"
+              onClick={() => setSummaryOpen(false)}
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              Got It, Let&apos;s Watch!
+            </Button>
           </div>
-        </div>
-      )}
+        ) : (
+          <p style={{ color: 'var(--text-muted)' }}>No summary available.</p>
+        )}
+      </Modal>
     </div>
   );
 }

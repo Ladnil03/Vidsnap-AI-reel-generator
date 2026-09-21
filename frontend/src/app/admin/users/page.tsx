@@ -6,10 +6,19 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Coins, Shield, Edit3, X, Loader2 } from 'lucide-react';
-import { api } from '../../../lib/api';
-import { useToast } from '../../../components/Toast';
-import { AdminUser } from '../../../lib/types';
+import { Users, Search, Coins, Edit3, X } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
+import { AdminUser } from '@/lib/types';
+import {
+  Button,
+  Input,
+  Badge,
+  Modal,
+  FormField,
+  Spinner,
+} from '@/components/ui';
+import styles from '../admin.module.css';
 
 export default function AdminUsersPage() {
   const { success, error: toastError } = useToast();
@@ -70,97 +79,96 @@ export default function AdminUsersPage() {
   return (
     <div>
       {/* Header & Search */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '16px',
-        marginBottom: '24px',
-      }}>
+      <div className={styles.toolbar}>
         <div>
-          <h2 style={{ fontSize: '1.4rem', marginBottom: '4px' }}>Registered Accounts</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+          <h2 style={{ fontSize: 'var(--text-xl)', fontFamily: 'var(--font-display)', margin: '0 0 var(--space-1) 0', color: 'var(--color-text)' }}>
+            Registered Accounts
+          </h2>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)', margin: 0 }}>
             {users.length} total registered users across all roles.
           </p>
         </div>
 
-        <div style={{ position: 'relative', width: '280px' }}>
-          <input
+        <div style={{ width: '280px' }}>
+          <Input
             type="text"
             placeholder="Search by name or email..."
-            className="form-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ paddingLeft: '36px', fontSize: '0.85rem' }}
+            leftIcon={<Search size={16} />}
           />
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: 'var(--text-muted)' }} />
         </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <Loader2 size={32} color="var(--primary-light)" style={{ animation: 'spinSlow 2s linear infinite', margin: '0 auto 12px auto' }} />
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Loading user directory...</p>
+        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+          <Spinner size="lg" />
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-3)' }}>
+            Loading user directory...
+          </p>
         </div>
       ) : (
-        <div className="glass-card" style={{ padding: '0', overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+        <div className={styles.tableWrapper}>
+          <table className={styles.adminTable}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-secondary)', background: 'rgba(255, 255, 255, 0.02)' }}>
-                <th style={{ padding: '14px 18px', fontWeight: 600 }}>User</th>
-                <th style={{ padding: '14px 18px', fontWeight: 600 }}>Roles</th>
-                <th style={{ padding: '14px 18px', fontWeight: 600 }}>Tokens</th>
-                <th style={{ padding: '14px 18px', fontWeight: 600 }}>Reels Made</th>
-                <th style={{ padding: '14px 18px', fontWeight: 600 }}>Joined</th>
-                <th style={{ padding: '14px 18px', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+              <tr>
+                <th>User</th>
+                <th>Roles</th>
+                <th>Tokens</th>
+                <th>Reels Made</th>
+                <th>Joined</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.map((u) => (
-                <tr key={u.user_id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                  <td style={{ padding: '14px 18px' }}>
-                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{u.name}</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{u.email}</div>
+                <tr key={u.user_id}>
+                  <td>
+                    <div style={{ fontWeight: 600, color: 'var(--color-text)' }}>{u.name}</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{u.email}</div>
                   </td>
 
-                  <td style={{ padding: '14px 18px' }}>
-                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                  <td>
+                    <div style={{ display: 'flex', gap: 'var(--space-1)', flexWrap: 'wrap' }}>
                       {u.roles.map((r, i) => (
-                        <span key={i} className={`badge ${r === 'admin' ? 'badge-cyan' : 'badge-primary'}`} style={{ fontSize: '0.7rem' }}>
+                        <Badge
+                          key={i}
+                          variant={r === 'admin' ? 'moss' : 'sage'}
+                          size="sm"
+                        >
                           {r}
-                        </span>
+                        </Badge>
                       ))}
                     </div>
                   </td>
 
-                  <td style={{ padding: '14px 18px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: 'var(--primary-light)' }}>
+                  <td>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-1)', fontWeight: 700, color: 'var(--color-forest-700)' }}>
                       <Coins size={14} />
                       <span>{u.tokens_remaining}</span>
                     </div>
                   </td>
 
-                  <td style={{ padding: '14px 18px', color: 'var(--text-secondary)' }}>
+                  <td style={{ color: 'var(--color-text-muted)' }}>
                     {u.reels_count || 0}
                   </td>
 
-                  <td style={{ padding: '14px 18px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                  <td style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>
                     {u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}
                   </td>
 
-                  <td style={{ padding: '14px 18px', textAlign: 'right' }}>
-                    <button
+                  <td style={{ textAlign: 'right' }}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => {
                         setEditingUser(u);
                         setNewTokens(u.tokens_remaining);
                       }}
-                      className="btn btn-secondary btn-sm"
-                      style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                      leftIcon={<Edit3 size={13} />}
                     >
-                      <Edit3 size={13} />
-                      <span>Adjust Tokens</span>
-                    </button>
+                      Adjust Tokens
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -170,66 +178,43 @@ export default function AdminUsersPage() {
       )}
 
       {/* Adjust Tokens Modal */}
-      {editingUser && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: '16px',
-        }}>
-          <div className="glass-card" style={{ maxWidth: '400px', width: '100%', background: 'var(--bg-surface)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h3 style={{ fontSize: '1.25rem' }}>Adjust User Tokens</h3>
-              <button onClick={() => setEditingUser(null)} style={{ color: 'var(--text-muted)' }}>
-                <X size={18} />
-              </button>
-            </div>
+      <Modal
+        isOpen={Boolean(editingUser)}
+        onClose={() => setEditingUser(null)}
+        title="Adjust User Tokens"
+        description={editingUser ? `Updating token balance for ${editingUser.email}. This records an atomic ledger event.` : ''}
+        size="sm"
+      >
+        <form onSubmit={handleUpdateTokens} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <FormField label="New Token Balance" required>
+            <Input
+              type="number"
+              min={0}
+              max={10000}
+              required
+              value={newTokens}
+              onChange={(e) => setNewTokens(parseInt(e.target.value, 10) || 0)}
+            />
+          </FormField>
 
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>
-              Updating token balance for <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{editingUser.email}</span>. This will record an atomic ledger event.
-            </p>
-
-            <form onSubmit={handleUpdateTokens}>
-              <div className="form-group">
-                <label className="form-label">New Token Balance</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={10000}
-                  required
-                  className="form-input"
-                  value={newTokens}
-                  onChange={(e) => setNewTokens(parseInt(e.target.value, 10) || 0)}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                <button
-                  type="button"
-                  onClick={() => setEditingUser(null)}
-                  className="btn btn-secondary"
-                  style={{ flex: 1 }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={updating}
-                  className="btn btn-primary"
-                  style={{ flex: 1 }}
-                >
-                  {updating ? 'Saving...' : 'Save Balance'}
-                </button>
-              </div>
-            </form>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end', marginTop: 'var(--space-2)' }}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setEditingUser(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={updating}
+            >
+              Save Balance
+            </Button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 }

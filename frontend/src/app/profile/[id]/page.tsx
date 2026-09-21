@@ -1,33 +1,51 @@
 'use client';
 
+/**
+ * VidSnap.AI Public Creator Profile (/profile/[id])
+ * Redesigned in the Forest & Paper design system.
+ */
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  Users, 
-  UserPlus, 
-  Check, 
-  Film, 
-  Heart, 
-  Eye, 
-  Share2, 
+import {
+  Users,
+  UserPlus,
+  Check,
+  Film,
+  Heart,
+  Eye,
   ArrowLeft,
-  Sparkles
+  Play,
+  Share2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { UserProfile, VideoContent } from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
 import EngagementBar from '@/components/EngagementBar';
+import {
+  Button,
+  IconButton,
+  Card,
+  Badge,
+  Modal,
+  Spinner,
+  EmptyState,
+  useToast,
+} from '@/components/ui';
+import styles from '../profile.module.css';
 
 export default function CreatorProfilePage() {
   const params = useParams();
   const userId = params?.id as string;
   const { user } = useAuth();
+  const { error: toastError, success: toastSuccess } = useToast();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [reels, setReels] = useState<VideoContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeVideo, setActiveVideo] = useState<VideoContent | null>(null);
+  const [followingLoading, setFollowingLoading] = useState(false);
 
   const loadData = () => {
     if (!userId) return;
@@ -40,7 +58,10 @@ export default function CreatorProfilePage() {
         setProfile(prof);
         setReels(vids);
       })
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        toastError('Failed to load creator profile.');
+      })
       .finally(() => setLoading(false));
   };
 
@@ -54,6 +75,7 @@ export default function CreatorProfilePage() {
       return;
     }
 
+    setFollowingLoading(true);
     try {
       if (profile.is_following) {
         const res = await api.social.unfollow(userId);
@@ -67,6 +89,7 @@ export default function CreatorProfilePage() {
               }
             : null
         );
+        toastSuccess(`Unfollowed ${profile.name}`);
       } else {
         const res = await api.social.follow(userId);
         setProfile((prev) =>
@@ -79,374 +102,195 @@ export default function CreatorProfilePage() {
               }
             : null
         );
+        toastSuccess(`Following ${profile.name}!`);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toastError('Failed to update follow status.');
+    } finally {
+      setFollowingLoading(false);
     }
   };
 
   if (loading) {
     return (
-      <div style={{ paddingTop: '100px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-        Loading creator profile...
+      <div style={{ textAlign: 'center', padding: 'var(--space-20) var(--space-4)' }}>
+        <Spinner size="lg" style={{ margin: '0 auto var(--space-4) auto' }} />
+        <p style={{ color: 'var(--text-muted)' }}>Loading creator profile...</p>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div style={{ paddingTop: '120px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-        <h2>User Not Found</h2>
-        <Link href="/feed" style={{ color: 'var(--primary-light)' }}>
-          Back to Feed
-        </Link>
+      <div className={styles.publicContainer}>
+        <EmptyState
+          icon={<Users size={40} />}
+          title="Creator Not Found"
+          description="The creator profile you are looking for does not exist or has been removed."
+          actionLabel="Back to Feed"
+          onAction={() => {
+            window.location.href = '/feed';
+          }}
+        />
       </div>
     );
   }
 
-  const isSelf = user?.user_id === profile.user_id;
-
   return (
-    <div style={{ paddingTop: '88px', minHeight: '100vh', paddingBottom: '4rem' }}>
-      <div className="container" style={{ maxWidth: '1000px' }}>
-        {/* Back link */}
-        <Link
-          href="/feed"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: 'var(--text-secondary)',
-            textDecoration: 'none',
-            fontSize: '0.9rem',
-            marginBottom: '1.5rem',
-          }}
-        >
-          <ArrowLeft size={16} /> Back to Feed
+    <div className={styles.publicContainer}>
+      {/* Top Bar with Back Link */}
+      <div style={{ marginBottom: 'var(--space-4)' }}>
+        <Link href="/explore">
+          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft size={16} />}>
+            Back to Explore
+          </Button>
         </Link>
-
-        {/* Profile Card Header */}
-        <div
-          style={{
-            background: 'var(--glass-bg)',
-            border: '1px solid var(--glass-border)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '2rem',
-            marginBottom: '2rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1.5rem',
-            boxShadow: 'var(--shadow-md)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '1.5rem',
-              flexWrap: 'wrap',
-            }}
-          >
-            {/* Avatar and Details */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div
-                style={{
-                  width: '76px',
-                  height: '76px',
-                  borderRadius: '50%',
-                  background: 'var(--primary-gradient)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#fff',
-                  fontSize: '2rem',
-                  fontWeight: 800,
-                  boxShadow: '0 4px 16px var(--primary-glow)',
-                }}
-              >
-                {profile.name.charAt(0).toUpperCase()}
-              </div>
-
-              <div>
-                <h1 style={{ margin: '0 0 0.25rem', fontSize: '1.75rem', fontWeight: 800 }}>
-                  {profile.name}
-                </h1>
-                <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                  @{profile.name.toLowerCase().replace(/\s+/g, '')}
-                </div>
-                {profile.bio && (
-                  <p style={{ margin: 0, color: 'var(--text-primary)', fontSize: '0.95rem', maxWidth: '500px', lineHeight: 1.4 }}>
-                    {profile.bio}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div>
-              {!isSelf ? (
-                <button
-                  onClick={handleFollowToggle}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 22px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: profile.is_following ? 'rgba(255, 255, 255, 0.1)' : 'var(--brand-gradient)',
-                    border: profile.is_following ? '1px solid var(--border-subtle)' : 'none',
-                    color: '#fff',
-                    fontWeight: 600,
-                    fontSize: '0.95rem',
-                    cursor: 'pointer',
-                    boxShadow: profile.is_following ? 'none' : '0 4px 14px var(--primary-glow)',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  {profile.is_friend ? (
-                    <>
-                      <Check size={18} /> Mutual Friends
-                    </>
-                  ) : profile.is_following ? (
-                    <>
-                      <Check size={18} /> Following
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus size={18} /> Follow
-                    </>
-                  )}
-                </button>
-              ) : (
-                <Link
-                  href="/profile"
-                  style={{
-                    padding: '10px 20px',
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: 'var(--radius-sm)',
-                    color: 'var(--text-primary)',
-                    textDecoration: 'none',
-                    fontWeight: 600,
-                    fontSize: '0.9rem',
-                  }}
-                >
-                  Edit Profile
-                </Link>
-              )}
-            </div>
-          </div>
-
-          {/* Social Stats Numbers */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '2.5rem',
-              borderTop: '1px solid var(--border-subtle)',
-              paddingTop: '1.25rem',
-            }}
-          >
-            <div>
-              <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {profile.followers_count}
-              </span>
-              <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Followers
-              </span>
-            </div>
-            <div>
-              <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {profile.following_count}
-              </span>
-              <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Following
-              </span>
-            </div>
-            <div>
-              <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {reels.length}
-              </span>
-              <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Reels
-              </span>
-            </div>
-          </div>
-
-          {/* Joined Communities Badges */}
-          {profile.communities && profile.communities.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Tribes:</span>
-              {profile.communities.map((c) => (
-                <span
-                  key={c.community_id}
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    padding: '3px 10px',
-                    borderRadius: '999px',
-                    background: 'rgba(99, 102, 241, 0.1)',
-                    border: '1px solid rgba(99, 102, 241, 0.25)',
-                    color: 'var(--primary-light)',
-                  }}
-                >
-                  c/{c.slug}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Creator's Published Reels Grid */}
-        <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Film size={20} /> Published Reels
-        </h2>
-
-        {reels.length === 0 ? (
-          <div
-            style={{
-              padding: '3rem',
-              textAlign: 'center',
-              background: 'var(--glass-bg)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--text-secondary)',
-            }}
-          >
-            No published reels yet from this creator.
-          </div>
-        ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-              gap: '1rem',
-            }}
-          >
-            {reels.map((reel) => (
-              <div
-                key={reel.video_id}
-                onClick={() => setActiveVideo(reel)}
-                style={{
-                  position: 'relative',
-                  aspectRatio: '9 / 16',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  background: '#000',
-                  border: '1px solid var(--glass-border)',
-                  cursor: 'pointer',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
-              >
-                <video
-                  src={reel.video_url}
-                  poster={reel.thumbnail_url}
-                  muted
-                  playsInline
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'flex-end',
-                    padding: '12px',
-                  }}
-                >
-                  <h4
-                    style={{
-                      margin: '0 0 4px',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      color: '#fff',
-                      lineHeight: 1.3,
-                    }}
-                  >
-                    {reel.title}
-                  </h4>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                      <Eye size={12} /> {reel.views_count}
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                      <Heart size={12} /> {reel.likes_count}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Modal Video Player */}
-      {activeVideo && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.85)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-            padding: '1rem',
-          }}
-          onClick={() => setActiveVideo(null)}
-        >
-          <div
-            style={{
-              position: 'relative',
-              height: '90vh',
-              aspectRatio: '9 / 16',
-              maxWidth: '420px',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              background: '#000',
-              boxShadow: '0 16px 48px rgba(0, 0, 0, 0.9)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <video
-              src={activeVideo.video_url}
-              poster={activeVideo.thumbnail_url}
-              controls
-              autoPlay
-              playsInline
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-            <div style={{ position: 'absolute', right: '8px', bottom: '24px', zIndex: 5 }}>
-              <EngagementBar video={activeVideo} />
+      {/* Creator Profile Header */}
+      <Card variant="raised" className={styles.profileHeader}>
+        <div className={styles.userInfo}>
+          <div className={styles.avatarLarge}>
+            {profile.name.charAt(0).toUpperCase()}
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-1)' }}>
+              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                {profile.name}
+              </h1>
+              {profile.is_friend && (
+                <Badge variant="sage" size="sm">
+                  Friend
+                </Badge>
+              )}
             </div>
-            <button
-              onClick={() => setActiveVideo(null)}
+
+            <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: '0 0 var(--space-3) 0', maxWidth: '500px' }}>
+              {profile.bio || 'Creating vertical stories and immersive AI reels.'}
+            </p>
+
+            {/* Follower stats */}
+            <div style={{ display: 'flex', gap: 'var(--space-4)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+              <span>
+                <strong style={{ color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>{profile.followers_count}</strong> followers
+              </span>
+              <span>
+                <strong style={{ color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>{profile.following_count}</strong> following
+              </span>
+              <span>
+                <strong style={{ color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>{reels.length}</strong> reels
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        {user?.user_id !== profile.user_id && (
+          <Button
+            variant={profile.is_following ? 'secondary' : 'primary'}
+            loading={followingLoading}
+            leftIcon={profile.is_following ? <Check size={16} /> : <UserPlus size={16} />}
+            onClick={handleFollowToggle}
+          >
+            {profile.is_following ? 'Following' : 'Follow Creator'}
+          </Button>
+        )}
+      </Card>
+
+      {/* Creator Reels Grid */}
+      <div style={{ marginBottom: 'var(--space-4)' }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', fontWeight: 700, margin: 0 }}>
+          Published Reels
+        </h2>
+      </div>
+
+      {reels.length === 0 ? (
+        <EmptyState
+          icon={<Film size={40} />}
+          title="No Reels Published"
+          description="This creator has not published any public vertical reels yet."
+        />
+      ) : (
+        <div className={styles.reelsGrid}>
+          {reels.map((reel) => (
+            <div
+              key={reel.video_id}
+              className={styles.reelCard}
+              onClick={() => setActiveVideo(reel)}
+            >
+              {reel.video_url && (
+                <video
+                  src={reel.video_url}
+                  muted
+                  playsInline
+                  preload="metadata"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              )}
+
+              <div className={styles.reelOverlay}>
+                <div style={{ fontWeight: 600, fontSize: 'var(--text-xs)', marginBottom: 'var(--space-1)' }}>
+                  {reel.title}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', fontSize: '11px', opacity: 0.85 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <Eye size={12} /> {reel.views_count}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <Heart size={12} /> {reel.likes_count}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* VIDEO PLAYER MODAL */}
+      <Modal
+        isOpen={Boolean(activeVideo)}
+        onClose={() => setActiveVideo(null)}
+        title={activeVideo?.title || 'Video Player'}
+        size="lg"
+      >
+        {activeVideo && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div
               style={{
-                position: 'absolute',
-                top: '12px',
-                right: '12px',
-                background: 'rgba(0, 0, 0, 0.6)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                color: '#fff',
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                cursor: 'pointer',
+                position: 'relative',
+                width: '100%',
+                aspectRatio: '9 / 16',
+                maxHeight: '520px',
+                background: 'var(--player-bg)',
+                borderRadius: 'var(--radius-md)',
+                overflow: 'hidden',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                zIndex: 6,
+                margin: '0 auto',
               }}
             >
-              ✕
-            </button>
+              <video
+                src={activeVideo.video_url}
+                controls
+                autoPlay
+                playsInline
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              />
+            </div>
+
+            <EngagementBar
+              videoId={activeVideo.video_id}
+              video={activeVideo}
+              initialLikes={activeVideo.likes_count}
+              initialCommentsCount={activeVideo.comments_count}
+              initialSaved={false}
+              layout="horizontal"
+            />
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

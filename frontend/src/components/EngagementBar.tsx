@@ -1,17 +1,13 @@
 'use client';
 
-/**
- * VidSnap.AI Video Engagement Bar
- * Interactive Likes, Saves/Bookmarks, Comments drawer, and Share actions.
- */
-
 import React, { useState } from 'react';
-import { Heart, Bookmark, MessageSquare, Share2, Send, X, Loader2, Flag } from 'lucide-react';
+import { Heart, Bookmark, MessageSquare, Share2, Send, X, Flag, Sparkles } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../components/Toast';
+import { useToast } from './ui';
 import { VideoComment, VideoContent } from '../lib/types';
 import ReportModal from './ReportModal';
+import { IconButton, Button, Avatar, Spinner } from './ui';
 
 export interface EngagementBarProps {
   videoId?: string;
@@ -22,6 +18,7 @@ export interface EngagementBarProps {
   initialLiked?: boolean;
   initialSaved?: boolean;
   videoUrl?: string;
+  layout?: 'rail' | 'horizontal';
 }
 
 export function EngagementBar({
@@ -33,6 +30,7 @@ export function EngagementBar({
   initialLiked = false,
   initialSaved = false,
   videoUrl,
+  layout = 'rail',
 }: EngagementBarProps) {
   const { user } = useAuth();
   const { success, error: toastError, info } = useToast();
@@ -47,11 +45,10 @@ export function EngagementBar({
 
   const [liked, setLiked] = useState(resolvedLiked);
   const [likesCount, setLikesCount] = useState(resolvedLikes);
-
   const [saved, setSaved] = useState(resolvedSaved);
   const [savesCount, setSavesCount] = useState(resolvedSaves);
-
   const [commentsCount, setCommentsCount] = useState(resolvedComments);
+
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [comments, setComments] = useState<VideoComment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -64,7 +61,6 @@ export function EngagementBar({
       info('Please sign in to like this reel.');
       return;
     }
-    // Optimistic UI update
     const nextState = !liked;
     setLiked(nextState);
     setLikesCount((prev) => (nextState ? prev + 1 : Math.max(0, prev - 1)));
@@ -74,7 +70,6 @@ export function EngagementBar({
       setLiked(res.liked);
       setLikesCount(res.likes_count);
     } catch {
-      // Revert on error
       setLiked(!nextState);
       setLikesCount((prev) => (!nextState ? prev + 1 : Math.max(0, prev - 1)));
     }
@@ -85,7 +80,6 @@ export function EngagementBar({
       info('Please sign in to bookmark this reel.');
       return;
     }
-    // Optimistic UI update
     const nextState = !saved;
     setSaved(nextState);
     setSavesCount((prev) => (nextState ? prev + 1 : Math.max(0, prev - 1)));
@@ -94,275 +88,342 @@ export function EngagementBar({
       const res = await api.content.toggleSave(resolvedVideoId);
       setSaved(res.saved);
       setSavesCount(res.saves_count);
+      if (res.saved) success('Reel saved to your bookmarks.');
     } catch {
       setSaved(!nextState);
       setSavesCount((prev) => (!nextState ? prev + 1 : Math.max(0, prev - 1)));
     }
   };
 
-  const handleOpenComments = async () => {
-    setCommentsOpen(true);
-    if (comments.length === 0) {
-      setLoadingComments(true);
+  const handleShare = async () => {
+    const url = resolvedUrl || (typeof window !== 'undefined' ? window.location.href : '');
+    if (navigator.share) {
       try {
-        const list = await api.content.listComments(resolvedVideoId);
-        setComments(list);
+        await navigator.share({
+          title: video?.title || 'Watch this reel on VidSnap.AI',
+          url,
+        });
+        return;
       } catch {
-        // Handled
-      } finally {
-        setLoadingComments(false);
+        // Fallback to clipboard
       }
+    }
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      success('Reel link copied to clipboard!');
+    }
+  };
+
+  const openComments = async () => {
+    setCommentsOpen(true);
+    setLoadingComments(true);
+    try {
+      const res = await api.content.listComments(resolvedVideoId);
+      setComments(res);
+    } catch {
+      // Ignored
+    } finally {
+      setLoadingComments(false);
     }
   };
 
   const handlePostComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      info('Please sign in to post comments.');
+      info('Please sign in to comment.');
       return;
     }
-    if (!newCommentText.trim()) return;
+    const text = newCommentText.trim();
+    if (!text || submittingComment) return;
 
     setSubmittingComment(true);
     try {
-      const comment = await api.content.addComment(resolvedVideoId, newCommentText.trim());
-      setComments((prev) => [comment, ...prev]);
-      setCommentsCount((prev) => prev + 1);
+      const newComment = await api.content.addComment(resolvedVideoId, text);
+      setComments((prev) => [newComment, ...prev]);
+      setCommentsCount((c) => c + 1);
       setNewCommentText('');
-      success('Comment added!');
+      success('Comment posted!');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to post comment';
-      toastError(msg);
+      toastError((err as Error).message || 'Failed to post comment.');
     } finally {
       setSubmittingComment(false);
     }
   };
 
-  const handleShare = () => {
-    const url = resolvedUrl || (typeof window !== 'undefined' ? window.location.href : '');
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url);
-      success('Link copied to clipboard!');
-    }
-  };
+  const isRail = layout === 'rail';
 
   return (
-    <div>
-      {/* Interaction Buttons Row */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        padding: '10px 0',
-      }}>
-        {/* Like */}
-        <button
-          onClick={handleLike}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: liked ? 'var(--accent-rose)' : 'var(--text-secondary)',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            transition: 'transform 0.15s',
-          }}
-          onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
-          onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-          title="Like video"
-        >
-          <Heart size={18} fill={liked ? 'var(--accent-rose)' : 'transparent'} />
-          <span>{likesCount}</span>
-        </button>
+    <>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: isRail ? 'column' : 'row',
+          alignItems: 'center',
+          gap: isRail ? 'var(--space-3)' : 'var(--space-4)',
+        }}
+      >
+        {/* Like Button */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+          <button
+            type="button"
+            onClick={handleLike}
+            aria-label={liked ? 'Unlike reel' : 'Like reel'}
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: 'var(--radius-pill)',
+              backgroundColor: 'var(--scrim-medium)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid var(--player-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: liked ? 'var(--danger)' : 'var(--player-text-primary)',
+              cursor: 'pointer',
+              transition: 'transform var(--transition-fast), color var(--transition-fast)',
+            }}
+          >
+            <Heart size={22} fill={liked ? 'currentColor' : 'none'} />
+          </button>
+          <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--player-text-secondary)' }}>
+            {likesCount}
+          </span>
+        </div>
 
-        {/* Save / Bookmark */}
-        <button
-          onClick={handleSave}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: saved ? '#fbbf24' : 'var(--text-secondary)',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            transition: 'transform 0.15s',
-          }}
-          onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
-          onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-          title="Bookmark video"
-        >
-          <Bookmark size={18} fill={saved ? '#fbbf24' : 'transparent'} />
-          <span>{savesCount}</span>
-        </button>
+        {/* Comment Button */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+          <button
+            type="button"
+            onClick={openComments}
+            aria-label="View comments"
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: 'var(--radius-pill)',
+              backgroundColor: 'var(--scrim-medium)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid var(--player-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--player-text-primary)',
+              cursor: 'pointer',
+              transition: 'transform var(--transition-fast)',
+            }}
+          >
+            <MessageSquare size={22} />
+          </button>
+          <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--player-text-secondary)' }}>
+            {commentsCount}
+          </span>
+        </div>
 
-        {/* Comments */}
-        <button
-          onClick={handleOpenComments}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: 'var(--text-secondary)',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-          }}
-          title="View comments"
-        >
-          <MessageSquare size={18} />
-          <span>{commentsCount}</span>
-        </button>
+        {/* Save / Bookmark Button */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+          <button
+            type="button"
+            onClick={handleSave}
+            aria-label={saved ? 'Remove bookmark' : 'Bookmark reel'}
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: 'var(--radius-pill)',
+              backgroundColor: 'var(--scrim-medium)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid var(--player-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: saved ? 'var(--raw-sage)' : 'var(--player-text-primary)',
+              cursor: 'pointer',
+              transition: 'transform var(--transition-fast), color var(--transition-fast)',
+            }}
+          >
+            <Bookmark size={22} fill={saved ? 'currentColor' : 'none'} />
+          </button>
+          <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--player-text-secondary)' }}>
+            {savesCount}
+          </span>
+        </div>
 
-        {/* Share */}
-        <button
-          onClick={handleShare}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: 'var(--text-secondary)',
-            fontSize: '0.85rem',
-            marginLeft: 'auto',
-          }}
-          title="Share video"
-        >
-          <Share2 size={18} />
-        </button>
+        {/* Share Button */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+          <button
+            type="button"
+            onClick={handleShare}
+            aria-label="Share reel"
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: 'var(--radius-pill)',
+              backgroundColor: 'var(--scrim-medium)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid var(--player-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--player-text-primary)',
+              cursor: 'pointer',
+              transition: 'transform var(--transition-fast)',
+            }}
+          >
+            <Share2 size={22} />
+          </button>
+        </div>
 
-        {/* Report */}
-        <button
-          onClick={() => setReportModalOpen(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: 'var(--text-muted)',
-            fontSize: '0.85rem',
-            cursor: 'pointer',
-          }}
-          title="Report inappropriate content"
-        >
-          <Flag size={16} />
-        </button>
+        {/* Report Button */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+          <button
+            type="button"
+            onClick={() => setReportModalOpen(true)}
+            aria-label="Report reel"
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: 'var(--radius-pill)',
+              backgroundColor: 'var(--scrim-medium)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid var(--player-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--player-text-muted)',
+              cursor: 'pointer',
+              transition: 'transform var(--transition-fast)',
+            }}
+          >
+            <Flag size={18} />
+          </button>
+        </div>
       </div>
 
-      {/* Slide-out / Modal Comments Drawer */}
+      {/* Comments Drawer / Sheet */}
       {commentsOpen && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(8px)',
-          zIndex: 9999,
-          display: 'flex',
-          justifyContent: 'flex-end',
-        }}>
-          <div style={{
-            width: '100%',
-            maxWidth: '420px',
-            background: 'var(--bg-surface)',
-            height: '100%',
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'var(--overlay-scrim)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 500,
             display: 'flex',
-            flexDirection: 'column',
-            borderLeft: '1px solid var(--glass-border)',
-            boxShadow: 'var(--shadow-lg)',
-            animation: 'fadeInUp 0.25s ease-out',
-          }}>
-            {/* Header */}
-            <div style={{
+            justifyContent: 'flex-end',
+          }}
+          onClick={() => setCommentsOpen(false)}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="comments-title"
+            style={{
+              width: '100%',
+              maxWidth: '440px',
+              height: '100%',
+              backgroundColor: 'var(--surface-paper)',
+              borderLeft: '1px solid var(--border-medium)',
+              boxShadow: 'var(--shadow-lg)',
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '16px 20px',
-              borderBottom: '1px solid var(--glass-border)',
-            }}>
-              <h3 style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <MessageSquare size={18} color="var(--primary-light)" />
-                <span>Comments ({commentsCount})</span>
-              </h3>
-              <button
-                onClick={() => setCommentsOpen(false)}
-                style={{ color: 'var(--text-muted)' }}
-              >
-                <X size={20} />
-              </button>
+              flexDirection: 'column',
+              padding: 'var(--space-6)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingBottom: 'var(--space-3)',
+                borderBottom: '1px solid var(--border-subtle)',
+                marginBottom: 'var(--space-4)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <MessageSquare size={18} style={{ color: 'var(--brand-primary)' }} />
+                <h3 id="comments-title" style={{ fontSize: 'var(--text-base)', margin: 0 }}>
+                  Comments ({commentsCount})
+                </h3>
+              </div>
+              <IconButton icon={<X size={18} />} aria-label="Close comments" onClick={() => setCommentsOpen(false)} size="sm" />
             </div>
 
             {/* Comments List */}
-            <div style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: '16px 20px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '14px',
-            }}>
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               {loadingComments ? (
-                <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                  <Loader2 size={24} color="var(--primary-light)" style={{ animation: 'spinSlow 2s linear infinite' }} />
+                <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--space-8)' }}>
+                  <Spinner size="md" />
                 </div>
               ) : comments.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                  No comments yet. Be the first to share your thoughts!
+                <div style={{ textAlign: 'center', padding: 'var(--space-8) var(--space-4)', color: 'var(--text-muted)' }}>
+                  <p>No comments yet. Be the first to start the conversation!</p>
                 </div>
               ) : (
                 comments.map((c) => (
-                  <div key={c.comment_id} style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px',
-                    padding: '10px 14px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'var(--glass-bg)',
-                    border: '1px solid var(--glass-border)',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
-                      <span style={{ fontWeight: 600, color: 'var(--primary-light)' }}>{c.user_name}</span>
-                      <span style={{ color: 'var(--text-muted)' }}>
-                        {c.created_at ? new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                      </span>
+                  <div key={c.comment_id} style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start' }}>
+                    <Avatar fallback={c.user_name || 'U'} size="sm" />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)' }}>
+                        <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)' }}>
+                          {c.user_name || 'Anonymous'}
+                        </span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                          {new Date(c.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', marginTop: '2px', lineHeight: 1.4 }}>
+                        {c.text}
+                      </p>
                     </div>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: '1.4' }}>
-                      {c.text}
-                    </p>
                   </div>
                 ))
               )}
             </div>
 
-            {/* Comment Input */}
+            {/* Comment Form */}
             <form
               onSubmit={handlePostComment}
               style={{
-                padding: '16px 20px',
-                borderTop: '1px solid var(--glass-border)',
-                background: 'var(--bg-surface-elevated)',
                 display: 'flex',
-                gap: '10px',
+                gap: 'var(--space-2)',
+                paddingTop: 'var(--space-3)',
+                borderTop: '1px solid var(--border-subtle)',
+                marginTop: 'var(--space-3)',
               }}
             >
               <input
                 type="text"
-                placeholder={user ? "Add a comment..." : "Sign in to comment"}
-                disabled={!user || submittingComment}
-                className="form-input"
                 value={newCommentText}
                 onChange={(e) => setNewCommentText(e.target.value)}
-                style={{ fontSize: '0.875rem' }}
+                placeholder={user ? 'Add a supportive comment...' : 'Sign in to comment'}
+                disabled={!user || submittingComment}
+                style={{
+                  flex: 1,
+                  padding: 'var(--space-2) var(--space-4)',
+                  borderRadius: 'var(--radius-pill)',
+                  border: '1px solid var(--border-medium)',
+                  backgroundColor: 'var(--surface-input)',
+                  fontSize: 'var(--text-sm)',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                }}
               />
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 type="submit"
-                disabled={!user || submittingComment || !newCommentText.trim()}
-                className="btn btn-primary btn-sm"
-                style={{ padding: '0 14px' }}
+                disabled={!newCommentText.trim() || !user || submittingComment}
+                loading={submittingComment}
               >
-                {submittingComment ? <Loader2 size={16} className="spin" /> : <Send size={16} />}
-              </button>
+                <Send size={15} />
+              </Button>
             </form>
           </div>
         </div>
       )}
 
-      {/* User Content Reporting Modal */}
+      {/* Report Modal */}
       <ReportModal
         isOpen={reportModalOpen}
         onClose={() => setReportModalOpen(false)}
@@ -370,8 +431,7 @@ export function EngagementBar({
         targetId={resolvedVideoId}
         targetTitle={video?.title}
       />
-    </div>
+    </>
   );
 }
-
 export default EngagementBar;

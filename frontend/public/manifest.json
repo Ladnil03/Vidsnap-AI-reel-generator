@@ -1,11 +1,11 @@
 {
-  "name": "VidSnap.AI - Next-Gen AI Reel Generator",
+  "name": "VidSnap.AI - Nature-Inspired AI Social Reel Platform",
   "short_name": "VidSnap.AI",
-  "description": "AI-Powered Short Video & Reel Entertainment Studio",
+  "description": "Craft beautiful high-impact 720p vertical reels with AI speech synthesis and calm organic aesthetics.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#090d16",
-  "theme_color": "#6366f1",
+  "background_color": "#0E2012",
+  "theme_color": "#285430",
   "orientation": "portrait",
   "icons": [
     {

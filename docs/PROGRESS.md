@@ -26,3 +26,9 @@
 | W2-5 | DONE | Added missing MongoDB indexes for videos (unique video_id, user_id+created_at, visibility+status+created_at, tags), video_likes (unique user_id+video_id, video_id), video_saves (unique user_id+video_id, video_id), and video_comments (video_id+created_at); refactored toggle_like and toggle_save in ContentService to be race-safe using insert-first with DuplicateKeyError handling. 2 tests in tests/unit/test_indexes.py. |
 | W2-6 | DONE | Hardened /metrics endpoint: require Authorization: Bearer <METRICS_TOKEN> header with constant-time comparison (secrets.compare_digest); return 401 on missing or invalid token; disable endpoint with 404 in production/staging if metrics_token is not configured. 4 security tests in tests/security/test_metrics_auth.py. |
 | W2-7 | DONE | Prevented signup abuse: set email_verified=False and tokens_remaining=0 on registration; free signup tokens granted only upon OTP email verification (/api/v1/auth/verify-email); added resend-verification endpoint; grandfathered existing users on login; added CAPTCHA verification support (configurable via captcha_enabled & captcha_secret); added per-IP signup rate limit (signup_rate_limit_per_hour=3) returning 429. 5 security tests in tests/security/test_signup_abuse.py. |
+
+## Wave 3: Medium, Hygiene, Honesty
+
+| Task | Status | Notes |
+|---|---|---|
+| W3-1 | DONE | Implemented refresh-token reuse detection using session token families (`family_id`); rotating a valid token marks it as `rotated` and issues a successor in the same family; presenting an already-rotated or revoked token revokes the entire family, records a security audit log event, and returns 401; added `idx_rt_family_id` and security audit log indexes. 3 tests in tests/security/test_refresh_token_reuse.py. |

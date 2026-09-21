@@ -118,9 +118,17 @@ async def ensure_indexes(db: AsyncIOMotorDatabase) -> None:
     refresh_tokens = db["refresh_tokens"]
     await refresh_tokens.create_index([("token_hash", ASCENDING)], unique=True, name="idx_rt_hash_unique")
     await refresh_tokens.create_index([("user_id", ASCENDING)], name="idx_rt_user_id")
+    await refresh_tokens.create_index([("family_id", ASCENDING)], name="idx_rt_family_id")
     await refresh_tokens.create_index(
         [("expires_at", ASCENDING)], expireAfterSeconds=0, name="idx_rt_expires_ttl"
     )
+
+    # Security Audit Logs collection
+    security_audit_logs = db["security_audit_logs"]
+    await security_audit_logs.create_index(
+        [("user_id", ASCENDING), ("timestamp", DESCENDING)], name="idx_sal_user_time"
+    )
+    await security_audit_logs.create_index([("event", ASCENDING), ("timestamp", DESCENDING)], name="idx_sal_event_time")
 
     # Feedback collection indexes
     feedback = db["feedback"]

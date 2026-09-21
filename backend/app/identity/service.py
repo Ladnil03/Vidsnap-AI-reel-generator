@@ -118,8 +118,8 @@ class IdentityService:
         return user
 
     @staticmethod
-    async def create_session(user: dict[str, Any]) -> AuthResponse:
-        """Create access token and rotating refresh token for user."""
+    async def create_session(user: dict[str, Any], family_id: str | None = None) -> AuthResponse:
+        """Create access token and rotating refresh token for user within a session family."""
         db = get_db()
         user_id = user["user_id"]
         roles = user.get("roles", [UserRole.USER.value])
@@ -136,10 +136,15 @@ class IdentityService:
         now = datetime.now(timezone.utc)
         refresh_expires = now + timedelta(days=settings.refresh_token_expire_days)
 
-        # Store hashed refresh token
+        if not family_id:
+            family_id = str(uuid.uuid4())
+
+        # Store hashed refresh token with family tracking
         await db.refresh_tokens.insert_one({
             "token_hash": hashed_refresh,
             "user_id": user_id,
+            "family_id": family_id,
+            "status": "active",
             "created_at": now,
             "expires_at": refresh_expires,
         })
@@ -164,42 +169,107 @@ class IdentityService:
 
     @staticmethod
     async def rotate_refresh_token(raw_refresh_token: str) -> AuthResponse:
-        """Verify and rotate refresh token, issuing new access and refresh tokens."""
+        """
+        Verify and rotate refresh token, issuing new access and refresh tokens.
+        Enforces refresh token reuse detection via token families:
+        - Presenting an already-rotated or revoked token terminates the entire family
+          and records an entry in the security audit logs.
+        """
         db = get_db()
         hashed_input = hash_token(raw_refresh_token)
         now = datetime.now(timezone.utc)
 
-        # Find and immediately delete old refresh token (single use)
-        stored_token = await db.refresh_tokens.find_one_and_delete({"token_hash": hashed_input})
+        stored_token = await db.refresh_tokens.find_one({"token_hash": hashed_input})
         if not stored_token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or already used refresh token. Please log in again.",
             )
 
-        if stored_token["expires_at"] < now:
+        family_id = stored_token.get("family_id")
+        user_id = stored_token.get("user_id")
+
+        # REUSE DETECTION: If token was already rotated or revoked, trigger security defense
+        if stored_token.get("status") in ("rotated", "revoked"):
+            logger.warning(
+                "SECURITY: Refresh token reuse detected! user_id=%s, family_id=%s, token_status=%s",
+                user_id,
+                family_id,
+                stored_token.get("status"),
+            )
+            # Revoke entire token family
+            if family_id:
+                await db.refresh_tokens.update_many(
+                    {"family_id": family_id},
+                    {"$set": {"status": "revoked", "revoked_at": now}},
+                )
+
+            # Record security audit log
+            await db.security_audit_logs.insert_one({
+                "audit_id": str(uuid.uuid4()),
+                "event": "refresh_token_reuse_detected",
+                "user_id": user_id,
+                "family_id": family_id,
+                "timestamp": now,
+                "detail": (
+                    "Attempted reuse of an already-rotated or revoked refresh token. "
+                    "Entire session family revoked."
+                ),
+            })
+
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=(
+                    "Refresh token reuse detected. All sessions in this family have been "
+                    "terminated. Please log in again."
+                ),
+            )
+
+        # Normalize expires_at for timezone-safe comparison
+        expires_at = stored_token["expires_at"]
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+        if expires_at < now:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Refresh token has expired. Please log in again.",
             )
 
-        user = await db.users.find_one({"user_id": stored_token["user_id"]})
+        # Mark token as rotated
+        await db.refresh_tokens.update_one(
+            {"_id": stored_token["_id"]},
+            {"$set": {"status": "rotated", "rotated_at": now}},
+        )
+
+        user = await db.users.find_one({"user_id": user_id})
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User account no longer exists.",
             )
 
-        return await IdentityService.create_session(user)
+        # Issue new token in the same token family
+        return await IdentityService.create_session(user, family_id=family_id)
 
     @staticmethod
     async def revoke_session(raw_refresh_token: str | None) -> None:
-        """Revoke a refresh token on logout."""
+        """Revoke a refresh token and its session family on logout."""
         if not raw_refresh_token:
             return
         db = get_db()
         hashed_input = hash_token(raw_refresh_token)
-        await db.refresh_tokens.delete_one({"token_hash": hashed_input})
+        stored_token = await db.refresh_tokens.find_one({"token_hash": hashed_input})
+        if stored_token:
+            family_id = stored_token.get("family_id")
+            now = datetime.now(timezone.utc)
+            if family_id:
+                await db.refresh_tokens.update_many(
+                    {"family_id": family_id},
+                    {"$set": {"status": "revoked", "revoked_at": now}},
+                )
+            else:
+                await db.refresh_tokens.delete_one({"_id": stored_token["_id"]})
 
     @staticmethod
     async def request_password_reset(email: str) -> None:

@@ -38,6 +38,10 @@ async def test_expected_indexes_exist(mock_db):
     comment_indexes = await mock_db.video_comments.index_information()
     assert "idx_vc_video_created" in comment_indexes
 
+    # 5. refresh_tokens collection
+    rt_indexes = await mock_db.refresh_tokens.index_information()
+    assert "idx_rt_family_id" in rt_indexes
+
 
 @pytest.mark.asyncio
 async def test_concurrent_toggle_like_race_safety(mock_db):

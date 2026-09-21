@@ -1,47 +1,99 @@
 # VidSnap.AI — Load Test Benchmark & Capacity Planning Report
 
-**Test Engine**: k6 v0.54 & Locust 2.31  
-**Target Environment**: Oracle Cloud Always-Free ARM Compute (4 OCPUs, 24GB RAM)  
-**Database**: MongoDB Atlas M0 (512MB shared storage)  
-**Edge / CDN**: Cloudinary Media Cloud & Multi-CDN (f_auto, q_auto — Zero Card Required)  
+**Status**: **Not Yet Executed** (Scripts provisioned and verified; awaiting execution against dedicated staging environment)  
+**Test Engines Available**: k6 v0.54 (`deploy/tests/k6_load_test.js`) & Locust 2.31 (`deploy/tests/locustfile.py`)  
+**Target Infrastructure (Planned)**: Linux Docker Host + MongoDB Atlas M0 (512MB shared) + Redis 7 + Cloudinary Multi-CDN  
 **Date**: September 2026  
 
 ---
 
-## 1. Service Level Objectives (SLOs) vs. Results
+## 1. Execution Status & Honesty Disclaimer
 
-| Service / Endpoint | Free-Tier Target SLO | Simulated Result | Compliance |
+> [!IMPORTANT]
+> Previous revisions of this document contained simulated / theoretical latency and throughput estimates. To maintain engineering honesty and audit integrity, all simulated metrics have been marked as **Not Yet Executed**. Actual load benchmark numbers will be populated once executed against an isolated staging environment.
+
+---
+
+## 2. Service Level Objectives (SLOs) Targets
+
+The following targets represent the design objectives for the ₹0/month free-tier architecture:
+
+| Service / Endpoint | Free-Tier Target SLO | Staging Benchmark | Compliance Status |
 |---|---|---|---|
-| **Feed API (`GET /feed?tab=for_you`)** | p95 < 400ms (cached) | **64ms (p95)**, **22ms (p50)** | **EXCEEDED (6x faster)** |
-| **Feed Cached (304 Not Modified)** | p95 < 100ms | **14ms (p95)** | **EXCEEDED** |
-| **Search API (`GET /discovery/search`)** | p95 < 500ms | **88ms (p95)** | **PASS** |
-| **WebSocket Latency / Sync Fanout** | Fan-out < 300ms | **45ms (p95)** | **PASS** |
-| **Prometheus Exporter (`GET /metrics`)** | p95 < 50ms | **6ms (p95)** | **PASS** |
-| **Overall API Error Rate** | < 1.0% | **0.00% (0 errors)** | **PASS** |
+| **Feed API (`GET /feed?tab=for_you`)** | p95 < 400ms (uncached) | Pending execution | PENDING |
+| **Feed Cached (304 Not Modified)** | p95 < 100ms | Pending execution | PENDING |
+| **Search API (`GET /discovery/search`)** | p95 < 500ms | Pending execution | PENDING |
+| **WebSocket Latency / Sync Fanout** | Fan-out < 300ms | Pending execution | PENDING |
+| **Prometheus Exporter (`GET /metrics`)** | p95 < 50ms | Pending execution | PENDING |
+| **Overall API Error Rate** | < 1.0% | Pending execution | PENDING |
 
 ---
 
-## 2. Capacity & Virtual User (VU) Scaling Analysis
+## 3. Reproduction & Execution Instructions
 
-### Test Profile
-- **Stage 1 (0 to 30s)**: Ramp up to 25 concurrent virtual users.
-- **Stage 2 (30s to 1m30s)**: Sustained load at 50 concurrent virtual users.
-- **Stage 3 (1m30s to 2m)**: Peak burst at 100 concurrent virtual users.
-- **Total Requests Executed**: ~12,400 requests across all simulated scenarios.
+Two load test suites are committed to the repository and ready for automated or manual execution:
 
-### Observations
-1. **Edge Caching & 304 ETag Impact**:
-   - The introduction of `CacheControlMiddleware` with ETags resulted in an 82% bandwidth reduction and dropped feed latency from 180ms down to 14ms for repeating clients.
-2. **MongoDB Atlas M0 Connection Pool**:
-   - Connection pool ceiling capped at 100 connections in Motor (`maxPoolSize=50`). Under 100 VUs, active connection count peaked at 38 connections, comfortably within the Atlas M0 limit (500 connections max).
-3. **Memory Footprint**:
-   - Python FastAPI process memory stabilized at **118 MB**.
-   - Redis container memory footprint: **14 MB**.
-   - Total system RAM utilization on the 24GB Oracle ARM VM remained under **2%**, providing substantial headroom for FFmpeg video encoding worker processes.
+### Option A: k6 Multi-Stage Load Test (`deploy/tests/k6_load_test.js`)
+
+#### Prerequisites
+Install k6:
+- macOS: `brew install k6`
+- Windows: `winget install k6` or `choco install k6`
+- Linux: `sudo apt-get install k6`
+
+#### Test Stages
+- **Stage 1 (0 to 30s)**: Ramp up to 25 concurrent virtual users (VUs).
+- **Stage 2 (30s to 1m30s)**: Sustained load at 50 concurrent VUs.
+- **Stage 3 (1m30s to 2m)**: Peak burst at 100 concurrent VUs.
+- **Stage 4 (2m to 2m30s)**: Ramp down to 0 VUs.
+
+#### Running the Test
+```bash
+# 1. Boot local stack or target staging host
+export BASE_URL="http://localhost:8000"
+export METRICS_TOKEN="your_metrics_token_if_set"
+
+# 2. Run k6 benchmark with summary output
+k6 run deploy/tests/k6_load_test.js
+```
 
 ---
 
-## 3. Recommended Production Guardrails
-1. **FFmpeg Job Concurrency**: Maintain `nice` worker concurrency capped at 2 simultaneous transcode jobs to prevent CPU starvation of the FastAPI web process.
-2. **Rate Limiting**: Enforce 60 requests/minute per IP on feed endpoints and 5 uploads/hour per user on video upload endpoints.
-3. **TTL Cleanups**: Preserve 15-day TTL on `interaction_events` and 30-day TTL on notifications to keep Atlas M0 disk utilization safely below 300MB.
+### Option B: Locust Python Load Test (`deploy/tests/locustfile.py`)
+
+#### Prerequisites
+```bash
+pip install locust
+```
+
+#### Running Headless Locust Test
+```bash
+# Run headless test with 50 users, spawn rate 5, for 2 minutes
+locust -f deploy/tests/locustfile.py \
+       --host=http://localhost:8000 \
+       --headless \
+       -u 50 \
+       -r 5 \
+       --run-time 2m \
+       --csv=load_test_results
+```
+
+#### Running with Locust Web UI
+```bash
+locust -f deploy/tests/locustfile.py --host=http://localhost:8000
+# Open http://localhost:8089 in browser
+```
+
+---
+
+## 4. Planned Capacity Guardrails
+
+1. **FFmpeg Job Concurrency**: Cap ARQ worker concurrency at 2 simultaneous transcode jobs to prevent CPU starvation on shared host instances.
+2. **Rate Limiting**: Sliding-window Redis rate limits enforced at:
+   - General API: 60 req/min
+   - Auth endpoints: 10 req/min
+   - Signup: 3 req/hour
+3. **Atlas M0 512MB Ceilings**:
+   - 15-day TTL on `interaction_events`
+   - 30-day TTL on `notifications` and `companion_messages`
+   - 30-day TTL on video drafts and 24-hour retention on failed jobs.

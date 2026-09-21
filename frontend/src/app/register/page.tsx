@@ -8,10 +8,18 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { UserPlus, Mail, Lock, User, Sparkles, Check, AlertCircle, Coins } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Check, AlertCircle, Coins } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../components/Toast';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/components/ui/Toast';
+import {
+  Card,
+  Button,
+  Input,
+  FormField,
+  Checkbox,
+} from '@/components/ui';
+import styles from '../login/auth.module.css';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -76,196 +84,122 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="container" style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: 'calc(100vh - 200px)',
-      padding: '40px 16px',
-    }}>
-      <div className="glass-card" style={{
-        width: '100%',
-        maxWidth: '460px',
-        padding: '36px',
-        boxShadow: 'var(--shadow-lg)',
-      }}>
+    <div className={styles.container}>
+      <Card variant="raised" className={styles.authCard}>
         {/* Token Gift Banner */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          padding: '10px 14px',
-          borderRadius: 'var(--radius-md)',
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%)',
-          border: '1px solid rgba(16, 185, 129, 0.4)',
-          color: '#34d399',
-          fontSize: '0.825rem',
-          fontWeight: 600,
-          marginBottom: '20px',
-        }}>
+        <div className={styles.tokenBanner}>
           <Coins size={18} />
           <span>Special Welcome: 5 Free AI Generation Credits</span>
         </div>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--primary-gradient)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px auto',
-            boxShadow: '0 4px 16px var(--primary-glow)',
-          }}>
-            <UserPlus size={24} color="#fff" />
+        <div className={styles.authHeader}>
+          <div className={styles.headerIcon}>
+            <UserPlus size={24} />
           </div>
-          <h1 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>Create Your Account</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          <h1 className={styles.authTitle}>Create Your Account</h1>
+          <p className={styles.authSubtitle}>
             Start creating viral AI reels in seconds
           </p>
         </div>
 
         {formError && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '12px',
-            borderRadius: 'var(--radius-sm)',
-            background: 'rgba(244, 63, 94, 0.12)',
-            border: '1px solid rgba(244, 63, 94, 0.3)',
-            color: 'var(--accent-rose)',
-            fontSize: '0.85rem',
-            marginBottom: '20px',
-          }}>
+          <div className={styles.errorMessage} role="alert">
             <AlertCircle size={16} />
             <span>{formError}</span>
           </div>
         )}
 
-        <form onSubmit={handleRegister}>
-          <div className="form-group">
-            <label className="form-label" htmlFor="name">Full Name</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                id="name"
-                type="text"
-                required
-                className="form-input"
-                placeholder="Alex Morgan"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                style={{ paddingLeft: '38px' }}
-              />
-              <User size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--text-muted)' }} />
-            </div>
-          </div>
+        <form onSubmit={handleRegister} className={styles.formGrid}>
+          <FormField label="Full Name" required>
+            <Input
+              id="name"
+              type="text"
+              required
+              placeholder="Alex Morgan"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              leftIcon={<User size={16} />}
+            />
+          </FormField>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="email">Email Address</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                id="email"
-                type="email"
-                required
-                className="form-input"
-                placeholder="alex@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={{ paddingLeft: '38px' }}
-              />
-              <Mail size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--text-muted)' }} />
-            </div>
-          </div>
+          <FormField label="Email Address" required>
+            <Input
+              id="email"
+              type="email"
+              required
+              placeholder="alex@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              leftIcon={<Mail size={16} />}
+            />
+          </FormField>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="password">Password</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                id="password"
-                type="password"
-                required
-                minLength={8}
-                className="form-input"
-                placeholder="Min 8 chars with letters & numbers"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={{ paddingLeft: '38px' }}
-              />
-              <Lock size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--text-muted)' }} />
-            </div>
+          <FormField label="Password" required hint="Min 8 chars with letters & numbers">
+            <Input
+              id="password"
+              type="password"
+              required
+              minLength={8}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              leftIcon={<Lock size={16} />}
+            />
 
             {/* Live requirements checklist */}
-            <div style={{ display: 'flex', gap: '14px', marginTop: '6px', fontSize: '0.75rem' }}>
-              <span style={{ color: hasMinLength ? 'var(--accent-emerald)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <div className={styles.requirementsRow}>
+              <span className={`${styles.requirementItem} ${hasMinLength ? styles.requirementMet : styles.requirementUnmet}`}>
                 <Check size={12} /> 8+ chars
               </span>
-              <span style={{ color: hasLetter ? 'var(--accent-emerald)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <span className={`${styles.requirementItem} ${hasLetter ? styles.requirementMet : styles.requirementUnmet}`}>
                 <Check size={12} /> Letters
               </span>
-              <span style={{ color: hasNumber ? 'var(--accent-emerald)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <span className={`${styles.requirementItem} ${hasNumber ? styles.requirementMet : styles.requirementUnmet}`}>
                 <Check size={12} /> Numbers
               </span>
             </div>
-          </div>
+          </FormField>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                id="confirmPassword"
-                type="password"
-                required
-                className="form-input"
-                placeholder="Confirm password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                style={{ paddingLeft: '38px' }}
-              />
-              <Lock size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--text-muted)' }} />
-            </div>
-          </div>
+          <FormField label="Confirm Password" required>
+            <Input
+              id="confirmPassword"
+              type="password"
+              required
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              leftIcon={<Lock size={16} />}
+              error={confirmPassword.length > 0 && !passwordsMatch}
+            />
+          </FormField>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '14px 0', fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
-            <input
+          <div className={styles.termsRow}>
+            <Checkbox
               id="terms"
-              type="checkbox"
               checked={agreeTerms}
               onChange={(e) => setAgreeTerms(e.target.checked)}
-              style={{ cursor: 'pointer' }}
+              label="I agree to the Terms of Service & Privacy Policy"
             />
-            <label htmlFor="terms" style={{ cursor: 'pointer' }}>
-              I agree to the Terms of Service & Privacy Policy
-            </label>
           </div>
 
-          <button
+          <Button
             type="submit"
-            disabled={submitting}
-            className="btn btn-primary"
-            style={{ width: '100%', marginTop: '8px', padding: '12px' }}
+            variant="primary"
+            loading={submitting}
+            style={{ width: '100%', marginTop: 'var(--space-2)', padding: 'var(--space-3)' }}
           >
-            {submitting ? 'Creating Account...' : 'Sign Up (Free 5 Tokens)'}
-          </button>
+            Sign Up (Get 5 Free Credits)
+          </Button>
         </form>
 
-        <div style={{
-          textAlign: 'center',
-          marginTop: '24px',
-          paddingTop: '20px',
-          borderTop: '1px solid var(--glass-border)',
-          fontSize: '0.875rem',
-          color: 'var(--text-secondary)',
-        }}>
-          Already have an account?{' '}
-          <Link href="/login" style={{ color: 'var(--primary-light)', fontWeight: 600 }}>
+        <div className={styles.cardFooter}>
+          Already have an account?
+          <Link href="/login" className={styles.authLink}>
             Sign In
           </Link>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

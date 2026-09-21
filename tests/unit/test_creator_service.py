@@ -60,6 +60,12 @@ async def test_creator_verification_flow(mock_db):
         "username": "sam_solo",
         "email": "sam@creator.test",
     })
+    await mock_db.videos.insert_one({
+        "video_id": "vid_sam_1",
+        "user_id": user_id,
+        "status": "published",
+        "title": "Sam's Comedy Reel",
+    })
 
     # Submit verification application
     req = VerificationApplyRequest(

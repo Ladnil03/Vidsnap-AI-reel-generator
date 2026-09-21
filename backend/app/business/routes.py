@@ -22,7 +22,11 @@ from backend.app.business.models import (
 )
 from backend.app.business.service import BusinessService
 from backend.app.core.rate_limiter import rate_limit
-from backend.app.identity.dependencies import get_current_user, get_optional_current_user
+from backend.app.identity.dependencies import (
+    get_current_admin,
+    get_current_user,
+    get_optional_current_user,
+)
 
 router = APIRouter(prefix="/api/v1/business", tags=["Business & Collab Marketplace"])
 
@@ -52,6 +56,20 @@ async def update_business_profile(
     return await BusinessService.create_or_update_profile(
         user_id=current_user["user_id"], request=request
     )
+
+
+@router.post(
+    "/profiles/{business_id}/review",
+    response_model=BusinessProfile,
+    summary="Review business profile (Admin only)",
+)
+async def review_business_profile(
+    business_id: str,
+    approve: bool = Query(..., description="True to approve, False to reject"),
+    current_user: dict[str, Any] = Depends(get_current_admin),
+) -> BusinessProfile:
+    """Admin review endpoint to grant or reject verified business status."""
+    return await BusinessService.review_business(business_id=business_id, approved=approve)
 
 
 @router.get(

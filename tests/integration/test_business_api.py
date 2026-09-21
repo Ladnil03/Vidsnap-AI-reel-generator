@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 from httpx import AsyncClient
 
+from backend.app.business.service import BusinessService
 from backend.app.identity.dependencies import get_current_user, get_optional_current_user
 from backend.app.main import app
 
@@ -55,7 +56,11 @@ async def test_business_profile_and_campaign_api(
             },
         )
         assert prof_res.status_code == 200
-        assert prof_res.json()["company_name"] == "Nova Audio Gear"
+        biz_data = prof_res.json()
+        assert biz_data["company_name"] == "Nova Audio Gear"
+
+        # 1b. Admin approves business profile
+        await BusinessService.review_business(biz_data["business_id"], approved=True)
 
         # 2. Publish campaign
         deadline = (datetime.now(timezone.utc) + timedelta(days=20)).isoformat()
@@ -91,6 +96,18 @@ async def test_collab_application_and_review_api(
     creator_applicant: dict[str, Any],
 ):
     """Test creator applying to campaign, and business owner reviewing."""
+    # Seed verified business profile for business owner
+    await mock_db.business_profiles.insert_one({
+        "business_id": "biz_nova_audio_collab",
+        "user_id": business_user["user_id"],
+        "company_name": "Nova Audio Brand",
+        "website": "https://novaaudio.test",
+        "industry": "lifestyle",
+        "verification_status": "verified",
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    })
+
     # Step 1: Create campaign as business owner
     app.dependency_overrides[get_current_user] = lambda: business_user
     app.dependency_overrides[get_optional_current_user] = lambda: business_user

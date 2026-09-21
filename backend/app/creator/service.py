@@ -118,7 +118,7 @@ class CreatorService:
 
     @classmethod
     async def apply_verification(
-        cls, user_id: str, request: VerificationApplyRequest
+        cls, user_id: str, request: VerificationApplyRequest, is_admin: bool = False
     ) -> VerificationApplication:
         """Submit an application for verified creator status with portfolio links."""
         db = get_db()
@@ -129,6 +129,19 @@ class CreatorService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Profile is already verified",
             )
+
+        if not is_admin:
+            published_video = await db["videos"].find_one(
+                {
+                    "$or": [{"user_id": user_id}, {"creator_id": user_id}],
+                    "status": "published",
+                }
+            )
+            if not published_video:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Creator verification requires at least 1 published video.",
+                )
 
         app_col = db["creator_verifications"]
         existing = await app_col.find_one({"user_id": user_id, "status": VerificationStatus.PENDING.value})

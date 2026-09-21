@@ -39,7 +39,13 @@ async def test_business_profile_lifecycle(mock_db):
     assert profile.industry == "Technology & Hardware"
     assert profile.website == "https://acme.corp"
 
-    # User role updated
+    # User role not yet business (pending verification)
+    user_doc = await mock_db.users.find_one({"user_id": user_id})
+    assert "business" not in user_doc.get("roles", [])
+
+    # Review and approve business profile
+    reviewed = await BusinessService.review_business(profile.business_id, approved=True)
+    assert reviewed.verification_status.value == "verified"
     user_doc = await mock_db.users.find_one({"user_id": user_id})
     assert "business" in user_doc.get("roles", [])
 
@@ -54,6 +60,17 @@ async def test_campaign_creation_and_application_flow(mock_db):
         {"user_id": biz_user_id, "name": "Brand Manager", "email": "bm@brand.test"},
         {"user_id": creator_user_id, "name": "Tech Reviewer", "username": "tech_rev", "email": "rev@creator.test"},
     ])
+
+    # Provision verified profile for business owner
+    biz_prof = await BusinessService.create_or_update_profile(
+        biz_user_id,
+        CreateBusinessProfileRequest(
+            company_name="CyberTech Brands",
+            website="https://cybertech.test",
+            industry="tech",
+        ),
+    )
+    await BusinessService.review_business(biz_prof.business_id, approved=True)
 
     # 1. Create campaign
     future_deadline = datetime.now(timezone.utc) + timedelta(days=14)

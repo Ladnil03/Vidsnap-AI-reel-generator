@@ -62,7 +62,7 @@ class BusinessService:
             website="https://vidsnap.ai",
             industry="Media & Entertainment",
             description="Verified Brand Partner on VidSnap.AI",
-            verification_status=BusinessVerificationStatus.VERIFIED,
+            verification_status=BusinessVerificationStatus.NONE,
         )
         await profiles_col.insert_one(new_profile.model_dump())
         return new_profile
@@ -79,6 +79,13 @@ class BusinessService:
         now = datetime.now(timezone.utc)
 
         if existing:
+            current_status = existing.get("verification_status", BusinessVerificationStatus.NONE.value)
+            if current_status not in (BusinessVerificationStatus.VERIFIED.value, BusinessVerificationStatus.VERIFIED):
+                new_status = BusinessVerificationStatus.PENDING
+            else:
+                new_status = BusinessVerificationStatus.VERIFIED
+
+            status_val = new_status.value if hasattr(new_status, "value") else new_status
             await profiles_col.update_one(
                 {"user_id": user_id},
                 {
@@ -88,11 +95,13 @@ class BusinessService:
                         "industry": request.industry,
                         "description": request.description,
                         "logo_url": request.logo_url,
+                        "verification_status": status_val,
                         "updated_at": now,
                     }
                 },
             )
             existing.update(request.model_dump())
+            existing["verification_status"] = new_status
             existing["updated_at"] = now
             return BusinessProfile(**existing)
 
@@ -108,10 +117,49 @@ class BusinessService:
             verification_status=BusinessVerificationStatus.PENDING,
         )
         await profiles_col.insert_one(profile.model_dump())
-
-        # Grant business role
-        await db["users"].update_one({"user_id": user_id}, {"$addToSet": {"roles": "business"}})
         return profile
+
+    @classmethod
+    async def review_business(
+        cls, business_id: str, approved: bool
+    ) -> BusinessProfile:
+        """Approve or reject a business profile (admin action)."""
+        db = get_db()
+        profiles_col = db["business_profiles"]
+        profile_doc = await profiles_col.find_one({"business_id": business_id})
+        if not profile_doc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Business profile not found",
+            )
+
+        new_status = (
+            BusinessVerificationStatus.VERIFIED
+            if approved
+            else BusinessVerificationStatus.REJECTED
+        )
+        now = datetime.now(timezone.utc)
+
+        await profiles_col.update_one(
+            {"business_id": business_id},
+            {"$set": {"verification_status": new_status.value, "updated_at": now}},
+        )
+
+        user_id = profile_doc["user_id"]
+        if approved:
+            await db["users"].update_one(
+                {"user_id": user_id},
+                {"$addToSet": {"roles": "business"}},
+            )
+        else:
+            await db["users"].update_one(
+                {"user_id": user_id},
+                {"$pull": {"roles": "business"}},
+            )
+
+        profile_doc["verification_status"] = new_status
+        profile_doc["updated_at"] = now
+        return BusinessProfile(**profile_doc)
 
     @classmethod
     async def create_campaign(cls, user_id: str, request: CreateCampaignRequest) -> Campaign:
@@ -137,6 +185,12 @@ class BusinessService:
         except Exception as e:
             logger.warning("Moderation check on campaign brief error: %s", e)
             c_status = CampaignStatus.IN_REVIEW
+
+        if profile.verification_status != BusinessVerificationStatus.VERIFIED:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only verified business profiles can create campaigns.",
+            )
 
         campaign_id = f"cmp_{uuid.uuid4().hex[:10]}"
         campaign = Campaign(
@@ -301,9 +355,13 @@ class BusinessService:
                 detail="Application not found",
             )
 
-        # Check ownership: campaign business_id must match current user's business_id
+        # Check ownership and verification
         biz_profile = await db["business_profiles"].find_one({"user_id": business_user_id})
-        if not biz_profile or biz_profile.get("business_id") != app_doc.get("business_id"):
+        if (
+            not biz_profile
+            or biz_profile.get("verification_status") != BusinessVerificationStatus.VERIFIED.value
+            or biz_profile.get("business_id") != app_doc.get("business_id")
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not authorized to review this campaign's applications",
@@ -328,7 +386,11 @@ class BusinessService:
         biz_profile = await db["business_profiles"].find_one({"user_id": business_user_id})
         campaign = await cls.get_campaign(campaign_id)
 
-        if not biz_profile or biz_profile.get("business_id") != campaign.business_id:
+        if (
+            not biz_profile
+            or biz_profile.get("verification_status") != BusinessVerificationStatus.VERIFIED.value
+            or biz_profile.get("business_id") != campaign.business_id
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not authorized to view these applications",

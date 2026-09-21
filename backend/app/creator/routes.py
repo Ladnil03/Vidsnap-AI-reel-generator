@@ -21,7 +21,11 @@ from backend.app.creator.models import (
     VerificationApplyRequest,
 )
 from backend.app.creator.service import CreatorService
-from backend.app.identity.dependencies import get_current_user, get_optional_current_user
+from backend.app.identity.dependencies import (
+    get_current_user,
+    get_optional_current_user,
+    require_role,
+)
 
 router = APIRouter(prefix="/api/v1/creator", tags=["Creator Platform"])
 
@@ -62,7 +66,10 @@ async def apply_for_verification(
     current_user: dict[str, Any] = Depends(get_current_user),
 ) -> VerificationApplication:
     """Submit a creator verification badge application with portfolio references."""
-    return await CreatorService.apply_verification(user_id=current_user["user_id"], request=request)
+    is_admin = "admin" in current_user.get("roles", [])
+    return await CreatorService.apply_verification(
+        user_id=current_user["user_id"], request=request, is_admin=is_admin
+    )
 
 
 @router.get(
@@ -130,7 +137,7 @@ async def schedule_creator_event(
 async def review_verification_application(
     application_id: str,
     approve: bool = Query(..., description="True to approve, False to reject"),
-    current_user: dict[str, Any] = Depends(get_current_user),
+    current_user: dict[str, Any] = Depends(require_role("admin", "moderator")),
 ) -> VerificationApplication:
     """Admin review endpoint to grant or reject verified creator status."""
     return await CreatorService.review_verification(application_id=application_id, approved=approve)

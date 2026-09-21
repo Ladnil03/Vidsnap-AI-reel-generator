@@ -287,18 +287,23 @@ async def test_worker_rejects_traversal_key_with_own_user_prefix(async_client: A
 async def test_cloudinary_presigned_signature_restricts_upload(mock_db):
     """W1-2: Cloudinary signed upload params must pin resource_type, allowed_formats, max_file_size."""
     from backend.app.core.adapters.storage_cloudinary import CloudinaryStorageAdapter
+    from backend.app.core.config import settings
 
-    adapter = CloudinaryStorageAdapter()
-    target = await adapter.generate_presigned_upload_url(
-        key=f"videos/{USER_A}/clip.mp4",
-        content_type="video/mp4",
-    )
-    fields = target["fields"]
-    assert "resource_type" in fields, f"resource_type missing from signed fields: {fields}"
-    assert fields["resource_type"] == "video"
-    assert fields.get("allowed_formats") == "mp4", f"allowed_formats wrong: {fields.get('allowed_formats')}"
-    assert int(fields["max_file_size"]) > 0, f"max_file_size missing: {fields}"
-    assert f"/videos/{USER_A}/" in fields["public_id"], f"public_id not under user prefix: {fields}"
+    with patch.object(settings, "cloudinary_cloud_name", "test-cloud"), \
+         patch.object(settings, "cloudinary_api_key", "test-key-123"), \
+         patch.object(settings, "cloudinary_api_secret", "test-secret-456"), \
+         patch.object(settings, "cloudinary_folder", "vidsnap-reels"):
+        adapter = CloudinaryStorageAdapter()
+        target = await adapter.generate_presigned_upload_url(
+            key=f"videos/{USER_A}/clip.mp4",
+            content_type="video/mp4",
+        )
+        fields = target["fields"]
+        assert "resource_type" in fields, f"resource_type missing from signed fields: {fields}"
+        assert fields["resource_type"] == "video"
+        assert fields.get("allowed_formats") == "mp4", f"allowed_formats wrong: {fields.get('allowed_formats')}"
+        assert int(fields["max_file_size"]) > 0, f"max_file_size missing: {fields}"
+        assert f"/videos/{USER_A}/" in fields["public_id"], f"public_id not under user prefix: {fields}"
 
 
 # ───── Integration: Content from-key foreign key -> 403 ─────

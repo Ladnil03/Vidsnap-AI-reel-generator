@@ -65,6 +65,8 @@ jobs:
           STORAGE_PROVIDER: local
           EMAIL_PROVIDER: console
           JWT_SECRET_KEY: ci_test_secret_key_min_32_characters_long_12345
+          CLOUDINARY_API_KEY: ci_cloudinary_api_key_123
+          CLOUDINARY_API_SECRET: ci_cloudinary_api_secret_456
         run: |
           pytest tests/ -v --cov=backend/app --cov-report=term-missing --cov-fail-under=80
 

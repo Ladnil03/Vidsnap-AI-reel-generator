@@ -1,0 +1,163 @@
+{
+  "$schema": "https://tr.designtokens.org/format/",
+  "name": "VidSnap.AI Forest and Paper Design Tokens",
+  "version": "1.0.0",
+  "palette": {
+    "cream": {
+      "50": "#F7F4EB",
+      "100": "#EFE9D5",
+      "200": "#E5D9B6",
+      "300": "#D6C79A",
+      "400": "#C7B57F"
+    },
+    "sage": {
+      "100": "#EDF3E4",
+      "200": "#DBE7C9",
+      "300": "#BDD69D",
+      "400": "#A4BE7B",
+      "500": "#8CA862"
+    },
+    "moss": {
+      "100": "#E2ECDD",
+      "200": "#C4DAB8",
+      "300": "#90B680",
+      "500": "#5F8D4E",
+      "700": "#426535",
+      "800": "#334E2A",
+      "900": "#284020"
+    },
+    "forest": {
+      "100": "#D2DFD5",
+      "200": "#A4BFAB",
+      "300": "#6F9776",
+      "500": "#285430",
+      "600": "#224729",
+      "700": "#1C3D22",
+      "800": "#152E1A",
+      "900": "#0E2012",
+      "950": "#08140B"
+    },
+    "danger": {
+      "light": "#9E3324",
+      "dark": "#FF9B8A"
+    },
+    "warning": {
+      "light": "#8C5300",
+      "dark": "#FFC266"
+    },
+    "success": {
+      "light": "#1C5E28",
+      "dark": "#8BE299"
+    }
+  },
+  "themes": {
+    "light": {
+      "name": "Paper",
+      "surface": {
+        "base": "#EFE9D5",
+        "paper": "#F7F4EB",
+        "raised": "#FAF8F2",
+        "sunken": "#E5D9B6",
+        "input": "#FFFFFF"
+      },
+      "border": {
+        "subtle": "rgba(40, 84, 48, 0.12)",
+        "medium": "rgba(40, 84, 48, 0.22)",
+        "strong": "rgba(40, 84, 48, 0.38)"
+      },
+      "text": {
+        "primary": "#0E2012",
+        "secondary": "#1C3D22",
+        "muted": "#285430",
+        "inverse": "#F7F4EB"
+      },
+      "brand": {
+        "primary": "#285430",
+        "primaryHover": "#1C3D22",
+        "primaryText": "#F7F4EB",
+        "secondary": "#DBE7C9",
+        "secondaryText": "#0E2012"
+      },
+      "accent": {
+        "fill": "#5F8D4E",
+        "fillText": "#FFFFFF",
+        "soft": "#EDF3E4",
+        "softText": "#0E2012"
+      },
+      "feedback": {
+        "danger": "#9E3324",
+        "warning": "#8C5300",
+        "success": "#1C5E28"
+      },
+      "focusRing": "#1C3D22"
+    },
+    "dark": {
+      "name": "Forest",
+      "surface": {
+        "base": "#08140B",
+        "paper": "#0E2012",
+        "raised": "#152E1A",
+        "sunken": "#050D07",
+        "input": "#0E2012"
+      },
+      "border": {
+        "subtle": "rgba(164, 190, 123, 0.14)",
+        "medium": "rgba(164, 190, 123, 0.24)",
+        "strong": "rgba(164, 190, 123, 0.45)"
+      },
+      "text": {
+        "primary": "#F7F4EB",
+        "secondary": "#E5D9B6",
+        "muted": "#BDD69D",
+        "inverse": "#08140B"
+      },
+      "brand": {
+        "primary": "#285430",
+        "primaryHover": "#6F9776",
+        "primaryText": "#F7F4EB",
+        "secondary": "#1C3D22",
+        "secondaryText": "#F7F4EB"
+      },
+      "accent": {
+        "fill": "#5F8D4E",
+        "fillText": "#FFFFFF",
+        "soft": "rgba(164, 190, 123, 0.18)",
+        "softText": "#BDD69D"
+      },
+      "feedback": {
+        "danger": "#FF9B8A",
+        "warning": "#FFC266",
+        "success": "#8BE299"
+      },
+      "focusRing": "#A4BE7B"
+    }
+  },
+  "spacing": {
+    "0": 0,
+    "1": 4,
+    "2": 8,
+    "3": 12,
+    "4": 16,
+    "5": 20,
+    "6": 24,
+    "8": 32,
+    "10": 40,
+    "12": 48,
+    "16": 64,
+    "20": 80
+  },
+  "radii": {
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "pill": 9999
+  },
+  "typography": {
+    "fontFamilyHeading": "Outfit",
+    "fontFamilyBody": "Plus Jakarta Sans",
+    "fontFamilyDevanagari": "Noto Sans Devanagari",
+    "fontFamilyGujarati": "Noto Sans Gujarati"
+  }
+}

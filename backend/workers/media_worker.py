@@ -310,5 +310,7 @@ class WorkerSettings:
     on_startup = startup
     on_shutdown = shutdown
     max_jobs = settings.worker_concurrency
+    max_tries = 3
+    retry_delay = 10
     redis_settings = RedisSettings.from_dsn(settings.redis_url)
     job_timeout = settings.ffmpeg_timeout_seconds + 60

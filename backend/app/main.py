@@ -4,12 +4,13 @@ Initializes lifespan, routes, CORS middleware, security headers, and health endp
 """
 
 import logging
+import secrets
 import time
 import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -196,8 +197,27 @@ async def root_status() -> dict[str, str]:
 
 
 @app.get("/metrics", tags=["Observability"])
-async def prometheus_metrics() -> Response:
+async def prometheus_metrics(request: Request) -> Response:
     """Prometheus exposition metrics endpoint for platform observability."""
+    if settings.environment in ("production", "staging") and not settings.metrics_token:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
+
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required for metrics endpoint.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token = auth_header[7:].strip()
+    if not settings.metrics_token or not secrets.compare_digest(token, settings.metrics_token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid metrics authentication token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     return Response(
         content=generate_prometheus_output(),
         media_type="text/plain; version=0.0.4; charset=utf-8",

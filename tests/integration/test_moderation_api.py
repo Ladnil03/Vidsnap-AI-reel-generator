@@ -3,10 +3,12 @@ Integration tests for Moderation REST API (/api/v1/moderation) and Observability
 """
 
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from httpx import AsyncClient
 
+from backend.app.core.config import settings
 from backend.app.identity.dependencies import get_current_admin, get_current_user
 from backend.app.main import app
 
@@ -125,7 +127,11 @@ async def test_admin_moderation_queue_and_action_flow(
 @pytest.mark.asyncio
 async def test_prometheus_metrics_endpoint(async_client: AsyncClient, mock_db):
     """Verify /metrics returns Prometheus format plaintext exposition."""
-    res = await async_client.get("/metrics")
-    assert res.status_code == 200
-    assert "text/plain" in res.headers["content-type"]
-    assert "vidsnap_system_uptime_seconds" in res.text
+    with patch.object(settings, "metrics_token", "test-metrics-token"):
+        res = await async_client.get(
+            "/metrics",
+            headers={"Authorization": "Bearer test-metrics-token"},
+        )
+        assert res.status_code == 200
+        assert "text/plain" in res.headers["content-type"]
+        assert "vidsnap_system_uptime_seconds" in res.text

@@ -6,6 +6,8 @@ Handles live bidirectional sync, presence heartbeats, chat broadcasting, emoji b
 import asyncio
 import json
 import logging
+import re
+import uuid
 from typing import Any
 
 from fastapi import HTTPException, WebSocket, WebSocketDisconnect
@@ -19,6 +21,17 @@ from backend.app.rooms.service import RoomService
 
 logger = logging.getLogger(__name__)
 
+# Unique ID for this worker process — used to de-duplicate Redis pubsub messages.
+_INSTANCE_ID = uuid.uuid4().hex
+
+# Frame & message limits
+_MAX_FRAME_BYTES = 4096  # 4 KB
+_MAX_CHAT_TEXT_LENGTH = 500
+_CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+# Known message types the gateway accepts
+_KNOWN_MSG_TYPES = frozenset({"ping", "chat", "reaction", "sync_action", "assistant_prompt", "auth"})
+
 
 class RoomConnectionManager:
     """Manages active WebSockets for a room with multi-instance broadcast support."""
@@ -28,8 +41,8 @@ class RoomConnectionManager:
         self._rooms: dict[str, set[WebSocket]] = {}
         # ws -> user metadata dict
         self._users: dict[WebSocket, dict[str, Any]] = {}
-        # Background pub/sub tasks per room
-        self._pubsub_tasks: dict[str, asyncio.Task] = {}
+        # Single global pubsub listener task (if Redis is available)
+        self._global_pubsub_task: asyncio.Task | None = None
 
     async def connect(self, websocket: WebSocket, room_id: str, user_data: dict[str, Any]) -> None:
         """Register a new authenticated WebSocket connection."""
@@ -37,11 +50,12 @@ class RoomConnectionManager:
             await websocket.accept()
         if room_id not in self._rooms:
             self._rooms[room_id] = set()
-            # Start Redis pubsub listener for this room if not already running
-            self._start_redis_subscriber(room_id)
 
         self._rooms[room_id].add(websocket)
         self._users[websocket] = user_data
+
+        # Start global Redis subscriber if not already running
+        self._ensure_global_subscriber()
 
         # Update presence in Redis
         await RoomService.update_presence(
@@ -67,10 +81,6 @@ class RoomConnectionManager:
             self._rooms[room_id].discard(websocket)
             if not self._rooms[room_id]:
                 self._rooms.pop(room_id, None)
-                # Cancel Redis subscriber if room is empty
-                task = self._pubsub_tasks.pop(room_id, None)
-                if task:
-                    task.cancel()
 
         if user_data:
             await RoomService.leave_room(room_id, user_data["user_id"])
@@ -100,39 +110,66 @@ class RoomConnectionManager:
             await self.disconnect(dead_ws, room_id)
 
         # 2. Redis pub/sub publish for multi-worker scaling
+        #    Envelope includes origin instance ID so the subscriber can skip
+        #    messages that originated from this process (prevents double delivery).
         redis = get_redis()
         if redis:
             try:
-                await redis.publish(f"room_channel:{room_id}", payload_str)
+                envelope = json.dumps({
+                    "origin": _INSTANCE_ID,
+                    "room_id": room_id,
+                    "payload": payload_str,
+                })
+                await redis.publish(f"room_channel:{room_id}", envelope)
             except Exception as e:
                 logger.debug("Redis publish failed (running single-instance): %s", e)
 
-    def _start_redis_subscriber(self, room_id: str) -> None:
-        """Start async Redis pub/sub listener for cross-instance message sync."""
+    def _ensure_global_subscriber(self) -> None:
+        """Start a single global Redis psubscribe(room_channel:*) task if not already running."""
+        if self._global_pubsub_task is not None and not self._global_pubsub_task.done():
+            return
         redis = get_redis()
         if not redis:
             return
 
-        async def _subscriber_loop():
+        async def _global_subscriber_loop():
             try:
                 pubsub = redis.pubsub()
-                await pubsub.subscribe(f"room_channel:{room_id}")
+                await pubsub.psubscribe("room_channel:*")
                 async for item in pubsub.listen():
-                    if item and item.get("type") == "message":
+                    if item and item.get("type") == "pmessage":
                         data_str = item.get("data")
-                        if data_str:
-                            connections = self._rooms.get(room_id, set()).copy()
-                            for ws in connections:
-                                try:
-                                    await ws.send_text(data_str)
-                                except Exception:
-                                    pass
+                        if not data_str:
+                            continue
+                        try:
+                            envelope = json.loads(data_str)
+                        except (json.JSONDecodeError, TypeError):
+                            continue
+                        # Skip messages that originated from this instance
+                        if envelope.get("origin") == _INSTANCE_ID:
+                            continue
+                        room_id = envelope.get("room_id")
+                        payload = envelope.get("payload")
+                        if not room_id or not payload:
+                            continue
+                        connections = self._rooms.get(room_id, set()).copy()
+                        for ws in connections:
+                            try:
+                                await ws.send_text(payload)
+                            except Exception:
+                                pass
             except asyncio.CancelledError:
                 pass
             except Exception as e:
-                logger.debug("Redis subscriber closed for room %s: %s", room_id, e)
+                logger.debug("Global Redis subscriber closed: %s", e)
 
-        self._pubsub_tasks[room_id] = asyncio.create_task(_subscriber_loop())
+        self._global_pubsub_task = asyncio.create_task(_global_subscriber_loop())
+
+    async def shutdown(self) -> None:
+        """Clean up global subscriber on application shutdown."""
+        if self._global_pubsub_task and not self._global_pubsub_task.done():
+            self._global_pubsub_task.cancel()
+            self._global_pubsub_task = None
 
 
 manager = RoomConnectionManager()
@@ -149,6 +186,7 @@ async def room_websocket_endpoint(websocket: WebSocket, room_id: str, token: str
                 "user_id": claims.get("user_id") or claims.get("sub"),
                 "name": claims.get("name") or claims.get("email", "Viewer"),
                 "email": claims.get("email"),
+                "token_exp": claims.get("exp"),
             }
         except Exception:
             user_payload = None
@@ -165,6 +203,7 @@ async def room_websocket_endpoint(websocket: WebSocket, room_id: str, token: str
                     "user_id": claims.get("user_id") or claims.get("sub"),
                     "name": claims.get("name") or claims.get("email", "Viewer"),
                     "email": claims.get("email"),
+                    "token_exp": claims.get("exp"),
                 }
         except Exception:
             user_payload = None
@@ -189,6 +228,15 @@ async def room_websocket_endpoint(websocket: WebSocket, room_id: str, token: str
     try:
         while True:
             raw_msg = await websocket.receive_text()
+
+            # --- W2-2: Frame size guard ---
+            if len(raw_msg.encode("utf-8", errors="replace")) > _MAX_FRAME_BYTES:
+                await websocket.send_text(json.dumps({
+                    "type": "error",
+                    "detail": f"Message too large (max {_MAX_FRAME_BYTES} bytes)",
+                }))
+                continue
+
             try:
                 msg = json.loads(raw_msg)
             except json.JSONDecodeError:
@@ -198,6 +246,14 @@ async def room_websocket_endpoint(websocket: WebSocket, room_id: str, token: str
             user_id = user_payload["user_id"]
             user_name = user_payload.get("name", "Viewer")
 
+            # --- W2-2: Reject unknown message types ---
+            if msg_type not in _KNOWN_MSG_TYPES:
+                await websocket.send_text(json.dumps({
+                    "type": "error",
+                    "detail": f"Unknown message type: {msg_type}",
+                }))
+                continue
+
             # Heartbeat ping
             if msg_type == "ping":
                 await websocket.send_text(json.dumps({"type": "pong"}))
@@ -206,6 +262,17 @@ async def room_websocket_endpoint(websocket: WebSocket, room_id: str, token: str
             # Chat message
             elif msg_type == "chat":
                 text = msg.get("text", "").strip()
+                # Strip control characters
+                text = _CONTROL_CHAR_RE.sub("", text)
+
+                # --- W2-2: Chat text length guard ---
+                if len(text) > _MAX_CHAT_TEXT_LENGTH:
+                    await websocket.send_text(json.dumps({
+                        "type": "error",
+                        "detail": f"Chat message too long (max {_MAX_CHAT_TEXT_LENGTH} chars)",
+                    }))
+                    continue
+
                 if text:
                     try:
                         saved_msg = await RoomService.add_chat_message(

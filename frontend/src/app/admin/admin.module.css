@@ -258,7 +258,7 @@
 .modalBackdrop {
   position: fixed;
   inset: 0;
-  background: rgba(14, 32, 18, 0.85);
+  background: var(--scrim-heavy);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;

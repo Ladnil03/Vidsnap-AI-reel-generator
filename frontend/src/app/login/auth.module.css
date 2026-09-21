@@ -29,12 +29,12 @@
   align-items: center;
   justifyContent: center;
   margin: 0 auto var(--space-3) auto;
-  box-shadow: 0 4px 14px rgba(40, 84, 48, 0.25);
+  box-shadow: 0 4px 14px var(--forest-shadow-tint);
 }
 
 :global([data-theme='dark']) .headerIcon {
   background: var(--color-forest-600);
-  box-shadow: 0 4px 14px rgba(14, 32, 18, 0.5);
+  box-shadow: 0 4px 14px var(--forest-shadow-dark);
 }
 
 .authTitle {

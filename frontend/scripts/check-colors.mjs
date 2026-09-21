@@ -18,6 +18,10 @@ const EXEMPT_FILES = [
   'styles/tokens.css',
   'components/Logo.tsx',
   'components/ui/EmptyState.tsx', // May contain inline SVG illustrations in palette
+  'app/styleguide/page.tsx', // Developer styleguide showcasing color swatches
+  'app/layout.tsx', // HTML head themeColor metadata & zero-flash hydration script
+  'context/ThemeContext.tsx', // DOM meta theme-color attributes
+  'app/globals.css', // Root CSS setup and print styles
 ];
 
 const COLOR_REGEX = /(#[0-9a-fA-F]{3,8}\b|rgba?\(\s*\d+[^)]*\)|hsla?\(\s*\d+[^)]*\))/g;

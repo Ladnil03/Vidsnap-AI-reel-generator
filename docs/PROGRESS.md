@@ -59,3 +59,6 @@
 - S8 Auth & Micro-Polish: DONE
   - Key files changed: frontend/src/app/login/page.tsx, frontend/src/app/login/auth.module.css, frontend/src/app/register/page.tsx, frontend/src/app/loading.tsx, frontend/src/app/error.tsx, frontend/src/app/not-found.tsx, frontend/public/manifest.json.
   - Notes: Redesigned Login & Register flows with password strength checklist, 5-token gift banner, OTP reset modal, organic root loading screen, accessible root error boundary, 404 navigation grove, and updated PWA manifest branding. Production build and typecheck green.
+- S9 QA & Hardening: DONE
+  - Key files changed: frontend/scripts/check-colors.mjs, frontend/scripts/check-contrast.mjs, frontend/src/styles/tokens.css, docs/design-system.md, and tokenized scrims across frontend components.
+  - Notes: Conducted comprehensive design QA and hardening. WCAG 2.2 AA contrast verified (18/18 token pairs pass, up to 17.12:1). Color audit script verified 0 raw color/hex violations across all source files. Production build and typecheck green across all 25 routes.

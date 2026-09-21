@@ -103,7 +103,7 @@
 .reelOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(14, 32, 18, 0.95) 0%, transparent 60%);
+  background: linear-gradient(to top, var(--scrim-darkest) 0%, transparent 60%);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;

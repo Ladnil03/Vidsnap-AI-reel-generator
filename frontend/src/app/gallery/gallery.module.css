@@ -67,7 +67,7 @@
 .playOverlay {
   position: absolute;
   inset: 0;
-  background: rgba(14, 32, 18, 0.4);
+  background: var(--scrim-light);
   display: flex;
   align-items: center;
   justify-content: center;

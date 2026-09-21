@@ -300,7 +300,7 @@ export default function ExplorePage() {
                       position: 'absolute',
                       bottom: 'var(--space-3)',
                       right: 'var(--space-3)',
-                      backgroundColor: 'rgba(8, 20, 11, 0.75)',
+                      backgroundColor: 'var(--scrim-modal)',
                       color: 'var(--cream-50)',
                       fontSize: '11px',
                       padding: '2px 8px',

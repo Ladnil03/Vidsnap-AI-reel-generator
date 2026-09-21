@@ -135,7 +135,15 @@
   --player-text-primary: var(--cream-50);
   --player-text-secondary: var(--cream-200);
   --player-text-muted: var(--sage-300);
-  --player-scrim: linear-gradient(180deg, rgba(8, 20, 11, 0.72) 0%, rgba(8, 20, 11, 0) 25%, rgba(8, 20, 11, 0) 65%, rgba(8, 20, 11, 0.88) 100%);
+  /* --- OVERLAY SCRIMS & GLOWS --- */
+  --scrim-heavy: rgba(14, 32, 18, 0.85);
+  --scrim-medium: rgba(14, 32, 18, 0.65);
+  --scrim-light: rgba(14, 32, 18, 0.4);
+  --scrim-darkest: rgba(8, 20, 11, 0.95);
+  --scrim-modal: rgba(8, 20, 11, 0.75);
+  --sage-glow: rgba(164, 190, 123, 0.3);
+  --forest-shadow-tint: rgba(40, 84, 48, 0.25);
+  --forest-shadow-dark: rgba(14, 32, 18, 0.5);
 }
 
 /* ==============================================================================

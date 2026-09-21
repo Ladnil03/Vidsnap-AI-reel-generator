@@ -74,7 +74,7 @@
   align-items: center;
   justify-content: space-between;
   z-index: 10;
-  background: linear-gradient(180deg, rgba(8, 20, 11, 0.7) 0%, transparent 100%);
+  background: linear-gradient(180deg, var(--scrim-medium) 0%, transparent 100%);
 }
 
 .bottomOverlay {
@@ -127,7 +127,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background-color: rgba(164, 190, 123, 0.25);
+  background-color: var(--sage-glow);
   z-index: 15;
 }
 

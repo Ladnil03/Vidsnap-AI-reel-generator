@@ -195,7 +195,7 @@
 .textarea:focus,
 .select:focus {
   border-color: var(--focus-ring);
-  box-shadow: 0 0 0 3px rgba(164, 190, 123, 0.35);
+  box-shadow: 0 0 0 3px var(--sage-glow);
 }
 
 .inputError {

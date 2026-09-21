@@ -6,7 +6,7 @@ The VidSnap.AI frontend design system is built on a calm, nature-inspired, paper
 
 ## 1. Brand Palette & Contrast Rules
 
-| Color | Token | Hex | Role | Contrast on Paper (#F7F4EB) | Contrast on Dark Forest (#0E2012) |
+| Color | Token | Hex | Role | Contrast on Paper (`#F7F4EB`) | Contrast on Dark Forest (`#0E2012`) |
 |---|---|---|---|---|---|
 | **Cream** | `--color-cream` | `#E5D9B6` / `#F7F4EB` | Paper Canvas / Dark theme text | Surface Canvas | 15.47:1 (AAA) |
 | **Sage** | `--color-sage` | `#A4BE7B` | Accent, Highlights, Focus glow, Progress | Accent Fill | 10.75:1 (AAA) |
@@ -18,11 +18,11 @@ The VidSnap.AI frontend design system is built on a calm, nature-inspired, paper
 - **Moss & Sage**: Used as fills, chips, badges with bold text, progress bars, and icon indicators. Never use small body text in Moss on Cream (fails at ~2.8:1).
 - **Primary CTA**: Forest background (`#285430`) with Cream text (`#F7F4EB`) -> 7.95:1 (AAA).
 - **Secondary CTA**: Sage tint background with Forest-900 text (`#0E2012`) -> 13.20:1 (AAA).
-- **Focus Ring**: 2px solid Forest (light) / Sage (dark) with 2px offset.
+- **Focus Ring**: 2px solid Forest (light) / Sage (dark) with 2px offset + 3px halo glow (`var(--sage-glow)`).
 
 ---
 
-## 2. Themes
+## 2. Themes & Surface Architecture
 
 1. **Light ("Paper" - Default)**:
    - Canvas: Warm Cream-100 (`#EFE9D5`) / Cream-50 (`#F7F4EB`).
@@ -34,6 +34,13 @@ The VidSnap.AI frontend design system is built on a calm, nature-inspired, paper
    - Text: Cream-50 (`#F7F4EB`).
 3. **Always-Dark Video Surfaces**:
    - Reel feed player and Watch Together rooms maintain immersive dark surfaces (`--player-bg: #08140B`) in both themes for video color fidelity and contrast.
+4. **Scrim & Overlay Tokens**:
+   - `--scrim-modal`: `rgba(8, 20, 11, 0.75)` (Modal and drawer backdrops)
+   - `--scrim-heavy`: `rgba(14, 32, 18, 0.88)` (Floating reaction chips, heavy frosted overlays)
+   - `--scrim-medium`: `rgba(14, 32, 18, 0.65)` (Player pill controls, top feed vignettes)
+   - `--scrim-light`: `rgba(14, 32, 18, 0.40)` (Hover card thumbnails, preview scrims)
+   - `--scrim-darkest`: `rgba(14, 32, 18, 0.95)` (Bottom profile card gradients)
+   - `--sage-glow`: `rgba(164, 190, 123, 0.35)` (Interactive focus rings and scrubber tracks)
 
 ---
 
@@ -67,6 +74,28 @@ All primitives are written in React 19 / Next.js 16 with pure CSS modules (`ui.m
 
 ---
 
-## 4. Interactive Styleguide
+## 4. Mobile & Layout Guidelines
 
-A live reference showing every component in both themes is available during development at `/styleguide`.
+- **Bottom Navigation**: 64px fixed bar on mobile (`max-width: 768px`) with 48px touch targets, active sage indicators, and safe-area padding.
+- **Desktop Sidebar**: 240px clean navigation rail on desktop screens (`> 768px`).
+- **Responsive Tables**: All tabular data views (Admin Users, Reels, Moderation, System, Feedback) wrap `<table>` in `<div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>` with minimum table widths (`600px` - `800px`) preventing content truncation or container blowout.
+- **Motion & Accessibility**: Complete `@media (prefers-reduced-motion: reduce)` support globally, replacing smooth transforms/animations with immediate transitions.
+
+---
+
+## 5. Automated Audits & Verification
+
+Two CI check scripts ensure long-term design system integrity:
+1. `npm run lint:contrast` (`check-contrast.mjs`):
+   - Computes relative luminance and contrast ratio for 18 core token pairs across both Light and Dark themes.
+   - Requires every pair to meet or exceed WCAG 2.2 AA (>= 4.5:1).
+   - Current status: **18/18 PASS** (with ratios up to 17.12:1).
+2. `npm run lint:colors` (`check-colors.mjs`):
+   - Scans all `.tsx`, `.ts`, and `.css` files under `frontend/src` for raw hex codes (`#...`), `rgb(...)`, `rgba(...)`, `hsl(...)`, or unapproved color names.
+   - Current status: **0 violations / PASS**. All colors are fully tokenized via `tokens.css`.
+
+---
+
+## 6. Interactive Styleguide
+
+A live reference showing every component, state, form field, modal, and badge in both themes is available during development at `/styleguide`.

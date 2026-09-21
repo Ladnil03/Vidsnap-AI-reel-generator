@@ -144,7 +144,7 @@ export default function HomePage() {
                   aria-label={isPlaying ? 'Pause preview' : 'Play preview'}
                   style={{
                     color: 'var(--player-text-primary)',
-                    background: 'rgba(14, 32, 18, 0.65)',
+                    background: 'var(--scrim-medium)',
                     border: '1px solid var(--player-border)',
                     borderRadius: 'var(--radius-pill)',
                     padding: '6px',
@@ -186,7 +186,7 @@ export default function HomePage() {
                       width: '38px',
                       height: '38px',
                       borderRadius: 'var(--radius-pill)',
-                      backgroundColor: 'rgba(14, 32, 18, 0.75)',
+                      backgroundColor: 'var(--scrim-modal)',
                       border: '1px solid var(--player-border)',
                       display: 'flex',
                       alignItems: 'center',
@@ -207,7 +207,7 @@ export default function HomePage() {
                       width: '38px',
                       height: '38px',
                       borderRadius: 'var(--radius-pill)',
-                      backgroundColor: 'rgba(14, 32, 18, 0.75)',
+                      backgroundColor: 'var(--scrim-modal)',
                       border: '1px solid var(--player-border)',
                       display: 'flex',
                       alignItems: 'center',
@@ -228,7 +228,7 @@ export default function HomePage() {
                       width: '38px',
                       height: '38px',
                       borderRadius: 'var(--radius-pill)',
-                      backgroundColor: 'rgba(14, 32, 18, 0.75)',
+                      backgroundColor: 'var(--scrim-modal)',
                       border: '1px solid var(--player-border)',
                       display: 'flex',
                       alignItems: 'center',
@@ -285,7 +285,7 @@ export default function HomePage() {
                   style={{
                     width: '100%',
                     height: '3px',
-                    backgroundColor: 'rgba(164, 190, 123, 0.3)',
+                    backgroundColor: 'var(--sage-glow)',
                     borderRadius: 'var(--radius-pill)',
                     overflow: 'hidden',
                   }}

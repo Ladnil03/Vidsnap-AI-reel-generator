@@ -436,7 +436,7 @@ export default function CreateReelPage() {
                           fontSize: '10px',
                           fontWeight: 'bold',
                           color: 'var(--cream-50)',
-                          backgroundColor: 'rgba(0,0,0,0.6)',
+                          backgroundColor: 'var(--scrim-medium)',
                           padding: '1px 4px',
                           borderRadius: 'var(--radius-pill)',
                         }}

@@ -346,7 +346,7 @@ export default function FeedPage() {
                       style={{
                         padding: '6px',
                         borderRadius: 'var(--radius-pill)',
-                        backgroundColor: 'rgba(14, 32, 18, 0.65)',
+                        backgroundColor: 'var(--scrim-medium)',
                         border: '1px solid var(--player-border)',
                         color: 'var(--player-text-primary)',
                         display: 'flex',

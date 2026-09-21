@@ -43,3 +43,4 @@
 ## Frontend Redesign (Forest & Paper)
 - S1 DONE: Defined tokens.css, globals.css reset, next/font (Outfit, Plus Jakarta, Noto fallbacks), ThemeProvider with zero-flash hydration, docs/design-tokens.json, and check-contrast.mjs / check-colors.mjs tooling. Build and all WCAG AA contrast pairs passing.
 - S2 DONE: Built 22 accessible UI primitives in src/components/ui/ using CSS Modules, interactive dev /styleguide route showing all primitives in Paper and Forest themes, and docs/design-system.md. Production build and typecheck green.
+- S3 DONE: Redesigned App Shell (Logo, Navbar, MobileNav, Footer, NotificationsDrawer, ReportModal, CompanionWidget) with responsive layout, safe-area insets, theme/lang switches, and palette tokens. Production build and typecheck green.

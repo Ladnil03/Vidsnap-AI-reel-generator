@@ -1,16 +1,12 @@
 'use client';
 
-/**
- * VidSnap.AI User Content Reporting Modal
- * Enables viewers to flag abusive, harmful, or copyright-violating content.
- */
-
 import React, { useState } from 'react';
-import { ShieldAlert, AlertTriangle, CheckCircle, X } from 'lucide-react';
+import { ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { ReportReasonType, ReportTargetType } from '../lib/types';
+import { Modal, Button, FormField, Textarea, Radio, useToast } from './ui';
 
-interface ReportModalProps {
+export interface ReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   targetType: ReportTargetType;
@@ -26,7 +22,7 @@ const REPORT_REASONS: { value: ReportReasonType; label: string; desc: string }[]
   { value: 'copyright', label: 'Copyright Infringement', desc: 'Unlicensed reuse of intellectual property' },
   { value: 'misinformation', label: 'Harmful Misinformation', desc: 'Deceptive or dangerous false information' },
   { value: 'dangerous', label: 'Dangerous Goods or Activity', desc: 'Illegal acts or self-harm encouragement' },
-  { value: 'other', label: 'Other Concern', desc: 'Other violation of community guidelines' },
+  { value: 'other', label: 'Other Concern', desc: 'Other violation of community safety standards' },
 ];
 
 export default function ReportModal({
@@ -36,12 +32,11 @@ export default function ReportModal({
   targetId,
   targetTitle,
 }: ReportModalProps) {
+  const { success, error: toastError } = useToast();
   const [selectedReason, setSelectedReason] = useState<ReportReasonType>('spam');
   const [details, setDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,128 +49,96 @@ export default function ReportModal({
         details: details.trim() || undefined,
       });
       setSubmitted(true);
+      success('Report submitted for moderation review. Thank you for keeping our community safe.');
       setTimeout(() => {
         setSubmitted(false);
         setDetails('');
         onClose();
-      }, 1800);
+      }, 1600);
     } catch (err: unknown) {
-      alert((err as Error).message || 'Failed to submit report. Please log in first.');
+      toastError((err as Error).message || 'Failed to submit report. Please log in first.');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      background: 'rgba(0, 0, 0, 0.75)',
-      backdropFilter: 'blur(6px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 99999,
-      padding: '16px',
-    }}>
-      <div className="glass-card" style={{ maxWidth: '480px', width: '100%', padding: '24px', position: 'relative' }}>
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '16px',
-            right: '16px',
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-muted)',
-            cursor: 'pointer',
-          }}
-        >
-          <X size={20} />
-        </button>
-
-        {submitted ? (
-          <div style={{ textAlign: 'center', padding: '30px 10px' }}>
-            <CheckCircle size={44} color="var(--accent-emerald)" style={{ margin: '0 auto 12px auto' }} />
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Thank You for Reporting</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-              Your report has been submitted to the moderation review queue to keep VidSnap safe.
-            </p>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Report Content"
+      description={targetTitle ? `Target: "${targetTitle}"` : 'Submit a moderation flag.'}
+    >
+      {submitted ? (
+        <div style={{ textAlign: 'center', padding: 'var(--space-6) 0' }}>
+          <CheckCircle2 size={48} style={{ color: 'var(--success)', margin: '0 auto var(--space-3) auto' }} />
+          <h4>Report Received</h4>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+            Our moderation team will review this content against community safety guidelines.
+          </p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-weight-semibold)' }}>
+              Reason for report
+            </span>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'var(--space-2)',
+                maxHeight: '220px',
+                overflowY: 'auto',
+                paddingRight: 'var(--space-1)',
+              }}
+            >
+              {REPORT_REASONS.map((r) => (
+                <div
+                  key={r.value}
+                  style={{
+                    padding: 'var(--space-2) var(--space-3)',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: selectedReason === r.value ? 'var(--accent-soft)' : 'transparent',
+                    border: '1px solid',
+                    borderColor: selectedReason === r.value ? 'var(--border-medium)' : 'var(--border-subtle)',
+                  }}
+                >
+                  <Radio
+                    id={`reason-${r.value}`}
+                    name="report-reason"
+                    label={r.label}
+                    checked={selectedReason === r.value}
+                    onChange={() => setSelectedReason(r.value)}
+                  />
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '28px' }}>
+                    {r.desc}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <ShieldAlert size={22} color="var(--accent-rose)" />
-              <h3 style={{ fontSize: '1.2rem' }}>Report Inappropriate Content</h3>
-            </div>
 
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem', marginBottom: '16px' }}>
-              Reporting {targetType}: {targetTitle ? <strong>&ldquo;{targetTitle}&rdquo;</strong> : <code>{targetId}</code>}
-            </p>
+          <FormField id="report-details" label="Additional Details (Optional)">
+            <Textarea
+              id="report-details"
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+              placeholder="Provide timestamps or specific context to assist moderators..."
+              rows={3}
+            />
+          </FormField>
 
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>
-                Select Reason for Report:
-              </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
-                {REPORT_REASONS.map((r) => (
-                  <label
-                    key={r.value}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '10px',
-                      padding: '8px 12px',
-                      borderRadius: 'var(--radius-sm)',
-                      background: selectedReason === r.value ? 'rgba(99, 102, 241, 0.15)' : 'var(--bg-surface-elevated)',
-                      border: selectedReason === r.value ? '1px solid var(--primary-light)' : '1px solid transparent',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="report_reason"
-                      checked={selectedReason === r.value}
-                      onChange={() => setSelectedReason(r.value)}
-                      style={{ marginTop: '3px' }}
-                    />
-                    <div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{r.label}</div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{r.desc}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
-                Additional Details (Optional):
-              </label>
-              <textarea
-                value={details}
-                onChange={(e) => setDetails(e.target.value)}
-                rows={2}
-                className="input"
-                style={{ width: '100%', fontSize: '0.85rem' }}
-                placeholder="Help us understand the issue..."
-              />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button type="button" onClick={onClose} className="btn btn-secondary" disabled={submitting}>
-                Cancel
-              </button>
-              <button type="submit" className="btn btn-primary" disabled={submitting}>
-                {submitting ? 'Submitting...' : 'Submit Report'}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+            <Button variant="ghost" type="button" onClick={onClose} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button variant="danger" type="submit" loading={submitting}>
+              Submit Report
+            </Button>
+          </div>
+        </form>
+      )}
+    </Modal>
   );
 }

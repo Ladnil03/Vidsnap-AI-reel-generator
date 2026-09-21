@@ -1,35 +1,37 @@
 'use client';
 
-/**
- * VidSnap.AI Glassmorphic Navigation Bar
- */
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  Clapperboard, 
-  Sparkles, 
-  Film, 
-  MessageSquare, 
-  ShieldCheck, 
-  User, 
-  LogOut, 
-  LogIn, 
-  Menu, 
-  X, 
-  Coins, 
-  Globe,
-  Bell,
+import {
   Compass,
+  Film,
   Users,
   Tv,
-  Trophy,
+  Sparkles,
+  Bot,
+  Bell,
+  Coins,
+  Flame,
+  Globe,
+  Sun,
+  Moon,
+  LogOut,
+  LogIn,
+  User,
+  ShieldCheck,
   Briefcase,
-  Palette
+  Trophy,
+  Menu,
+  X,
+  Search,
 } from 'lucide-react';
+import styles from './Navbar.module.css';
+import { Logo } from './Logo';
+import { Button, IconButton, Badge, Avatar } from './ui';
 import { useAuth } from '../context/AuthContext';
 import { useI18n, Locale } from '../context/I18nContext';
+import { useTheme } from '../context/ThemeContext';
 import NotificationsDrawer from './NotificationsDrawer';
 import { api } from '@/lib/api';
 
@@ -37,621 +39,355 @@ export function Navbar() {
   const pathname = usePathname();
   const { user, isAdmin, logout } = useAuth();
   const { locale, setLocale, t } = useI18n();
+  const { theme, toggleTheme } = useTheme();
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  React.useEffect(() => {
+  const profileRef = useRef<HTMLDivElement>(null);
+  const langRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
     if (user) {
-      api.notifications.list(true, 1).then((res) => setUnreadCount(res.unread_count)).catch(() => {});
+      api.notifications
+        .list(true, 1)
+        .then((res) => setUnreadCount(res.unread_count))
+        .catch(() => {});
     }
   }, [user]);
 
+  // Close menus on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+      if (langRef.current && !langRef.current.contains(event.target as Node)) {
+        setLangMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setProfileMenuOpen(false);
+  }, [pathname]);
+
   const isActive = (path: string) => pathname === path;
 
+  const NAV_ITEMS = [
+    { href: '/feed', label: 'Feed', icon: <Film size={18} /> },
+    { href: '/explore', label: 'Explore', icon: <Compass size={18} /> },
+    { href: '/create', label: t('navCreate') || 'Create', icon: <Sparkles size={18} /> },
+    { href: '/rooms', label: 'Watch Together', icon: <Tv size={18} /> },
+    { href: '/communities', label: 'Communities', icon: <Users size={18} /> },
+    { href: '/companion', label: 'AI Companion', icon: <Bot size={18} /> },
+  ];
+
   return (
-    <header style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: '68px',
-      zIndex: 1000,
-      background: 'rgba(7, 9, 14, 0.75)',
-      backdropFilter: 'var(--glass-blur)',
-      WebkitBackdropFilter: 'var(--glass-blur)',
-      borderBottom: '1px solid var(--glass-border)',
-      display: 'flex',
-      alignItems: 'center',
-    }}>
-      <div className="container" style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
+    <header className={styles.header}>
+      <div className={`container ${styles.inner}`}>
         {/* Brand Logo */}
-        <Link href="/" style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          fontWeight: 800,
-          fontSize: '1.25rem',
-          letterSpacing: '-0.02em',
-        }}>
-          <div style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--primary-gradient)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 14px var(--primary-glow)',
-          }}>
-            <Clapperboard size={20} color="#fff" />
-          </div>
-          <span style={{ fontFamily: 'var(--font-family-heading)' }}>
-            VidSnap<span style={{ color: 'var(--primary-light)' }}>.AI</span>
-          </span>
-        </Link>
+        <Logo size="md" />
 
-        {/* Desktop Nav Links */}
-        <nav style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-        }} className="desktop-nav">
-          <Link
-            href="/"
-            style={{
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              color: isActive('/') ? 'var(--primary-light)' : 'var(--text-secondary)',
-              background: isActive('/') ? 'var(--glass-bg-hover)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            {t('navHome')}
-          </Link>
-
-          <Link
-            href="/feed"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              color: isActive('/feed') ? 'var(--primary-light)' : 'var(--text-secondary)',
-              background: isActive('/feed') ? 'var(--glass-bg-hover)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            <Compass size={16} />
-            <span>Feed</span>
-          </Link>
-
-          <Link
-            href="/explore"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              color: isActive('/explore') ? 'var(--primary-light)' : 'var(--text-secondary)',
-              background: isActive('/explore') ? 'var(--glass-bg-hover)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            <Sparkles size={16} />
-            <span>Explore</span>
-          </Link>
-
-          <Link
-            href="/communities"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              color: isActive('/communities') ? 'var(--primary-light)' : 'var(--text-secondary)',
-              background: isActive('/communities') ? 'var(--glass-bg-hover)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            <Users size={16} />
-            <span>Communities</span>
-          </Link>
-
-          <Link
-            href="/rooms"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              color: isActive('/rooms') ? 'var(--primary-light)' : 'var(--text-secondary)',
-              background: isActive('/rooms') ? 'var(--glass-bg-hover)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            <Tv size={16} />
-            <span>Rooms</span>
-          </Link>
-
-          <Link
-            href="/companion"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              color: isActive('/companion') ? 'var(--primary-light)' : 'var(--text-secondary)',
-              background: isActive('/companion') ? 'var(--glass-bg-hover)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            <Sparkles size={16} />
-            <span>Companion ✨</span>
-          </Link>
-
-          <Link
-            href="/gamification"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              color: isActive('/gamification') ? 'var(--primary-light)' : 'var(--text-secondary)',
-              background: isActive('/gamification') ? 'var(--glass-bg-hover)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            <Trophy size={16} />
-            <span>Rewards 🏆</span>
-          </Link>
-
-          <Link
-            href="/creator"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              color: isActive('/creator') ? 'var(--primary-light)' : 'var(--text-secondary)',
-              background: isActive('/creator') ? 'var(--glass-bg-hover)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            <Palette size={16} />
-            <span>Creator 🎨</span>
-          </Link>
-
-          <Link
-            href="/business"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              color: isActive('/business') ? 'var(--primary-light)' : 'var(--text-secondary)',
-              background: isActive('/business') ? 'var(--glass-bg-hover)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            <Briefcase size={16} />
-            <span>Collabs 💼</span>
-          </Link>
-
-          {user && (
-            <>
+        {/* Desktop Primary Nav */}
+        <nav className={`${styles.navLinks} ${styles.desktopOnly}`} aria-label="Main Navigation">
+          {NAV_ITEMS.map((item) => {
+            const active = isActive(item.href);
+            return (
               <Link
-                href="/create"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 14px',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  color: isActive('/create') ? 'var(--primary-light)' : 'var(--text-secondary)',
-                  background: isActive('/create') ? 'var(--glass-bg-hover)' : 'transparent',
-                }}
+                key={item.href}
+                href={item.href}
+                className={`${styles.navLink} ${active ? styles.navLinkActive : ''}`}
+                aria-current={active ? 'page' : undefined}
               >
-                <Sparkles size={16} color="var(--primary-light)" />
-                {t('navCreate')}
+                {item.icon}
+                <span>{item.label}</span>
               </Link>
-
-              <Link
-                href="/gallery"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 14px',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  color: isActive('/gallery') ? 'var(--primary-light)' : 'var(--text-secondary)',
-                  background: isActive('/gallery') ? 'var(--glass-bg-hover)' : 'transparent',
-                }}
-              >
-                <Film size={16} />
-                {t('navGallery')}
-              </Link>
-            </>
-          )}
-
-          <Link
-            href="/feedback"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              color: isActive('/feedback') ? 'var(--primary-light)' : 'var(--text-secondary)',
-              background: isActive('/feedback') ? 'var(--glass-bg-hover)' : 'transparent',
-            }}
-          >
-            <MessageSquare size={16} />
-            {t('navFeedback')}
-          </Link>
-
-          {isAdmin && (
-            <Link
-              href="/admin"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 14px',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                color: '#38bdf8',
-                background: 'rgba(6, 182, 212, 0.1)',
-                border: '1px solid rgba(6, 182, 212, 0.25)',
-              }}
-            >
-              <ShieldCheck size={16} />
-              {t('navAdmin')}
-            </Link>
-          )}
+            );
+          })}
         </nav>
 
-        {/* Right Section: Language, Token Counter, Auth state */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-        }}>
-          {/* Language Switcher Dropdown */}
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => setLangMenuOpen(!langMenuOpen)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '6px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)',
-                color: 'var(--text-secondary)',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-              }}
-              title="Select Language"
-            >
-              <Globe size={14} />
-              <span>{locale.toUpperCase()}</span>
-            </button>
+        {/* Right Section: Tokens, Streak, Theme, Lang, Notifications, Auth */}
+        <div className={styles.rightGroup}>
+          {/* User Credits / Streak */}
+          {user && (
+            <div className={`${styles.chipGroup} ${styles.desktopOnly}`}>
+              <Link href="/create" title="Creation Tokens Remaining">
+                <Badge variant="sage" icon={<Coins size={14} />}>
+                  {user.tokens_remaining ?? 0}
+                </Badge>
+              </Link>
+              <Link href="/gamification" title="Daily Streak & XP">
+                <Badge variant="moss" icon={<Flame size={14} />}>
+                  Streak
+                </Badge>
+              </Link>
+            </div>
+          )}
 
+          {/* Theme Toggle */}
+          <IconButton
+            icon={theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            onClick={toggleTheme}
+            size="sm"
+          />
+
+          {/* Language Switcher */}
+          <div ref={langRef} style={{ position: 'relative' }}>
+            <IconButton
+              icon={<Globe size={18} />}
+              aria-label="Change language"
+              onClick={() => setLangMenuOpen((prev) => !prev)}
+              size="sm"
+            />
             {langMenuOpen && (
-              <div style={{
-                position: 'absolute',
-                top: 'calc(100% + 6px)',
-                right: 0,
-                background: 'var(--bg-surface-elevated)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: 'var(--radius-md)',
-                boxShadow: 'var(--shadow-md)',
-                display: 'flex',
-                flexDirection: 'column',
-                minWidth: '120px',
-                overflow: 'hidden',
-                zIndex: 200,
-              }}>
+              <div className={styles.menuDropdown} role="menu">
                 <button
-                  onClick={() => { setLocale('en'); setLangMenuOpen(false); }}
-                  style={{
-                    padding: '8px 14px',
-                    textAlign: 'left',
-                    color: locale === 'en' ? 'var(--primary-light)' : 'var(--text-primary)',
-                    fontSize: '0.85rem',
-                    background: locale === 'en' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                  type="button"
+                  role="menuitem"
+                  className={styles.dropdownItem}
+                  onClick={() => {
+                    setLocale('en');
+                    setLangMenuOpen(false);
                   }}
                 >
-                  English
+                  English {locale === 'en' && '✓'}
                 </button>
                 <button
-                  onClick={() => { setLocale('hi'); setLangMenuOpen(false); }}
-                  style={{
-                    padding: '8px 14px',
-                    textAlign: 'left',
-                    color: locale === 'hi' ? 'var(--primary-light)' : 'var(--text-primary)',
-                    fontSize: '0.85rem',
-                    background: locale === 'hi' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                  type="button"
+                  role="menuitem"
+                  className={styles.dropdownItem}
+                  onClick={() => {
+                    setLocale('hi');
+                    setLangMenuOpen(false);
                   }}
                 >
-                  हिन्दी (Hindi)
+                  हिन्दी (Hindi) {locale === 'hi' && '✓'}
                 </button>
                 <button
-                  onClick={() => { setLocale('es'); setLangMenuOpen(false); }}
-                  style={{
-                    padding: '8px 14px',
-                    textAlign: 'left',
-                    color: locale === 'es' ? 'var(--primary-light)' : 'var(--text-primary)',
-                    fontSize: '0.85rem',
-                    background: locale === 'es' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                  type="button"
+                  role="menuitem"
+                  className={styles.dropdownItem}
+                  onClick={() => {
+                    setLocale('es');
+                    setLangMenuOpen(false);
                   }}
                 >
-                  Español
+                  Español (Spanish) {locale === 'es' && '✓'}
                 </button>
               </div>
             )}
           </div>
 
-          {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {/* Token Badge */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '4px 12px',
-                borderRadius: 'var(--radius-full)',
-                background: 'rgba(99, 102, 241, 0.12)',
-                border: '1px solid rgba(99, 102, 241, 0.3)',
-                color: 'var(--primary-light)',
-                fontWeight: 600,
-                fontSize: '0.825rem',
-              }}>
-                <Coins size={14} />
-                <span>{user.tokens_remaining} {t('tokensLeft')}</span>
-              </div>
-
-              {/* Notifications Bell */}
-              <button
+          {/* Notifications Trigger */}
+          {user && (
+            <div style={{ position: 'relative' }}>
+              <IconButton
+                icon={<Bell size={18} />}
+                aria-label="View notifications"
                 onClick={() => setNotificationsOpen(true)}
-                style={{
-                  position: 'relative',
-                  padding: '7px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--glass-bg)',
-                  border: '1px solid var(--glass-border)',
-                  color: unreadCount > 0 ? 'var(--primary-light)' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                title="Notifications"
+                size="sm"
+              />
+              {unreadCount > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '4px',
+                    right: '4px',
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: 'var(--radius-pill)',
+                    backgroundColor: 'var(--danger)',
+                    pointerEvents: 'none',
+                  }}
+                />
+              )}
+            </div>
+          )}
+
+          {/* User Profile or Login */}
+          {user ? (
+            <div ref={profileRef} style={{ position: 'relative' }}>
+              <button
+                type="button"
+                aria-label="Open profile menu"
+                aria-expanded={profileMenuOpen}
+                onClick={() => setProfileMenuOpen((prev) => !prev)}
+                style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
               >
-                <Bell size={16} />
-                {unreadCount > 0 && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: '-4px',
-                      right: '-4px',
-                      background: '#f43f5e',
-                      color: '#fff',
-                      fontSize: '0.65rem',
-                      fontWeight: 700,
-                      minWidth: '16px',
-                      height: '16px',
-                      borderRadius: '999px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '0 3px',
+                <Avatar
+                  fallback={user.name || user.email || 'U'}
+                  size="sm"
+                />
+              </button>
+
+              {profileMenuOpen && (
+                <div className={styles.menuDropdown} role="menu">
+                  <div style={{ padding: 'var(--space-2) var(--space-3)', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <div style={{ fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--text-sm)' }}>
+                      {user.name || 'Creator'}
+                    </div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                      {user.email}
+                    </div>
+                  </div>
+
+                  <Link href="/profile" className={styles.dropdownItem} role="menuitem">
+                    <User size={16} />
+                    <span>My Profile</span>
+                  </Link>
+                  <Link href="/gallery" className={styles.dropdownItem} role="menuitem">
+                    <Film size={16} />
+                    <span>My Creations</span>
+                  </Link>
+                  <Link href="/gamification" className={styles.dropdownItem} role="menuitem">
+                    <Trophy size={16} />
+                    <span>XP & Badges</span>
+                  </Link>
+                  <Link href="/creator" className={styles.dropdownItem} role="menuitem">
+                    <Sparkles size={16} />
+                    <span>Creator Dashboard</span>
+                  </Link>
+                  <Link href="/business" className={styles.dropdownItem} role="menuitem">
+                    <Briefcase size={16} />
+                    <span>Business Portal</span>
+                  </Link>
+                  {isAdmin && (
+                    <Link href="/admin" className={styles.dropdownItem} role="menuitem">
+                      <ShieldCheck size={16} />
+                      <span>Admin Console</span>
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    className={styles.dropdownItem}
+                    role="menuitem"
+                    style={{ color: 'var(--danger)' }}
+                    onClick={() => {
+                      logout();
+                      setProfileMenuOpen(false);
                     }}
                   >
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {/* Profile Link */}
-              <Link
-                href="/profile"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--glass-bg)',
-                  border: '1px solid var(--glass-border)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.85rem',
-                  fontWeight: 500,
-                }}
-              >
-                <User size={15} />
-                <span className="hide-mobile">{user.name.split(' ')[0]}</span>
-              </Link>
-
-              {/* Logout */}
-              <button
-                onClick={logout}
-                style={{
-                  padding: '7px',
-                  borderRadius: 'var(--radius-sm)',
-                  color: 'var(--text-muted)',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-                title={t('navLogout')}
-              >
-                <LogOut size={16} />
-              </button>
+                    <LogOut size={16} />
+                    <span>Log Out</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Link
-                href="/login"
-                className="btn btn-secondary btn-sm"
-                style={{ fontSize: '0.825rem' }}
-              >
-                <LogIn size={14} />
-                <span>{t('navLogin')}</span>
+            <div className={`${styles.chipGroup} ${styles.desktopOnly}`}>
+              <Link href="/login">
+                <Button variant="ghost" size="sm">
+                  {t('navLogin') || 'Login'}
+                </Button>
               </Link>
-              <Link
-                href="/register"
-                className="btn btn-primary btn-sm hide-mobile"
-                style={{ fontSize: '0.825rem' }}
-              >
-                <span>{t('navSignUp')}</span>
+              <Link href="/register">
+                <Button variant="primary" size="sm">
+                  {t('navSignUp') || 'Sign Up'}
+                </Button>
               </Link>
             </div>
           )}
 
-          {/* Mobile hamburger button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            style={{
-              padding: '6px',
-              color: 'var(--text-primary)',
-              display: 'none',
-            }}
-            className="mobile-hamburger"
-          >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
+          {/* Mobile Menu Toggle Button */}
+          <IconButton
+            icon={mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            aria-label="Toggle navigation menu"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            className={styles.mobileMenuBtn}
+            size="sm"
+          />
         </div>
       </div>
 
-      {/* Mobile drawer */}
+      {/* Mobile Dropdown Panel */}
       {mobileMenuOpen && (
-        <div style={{
-          position: 'absolute',
-          top: '68px',
-          left: 0,
-          right: 0,
-          background: 'var(--bg-surface-elevated)',
-          borderBottom: '1px solid var(--glass-border)',
-          padding: '16px 24px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-          zIndex: 999,
-        }}>
-          <Link href="/" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem' }}>
-            {t('navHome')}
-          </Link>
-          <Link href="/feed" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem' }}>
-            Feed
-          </Link>
-          <Link href="/explore" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem' }}>
-            Explore
-          </Link>
-          <Link href="/communities" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem' }}>
-            Communities
-          </Link>
-          <Link href="/rooms" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem' }}>
-            Watch Parties
-          </Link>
-          <Link href="/companion" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem' }}>
-            AI Companion ✨
-          </Link>
-          <Link href="/gamification" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Trophy size={18} />
-            Rewards & Quests 🏆
-          </Link>
-          <Link href="/creator" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Palette size={18} />
-            Creator Studio 🎨
-          </Link>
-          <Link href="/business" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Briefcase size={18} />
-            Collab Marketplace 💼
-          </Link>
-          {user && (
-            <>
-              <Link href="/create" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem' }}>
-                {t('navCreate')}
+        <div
+          style={{
+            position: 'fixed',
+            top: '70px',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'var(--surface-paper)',
+            padding: 'var(--space-6)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-4)',
+            zIndex: varZSticky(),
+            overflowY: 'auto',
+          }}
+        >
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            {NAV_ITEMS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`${styles.navLink} ${isActive(item.href) ? styles.navLinkActive : ''}`}
+                style={{ fontSize: 'var(--text-base)', padding: 'var(--space-3)' }}
+              >
+                {item.icon}
+                <span>{item.label}</span>
               </Link>
-              <Link href="/gallery" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem' }}>
-                {t('navGallery')}
-              </Link>
-              <Link href="/profile" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem' }}>
-                {t('navProfile')}
-              </Link>
-            </>
-          )}
-          <Link href="/feedback" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem' }}>
-            {t('navFeedback')}
-          </Link>
-          {isAdmin && (
-            <Link href="/admin" onClick={() => setMobileMenuOpen(false)} style={{ padding: '8px 0', fontSize: '1rem', color: '#38bdf8' }}>
-              {t('navAdmin')}
-            </Link>
-          )}
+            ))}
+          </nav>
+
+          <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)' }}>
+            {!user ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <Link href="/login">
+                  <Button variant="secondary" style={{ width: '100%' }}>Login</Button>
+                </Link>
+                <Link href="/register">
+                  <Button variant="primary" style={{ width: '100%' }}>Sign Up</Button>
+                </Link>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <Link href="/profile" className={styles.dropdownItem}>
+                  <User size={18} />
+                  <span>My Profile</span>
+                </Link>
+                <Link href="/creator" className={styles.dropdownItem}>
+                  <Sparkles size={18} />
+                  <span>Creator Dashboard</span>
+                </Link>
+                <Link href="/business" className={styles.dropdownItem}>
+                  <Briefcase size={18} />
+                  <span>Business Portal</span>
+                </Link>
+                {isAdmin && (
+                  <Link href="/admin" className={styles.dropdownItem}>
+                    <ShieldCheck size={18} />
+                    <span>Admin Console</span>
+                  </Link>
+                )}
+                <Button variant="danger" onClick={logout} style={{ marginTop: 'var(--space-2)' }}>
+                  Log Out
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Slide-out Notifications Drawer */}
+      {/* Notifications Drawer */}
       <NotificationsDrawer
         isOpen={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
-        onUnreadChange={setUnreadCount}
       />
-
-      <style jsx global>{`
-        @media (max-width: 768px) {
-          .desktop-nav {
-            display: none !important;
-          }
-          .mobile-hamburger {
-            display: flex !important;
-          }
-          .hide-mobile {
-            display: none !important;
-          }
-        }
-      `}</style>
     </header>
   );
+}
+
+function varZSticky() {
+  return 100;
 }

@@ -1,0 +1,119 @@
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(70px + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+  z-index: var(--z-sticky);
+  background-color: var(--surface-overlay);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.navLink:hover {
+  color: var(--brand-primary);
+  background-color: var(--border-subtle);
+}
+
+.navLinkActive {
+  color: var(--brand-primary);
+  background-color: var(--accent-soft);
+  font-weight: var(--font-weight-semibold);
+}
+
+.rightGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.chipGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.menuDropdown {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  background-color: var(--surface-paper);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2);
+  min-width: 220px;
+  z-index: var(--z-dropdown);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast);
+  text-decoration: none;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdownItem:hover {
+  background-color: var(--border-subtle);
+}
+
+.mobileMenuBtn {
+  display: none;
+}
+
+.desktopOnly {
+  display: flex;
+}
+
+@media (max-width: 960px) {
+  .desktopOnly {
+    display: none;
+  }
+  .mobileMenuBtn {
+    display: inline-flex;
+  }
+}

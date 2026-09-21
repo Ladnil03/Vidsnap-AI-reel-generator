@@ -1,13 +1,10 @@
 'use client';
 
-/**
- * VidSnap.AI Mobile Bottom Navigation Bar
- */
-
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Sparkles, Film, User, MessageSquare } from 'lucide-react';
+import { Home, Compass, Sparkles, Tv, User } from 'lucide-react';
+import styles from './MobileNav.module.css';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 
@@ -19,111 +16,56 @@ export function MobileNav() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <nav className="mobile-bottom-nav">
-      <Link href="/" className={`bottom-nav-item ${isActive('/') ? 'active' : ''}`}>
+    <nav className={styles.bottomNav} aria-label="Mobile Navigation">
+      <Link
+        href="/feed"
+        className={`${styles.navItem} ${isActive('/feed') || isActive('/') ? styles.navItemActive : ''}`}
+        aria-current={isActive('/feed') || isActive('/') ? 'page' : undefined}
+      >
         <Home size={20} />
-        <span>{t('navHome')}</span>
+        <span>{t('navHome') || 'Home'}</span>
       </Link>
 
-      {user ? (
-        <>
-          <Link href="/gallery" className={`bottom-nav-item ${isActive('/gallery') ? 'active' : ''}`}>
-            <Film size={20} />
-            <span>{t('navGallery')}</span>
-          </Link>
+      <Link
+        href="/explore"
+        className={`${styles.navItem} ${isActive('/explore') ? styles.navItemActive : ''}`}
+        aria-current={isActive('/explore') ? 'page' : undefined}
+      >
+        <Compass size={20} />
+        <span>Explore</span>
+      </Link>
 
-          {/* Centered highlighted Studio button */}
-          <Link href="/create" className="bottom-nav-center-action" title={t('navCreate')}>
-            <div className="center-icon-wrap">
-              <Sparkles size={22} color="#ffffff" />
-            </div>
-            <span>{t('navCreate')}</span>
-          </Link>
+      {/* Center Highlighted Studio Action */}
+      <Link
+        href="/create"
+        className={styles.centerAction}
+        aria-label={t('navCreate') || 'Create Reel'}
+      >
+        <div className={styles.centerIconWrap}>
+          <Sparkles size={22} />
+        </div>
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--brand-primary)', fontWeight: 600 }}>
+          {t('navCreate') || 'Create'}
+        </span>
+      </Link>
 
-          <Link href="/feedback" className={`bottom-nav-item ${isActive('/feedback') ? 'active' : ''}`}>
-            <MessageSquare size={20} />
-            <span>{t('navFeedback')}</span>
-          </Link>
+      <Link
+        href="/rooms"
+        className={`${styles.navItem} ${isActive('/rooms') ? styles.navItemActive : ''}`}
+        aria-current={isActive('/rooms') ? 'page' : undefined}
+      >
+        <Tv size={20} />
+        <span>Rooms</span>
+      </Link>
 
-          <Link href="/profile" className={`bottom-nav-item ${isActive('/profile') ? 'active' : ''}`}>
-            <User size={20} />
-            <span>{t('navProfile')}</span>
-          </Link>
-        </>
-      ) : (
-        <>
-          <Link href="/feedback" className={`bottom-nav-item ${isActive('/feedback') ? 'active' : ''}`}>
-            <MessageSquare size={20} />
-            <span>{t('navFeedback')}</span>
-          </Link>
-          <Link href="/login" className={`bottom-nav-item ${isActive('/login') ? 'active' : ''}`}>
-            <User size={20} />
-            <span>{t('navLogin')}</span>
-          </Link>
-        </>
-      )}
-
-      <style jsx>{`
-        .mobile-bottom-nav {
-          display: none;
-          position: fixed;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 64px;
-          background: rgba(14, 19, 31, 0.92);
-          backdrop-filter: var(--glass-blur);
-          -webkit-backdrop-filter: var(--glass-blur);
-          border-top: 1px solid var(--glass-border);
-          z-index: 1000;
-          align-items: center;
-          justify-content: space-around;
-          padding: 0 12px;
-        }
-
-        .bottom-nav-item {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 4px;
-          font-size: 0.72rem;
-          color: var(--text-muted);
-          transition: color var(--transition-fast);
-        }
-
-        .bottom-nav-item.active {
-          color: var(--primary-light);
-        }
-
-        .bottom-nav-center-action {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 2px;
-          margin-top: -18px;
-          font-size: 0.72rem;
-          color: var(--primary-light);
-          font-weight: 600;
-        }
-
-        .center-icon-wrap {
-          width: 44px;
-          height: 44px;
-          border-radius: var(--radius-full);
-          background: var(--primary-gradient);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 16px var(--primary-glow);
-          animation: pulseGlow 3s infinite;
-        }
-
-        @media (max-width: 768px) {
-          .mobile-bottom-nav {
-            display: flex;
-          }
-        }
-      `}</style>
+      <Link
+        href={user ? '/profile' : '/login'}
+        className={`${styles.navItem} ${isActive('/profile') || isActive('/login') ? styles.navItemActive : ''}`}
+        aria-current={isActive('/profile') || isActive('/login') ? 'page' : undefined}
+      >
+        <User size={20} />
+        <span>{user ? t('navProfile') || 'Profile' : t('navLogin') || 'Login'}</span>
+      </Link>
     </nav>
   );
 }

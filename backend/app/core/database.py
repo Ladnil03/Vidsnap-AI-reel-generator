@@ -55,6 +55,38 @@ async def ensure_indexes(db: AsyncIOMotorDatabase) -> None:
     ]
     await users.create_indexes(user_indexes)
 
+    # Video Content, Likes, Saves, Comments
+    videos = db["videos"]
+    await videos.create_index([("video_id", ASCENDING)], unique=True, name="idx_videos_video_id_unique")
+    await videos.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="idx_videos_user_created")
+    await videos.create_index(
+        [("visibility", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)],
+        name="idx_videos_vis_status_created",
+    )
+    await videos.create_index([("tags", ASCENDING)], name="idx_videos_tags")
+
+    video_likes = db["video_likes"]
+    await video_likes.create_index(
+        [("user_id", ASCENDING), ("video_id", ASCENDING)],
+        unique=True,
+        name="idx_vl_user_video_unique",
+    )
+    await video_likes.create_index([("video_id", ASCENDING)], name="idx_vl_video_id")
+
+    video_saves = db["video_saves"]
+    await video_saves.create_index(
+        [("user_id", ASCENDING), ("video_id", ASCENDING)],
+        unique=True,
+        name="idx_vs_user_video_unique",
+    )
+    await video_saves.create_index([("video_id", ASCENDING)], name="idx_vs_video_id")
+
+    video_comments = db["video_comments"]
+    await video_comments.create_index(
+        [("video_id", ASCENDING), ("created_at", DESCENDING)],
+        name="idx_vc_video_created",
+    )
+
     # Jobs collection indexes
     jobs = db["jobs"]
     job_indexes = [

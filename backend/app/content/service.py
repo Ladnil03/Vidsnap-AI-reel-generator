@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import HTTPException, status
+from pymongo.errors import DuplicateKeyError
 
 from backend.app.content.models import (
     CommentResponse,
@@ -334,19 +335,7 @@ class ContentService:
         db = get_db()
         now = datetime.now(timezone.utc)
 
-        existing = await db.video_likes.find_one({"video_id": video_id, "user_id": user_id})
-        if existing:
-            # Unlike
-            await db.video_likes.delete_one({"video_id": video_id, "user_id": user_id})
-            doc = await db.videos.find_one_and_update(
-                {"video_id": video_id},
-                {"$inc": {"likes_count": -1}},
-                return_document=True,
-            )
-            count = max(0, doc.get("likes_count", 0)) if doc else 0
-            return LikeResponse(video_id=video_id, liked=False, likes_count=count)
-        else:
-            # Like
+        try:
             await db.video_likes.insert_one({"video_id": video_id, "user_id": user_id, "created_at": now})
             doc = await db.videos.find_one_and_update(
                 {"video_id": video_id},
@@ -387,25 +376,28 @@ class ContentService:
 
             return LikeResponse(video_id=video_id, liked=True, likes_count=count)
 
+        except DuplicateKeyError:
+            # Already liked -> unlike
+            del_res = await db.video_likes.delete_one({"video_id": video_id, "user_id": user_id})
+            if del_res.deleted_count > 0:
+                doc = await db.videos.find_one_and_update(
+                    {"video_id": video_id},
+                    {"$inc": {"likes_count": -1}},
+                    return_document=True,
+                )
+                count = max(0, doc.get("likes_count", 0)) if doc else 0
+            else:
+                doc = await db.videos.find_one({"video_id": video_id})
+                count = max(0, doc.get("likes_count", 0)) if doc else 0
+            return LikeResponse(video_id=video_id, liked=False, likes_count=count)
+
     @classmethod
     async def toggle_save(cls, user_id: str, video_id: str) -> SaveResponse:
         """Atomically toggle a save / bookmark on a video."""
         db = get_db()
         now = datetime.now(timezone.utc)
 
-        existing = await db.video_saves.find_one({"video_id": video_id, "user_id": user_id})
-        if existing:
-            # Unsave
-            await db.video_saves.delete_one({"video_id": video_id, "user_id": user_id})
-            doc = await db.videos.find_one_and_update(
-                {"video_id": video_id},
-                {"$inc": {"saves_count": -1}},
-                return_document=True,
-            )
-            count = max(0, doc.get("saves_count", 0)) if doc else 0
-            return SaveResponse(video_id=video_id, saved=False, saves_count=count)
-        else:
-            # Save
+        try:
             await db.video_saves.insert_one({"video_id": video_id, "user_id": user_id, "created_at": now})
             doc = await db.videos.find_one_and_update(
                 {"video_id": video_id},
@@ -414,6 +406,21 @@ class ContentService:
             )
             count = doc.get("saves_count", 1) if doc else 1
             return SaveResponse(video_id=video_id, saved=True, saves_count=count)
+
+        except DuplicateKeyError:
+            # Already saved -> unsave
+            del_res = await db.video_saves.delete_one({"video_id": video_id, "user_id": user_id})
+            if del_res.deleted_count > 0:
+                doc = await db.videos.find_one_and_update(
+                    {"video_id": video_id},
+                    {"$inc": {"saves_count": -1}},
+                    return_document=True,
+                )
+                count = max(0, doc.get("saves_count", 0)) if doc else 0
+            else:
+                doc = await db.videos.find_one({"video_id": video_id})
+                count = max(0, doc.get("saves_count", 0)) if doc else 0
+            return SaveResponse(video_id=video_id, saved=False, saves_count=count)
 
     @classmethod
     async def add_comment(cls, user_id: str, user_name: str, video_id: str, text: str) -> CommentResponse:

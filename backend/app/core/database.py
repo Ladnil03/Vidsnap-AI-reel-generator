@@ -96,6 +96,18 @@ async def ensure_indexes(db: AsyncIOMotorDatabase) -> None:
     ]
     await jobs.create_indexes(job_indexes)
 
+    # Job Idempotency collection indexes with 24-hour TTL
+    job_idempotency = db["job_idempotency"]
+    job_idem_indexes = [
+        IndexModel(
+            [("user_id", ASCENDING), ("idempotency_key", ASCENDING)],
+            unique=True,
+            name="idx_job_idem_user_key_unique",
+        ),
+        IndexModel([("created_at", ASCENDING)], expireAfterSeconds=86400, name="idx_job_idem_ttl_24h"),
+    ]
+    await job_idempotency.create_indexes(job_idem_indexes)
+
     # Credit Ledger collection indexes (append-only audit log)
     ledger = db["credit_ledger"]
     ledger_indexes = [

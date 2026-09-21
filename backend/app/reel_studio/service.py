@@ -32,13 +32,36 @@ class ReelStudioService:
     async def create_reel_job(
         request: CreateJobRequest,
         user_id: str,
+        idempotency_key: str | None = None,
     ) -> JobCreatedResponse:
         """
         Initiate a new reel generation job.
+        Supports optional Idempotency-Key deduplication:
+        - If the key exists for the user, returns the existing job without deducting tokens.
         1. Atomically deducts 1 token from user balance.
         2. Inserts job doc into MongoDB.
         3. Enqueues job to Redis ARQ worker.
         """
+        db = get_db()
+        if idempotency_key:
+            existing = await db.job_idempotency.find_one({
+                "user_id": user_id,
+                "idempotency_key": idempotency_key,
+            })
+            if existing:
+                logger.info(
+                    "Idempotent job creation hit for user %s, key %s -> job %s",
+                    user_id,
+                    idempotency_key,
+                    existing["job_id"],
+                )
+                return JobCreatedResponse(
+                    job_id=existing["job_id"],
+                    status=existing.get("status", "queued"),
+                    stage=JobStage(existing.get("stage", JobStage.QUEUED.value)),
+                    message="Reel generation job successfully queued (idempotent duplicate).",
+                )
+
         job_id = str(uuid.uuid4())
 
         # Validate ownership of all image keys (IDOR prevention)
@@ -72,11 +95,21 @@ class ReelStudioService:
             "updated_at": now,
         }
 
-        db = get_db()
         await db.jobs.insert_one(job_doc)
         logger.info("Reel job %s created in database for user %s", job_id, user_id)
 
-        # 2. Dispatch to background queue
+        # 2. Record idempotency if requested
+        if idempotency_key:
+            await db.job_idempotency.insert_one({
+                "user_id": user_id,
+                "idempotency_key": idempotency_key,
+                "job_id": job_id,
+                "status": "queued",
+                "stage": JobStage.QUEUED.value,
+                "created_at": now,
+            })
+
+        # 3. Dispatch to background queue
         queue = get_queue_adapter()
         try:
             await queue.enqueue("process_reel_job", job_id=job_id)
@@ -93,6 +126,11 @@ class ReelStudioService:
                     }
                 },
             )
+            if idempotency_key:
+                await db.job_idempotency.delete_one({
+                    "user_id": user_id,
+                    "idempotency_key": idempotency_key,
+                })
             await BillingService.atomic_refund_token(user_id, job_id, "Queue dispatch failure")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

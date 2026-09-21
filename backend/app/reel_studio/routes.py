@@ -2,6 +2,7 @@
 Reel Studio API Routes (/api/v1/reel-studio & backward-compatible aliases).
 """
 
+import logging
 import os
 from typing import Annotated, Any
 
@@ -10,6 +11,7 @@ from fastapi import (
     Depends,
     File,
     Form,
+    Header,
     HTTPException,
     Query,
     UploadFile,
@@ -31,7 +33,12 @@ from backend.app.reel_studio.models import (
 )
 from backend.app.reel_studio.service import ReelStudioService
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(tags=["Reel Studio"])
+
+MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB per image cap
+CHUNK_SIZE = 64 * 1024  # 64 KB streaming chunk
 
 
 @router.post(
@@ -43,11 +50,13 @@ router = APIRouter(tags=["Reel Studio"])
 async def create_job_from_keys(
     request: CreateJobRequest,
     current_user: dict[str, Any] = Depends(get_current_user),
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ) -> JobCreatedResponse:
-    """Create a reel generation job using pre-uploaded storage keys."""
+    """Create a reel generation job using pre-uploaded storage keys with idempotency support."""
     return await ReelStudioService.create_reel_job(
         request=request,
         user_id=current_user["user_id"],
+        idempotency_key=idempotency_key,
     )
 
 
@@ -63,10 +72,12 @@ async def create_job_multipart(
     voice: Annotated[str, Form()] = VoiceChoice.NATURAL_US.value,
     duration: Annotated[int, Form(ge=1, le=10)] = 3,
     current_user: dict[str, Any] = Depends(get_current_user),
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ) -> JobCreatedResponse:
     """
     Multipart upload endpoint for backwards-compatible job creation.
-    Validates images with Pillow, saves to configured StoragePort, then enqueues.
+    Streams images in bounded chunks, validates images with Pillow, saves to StoragePort,
+    and guarantees immediate cleanup of orphaned storage objects if quota/validation fails.
     """
     if len(images) < 1 or len(images) > settings.max_images_per_job:
         raise HTTPException(
@@ -78,24 +89,47 @@ async def create_job_multipart(
     image_keys: list[str] = []
     user_id = current_user["user_id"]
 
-    for idx, img in enumerate(images):
-        content = await img.read()
-        MediaService.validate_image_bytes(content, img.filename or f"image_{idx}.jpg")
+    try:
+        for idx, img in enumerate(images):
+            # Stream in chunks with size limit to prevent memory exhaustion
+            file_buffer = bytearray()
+            while chunk := await img.read(CHUNK_SIZE):
+                file_buffer.extend(chunk)
+                if len(file_buffer) > MAX_IMAGE_BYTES:
+                    raise HTTPException(
+                        status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                        detail=f"Image '{img.filename or idx}' exceeds maximum size of 10MB.",
+                    )
 
-        _, ext = os.path.splitext(img.filename or "")
-        safe_ext = ext.lower() if ext else ".jpg"
-        key = f"uploads/{user_id}/job_direct_{idx}_{os.urandom(4).hex()}{safe_ext}"
+            content = bytes(file_buffer)
+            MediaService.validate_image_bytes(content, img.filename or f"image_{idx}.jpg")
 
-        await storage.upload_bytes(content, key, img.content_type or "image/jpeg")
-        image_keys.append(key)
+            _, ext = os.path.splitext(img.filename or "")
+            safe_ext = ext.lower() if ext else ".jpg"
+            key = f"uploads/{user_id}/job_direct_{idx}_{os.urandom(4).hex()}{safe_ext}"
 
-    req = CreateJobRequest(
-        voiceover_text=voiceover_text,
-        image_keys=image_keys,
-        voice=voice,
-        duration=duration,
-    )
-    return await ReelStudioService.create_reel_job(req, user_id)
+            await storage.upload_bytes(content, key, img.content_type or "image/jpeg")
+            image_keys.append(key)
+
+        req = CreateJobRequest(
+            voiceover_text=voiceover_text,
+            image_keys=image_keys,
+            voice=voice,
+            duration=duration,
+        )
+        return await ReelStudioService.create_reel_job(
+            request=req,
+            user_id=user_id,
+            idempotency_key=idempotency_key,
+        )
+    except Exception:
+        # Clean up any orphaned uploaded files if quota, validation, or dispatch fails
+        for orphaned_key in image_keys:
+            try:
+                await storage.delete_file(orphaned_key)
+            except Exception as cleanup_err:
+                logger.warning("Failed to clean up orphaned image %s: %s", orphaned_key, cleanup_err)
+        raise
 
 
 @router.get(

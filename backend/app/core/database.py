@@ -27,7 +27,11 @@ class _SafeCollection:
         try:
             return await self._col.create_index(*args, **kwargs)
         except OperationFailure as err:
-            if getattr(err, "code", None) == 85 or "already exists" in str(err) or "IndexOptionsConflict" in str(err):
+            if (
+                getattr(err, "code", None) == 85
+                or "already exists" in str(err)
+                or "IndexOptionsConflict" in str(err)
+            ):
                 logger.warning(
                     "Index on '%s' already exists with a different name or options; reusing existing index: %s",
                     self.name,
@@ -43,7 +47,11 @@ class _SafeCollection:
                 res = await self._col.create_indexes([model], **kwargs)
                 created.extend(res if isinstance(res, list) else [res])
             except OperationFailure as err:
-                if getattr(err, "code", None) == 85 or "already exists" in str(err) or "IndexOptionsConflict" in str(err):
+                if (
+                    getattr(err, "code", None) == 85
+                    or "already exists" in str(err)
+                    or "IndexOptionsConflict" in str(err)
+                ):
                     logger.warning(
                         "Index on '%s' already exists with a different name or options; reusing existing index: %s",
                         self.name,

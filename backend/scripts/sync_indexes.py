@@ -39,7 +39,7 @@ async def reconcile():
             await db[collection_name].drop_index(index_name)
             logger.info("✅ Dropped legacy index '%s' from collection '%s'", index_name, collection_name)
         except Exception as err:
-            logger.info("ℹ️ Index '%s' on '%s': %s", index_name, collection_name, err)
+            logger.info("INFO: Index '%s' on '%s': %s", index_name, collection_name, err)
 
     logger.info("Building all canonical indexes...")
     await ensure_indexes(db)

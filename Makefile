@@ -3,10 +3,17 @@
 # Usage: make dev | make test | make lint | make clean
 # ==============================================================================
 
-PYTHON := env/Scripts/python.exe
-PIP := env/Scripts/pip.exe
-PYTEST := $(PYTHON) -m pytest
-RUFF := env/Scripts/ruff.exe
+ifeq ($(OS),Windows_NT)
+    PYTHON ?= python
+    PIP ?= pip
+    PYTEST ?= $(PYTHON) -m pytest
+    RUFF ?= $(PYTHON) -m ruff
+else
+    PYTHON ?= python3
+    PIP ?= pip3
+    PYTEST ?= $(PYTHON) -m pytest
+    RUFF ?= $(PYTHON) -m ruff
+endif
 
 # ──────────────────────────────────────────
 # Local Development

@@ -4,10 +4,16 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     envVars:
+      - key: ENVIRONMENT
+        value: production
       - key: MONGODB_URI
         sync: false   # Set manually in Render dashboard — contains credentials
       - key: MONGODB_DB
         value: vidsnap
+      - key: REDIS_URL
+        sync: false   # Set manually in Render dashboard
+      - key: STORAGE_PROVIDER
+        value: cloudinary
       - key: CLOUDINARY_CLOUD_NAME
         sync: false   # Set manually in Render dashboard
       - key: CLOUDINARY_API_KEY
@@ -17,20 +23,59 @@ services:
       - key: CLOUDINARY_FOLDER
         value: vidsnap-reels
       - key: JWT_SECRET_KEY
-        sync: false   # Set manually — must be a long, random secret
+        sync: false   # Set manually — must be a long, random secret (min 32 chars)
       - key: JWT_ALGORITHM
         value: HS256
-      - key: JWT_EXPIRE_MINUTES
-        value: "60"
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "15"
+      - key: REFRESH_TOKEN_EXPIRE_DAYS
+        value: "7"
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: EMAIL_FROM
+        sync: false   # e.g., notifications@yourdomain.com or onboarding@resend.dev
+      - key: RESEND_API_KEY
+        sync: false   # Set manually in Render dashboard
       - key: BREVO_API_KEY
         sync: false   # Set manually in Render dashboard
-      - key: EMAIL_FROM
-        sync: false   # Set manually — use onboarding@resend.dev on free tier
+      - key: ALLOWED_ORIGINS
+        sync: false   # Set manually — e.g., https://your-frontend.vercel.app
       - key: FREE_TOKENS_ON_SIGNUP
         value: "5"
-      - key: ALLOWED_ORIGINS
-        sync: false   # Set manually — add deployed frontend URL here
       - key: MAX_IMAGE_SIZE_MB
         value: "10"
-      - key: WORKER_POLL_SECONDS
-        value: "3"
+      - key: METRICS_TOKEN
+        sync: false   # Secret token to protect Prometheus /metrics
+      - key: TRUSTED_PROXY_COUNT
+        value: "1"   # Render reverse proxy
+
+  - type: worker
+    name: vidsnap-ai-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: python -m arq backend.workers.media_worker.WorkerSettings
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB
+        value: vidsnap
+      - key: REDIS_URL
+        sync: false
+      - key: STORAGE_PROVIDER
+        value: cloudinary
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        value: vidsnap-reels
+      - key: WORKER_CONCURRENCY
+        value: "2"
+      - key: FFMPEG_PRESET
+        value: veryfast
+      - key: FFMPEG_THREADS
+        value: "2"

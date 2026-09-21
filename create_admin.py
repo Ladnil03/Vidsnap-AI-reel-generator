@@ -13,8 +13,8 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from backend.config import settings
-from backend.utils.auth_utils import hash_password
+from backend.app.core.config import settings
+from backend.app.core.security import hash_password
 
 # Load environment variables
 load_dotenv()

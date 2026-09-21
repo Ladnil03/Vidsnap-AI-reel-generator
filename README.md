@@ -1,18 +1,44 @@
-# 🎬 VidSnap.AI — AI-Powered Video Reel Generator
+# 🎬 VidSnap.AI — AI-Powered Video Reel Generator & Social Platform
 
-VidSnap AI is a modern web application that automatically generates vertical (1080x1920) video reels from uploaded images and narration text. It utilizes **FastAPI** on the backend, **Flask** for the frontend rendering, **MongoDB** for database storage, **edge-tts** for neural voiceovers, **FFmpeg** for video compilation, and **Cloudinary** for video hosting.
+VidSnap.AI is a high-performance web platform for generating, discovering, and sharing vertical short-form video reels. It combines automated video synthesis (using Edge-TTS neural voiceover, FFmpeg assembly, and Cloudinary multi-CDN delivery) with real-time watch rooms, creator-brand collaboration, and gamified engagement.
 
 ---
 
-## 🚀 Key Features
+## 🏗️ Architecture Overview
 
-* **Multi-Image Processing**: Upload up to 20 images to compile sequentially into a reel.
-* **AI Neural Voiceover**: Generate high-quality voice narration from text scripts using Microsoft Edge neural voices (Warm/Natural, Smooth/Elegant, or Powerful/Bold).
-* **Flexible Durations**: Customize frame pacing by selecting image display times (1s to 8s).
-* **Robust Background Worker**: Offloads heavy media processing (audio generation + video stitching + cloud uploading) to an asynchronous queue worker to prevent web server locking.
-* **OTP Password Recovery**: Secure self-serve password recovery backed by **Gmail SMTP** and built-in brute-force protection (locks out after 5 invalid attempts).
-* **Reel Gallery**: Dynamic, paginated, lazy-loaded media gallery with interactive video lightbox player.
-* **Token System**: Built-in authorization quota limit (5 free tokens on signup, manageable by system admins).
+```
+                      ┌─────────────────────────────────────────┐
+                      │          Next.js 16 Frontend            │
+                      │   (React 19, TypeScript, App Router)    │
+                      └────────────────────┬────────────────────┘
+                                           │  REST / WebSocket
+                                           ▼
+                      ┌─────────────────────────────────────────┐
+                      │        FastAPI Modular Monolith         │
+                      │  (Security, Auth, Rooms, Feeds, APIs)   │
+                      └──────────────┬───────────────────┬──────┘
+                                     │                   │
+                     Enqueues jobs   │                   │ State & Cache
+                                     ▼                   ▼
+                      ┌───────────────────────┐ ┌───────────────┐
+                      │   ARQ Media Worker    │ │ Redis 7 &     │
+                      │ (FFmpeg, Edge-TTS,    │ │ MongoDB Atlas │
+                      │  Cloudinary Uploads)  │ │               │
+                      └───────────────────────┘ └───────────────┘
+```
+
+### Core Components
+* **Backend API (`backend/app/`)**: FastAPI modular monolith structured into domain modules:
+  * `identity/`: Authentication, refresh token rotation & reuse detection, OTP password recovery, CAPTCHA validation.
+  * `reels/`: Reel creation jobs, idempotent submissions, draft management, streaming uploads.
+  * `social/`: Feed curation, follow graph, comments, likes, and engagement tracking.
+  * `rooms/`: Real-time watch-together rooms with LiveKit RTC and hardened WebSocket protocols.
+  * `gamification/`: User streaks, badges, token balance, and daily challenges.
+  * `creators/` & `business/`: Creator marketplace, campaign briefs, and verified applications.
+  * `observability/`: Prometheus `/metrics` protected by bearer tokens, health probes (`/health/live`, `/health/ready`).
+  * `core/`: Central settings (`config.py`), security middleware, database connections, and storage adapters.
+* **ARQ Media Worker (`backend/workers/`)**: Asynchronous worker pipeline that executes text-to-speech synthesis via `edge-tts`, stitches video tracks with `ffmpeg`, generates video thumbnails, performs Cloudinary multi-CDN uploads, and ensures atomic token refunds on failure.
+* **Frontend (`frontend/`)**: Modern Next.js 16 application with React 19, Tailwind CSS, authenticated API client with in-memory access tokens, and responsive mobile-first UI.
 
 ---
 
@@ -20,145 +46,116 @@ VidSnap AI is a modern web application that automatically generates vertical (10
 
 | Layer | Technologies |
 | :--- | :--- |
-| **Backend API** | FastAPI, Pydantic v2, Motor (Async MongoDB), Uvicorn |
-| **Frontend Server** | Flask, Jinja2 Templates |
-| **Frontend Styling** | Vanilla CSS (Harmonious Dark Theme, Glassmorphism, Steppers) |
-| **Database** | MongoDB Atlas (Async Driver) |
-| **Media Processing** | FFmpeg (Subprocess wrapped in thread pools) |
-| **Text-To-Speech** | `edge-tts` (Free Microsoft Neural Voices) |
-| **Cloud Storage** | Cloudinary SDK |
-| **Email Gateway** | Gmail SMTP (Built-in `smtplib` + SSL) |
+| **Backend API** | Python 3.11+, FastAPI, Pydantic v2, Motor (Async MongoDB), Redis (Asyncio), Uvicorn |
+| **Media Worker** | ARQ, Redis 7, FFmpeg 6+, Edge-TTS, Cloudinary Python SDK |
+| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind CSS |
+| **Databases** | MongoDB Atlas 7.0+ (M0 free tier compatible), Redis 7+ |
+| **Realtime RTC** | LiveKit Cloud RTC + WebSockets |
+| **Email Gateway** | Resend API / Brevo API / Console fallback |
 
 ---
 
-## 📁 Repository Structure
+## ⚙️ Quickstart & Local Setup
 
-```text
-├── backend/
-│   ├── config.py              # Central Pydantic BaseSettings config
-│   ├── database.py            # Async MongoDB connection setup & indexes
-│   ├── main.py                # FastAPI application instance & middlewares
-│   ├── models.py              # Pydantic validation schemas
-│   ├── worker.py              # Async background queue worker
-│   ├── routes/
-│   │   ├── auth.py            # Sign Up, Login, and Password Recovery
-│   │   ├── admin.py           # Quota edits, User stats, & platform logs
-│   │   ├── jobs.py            # Job submission & status polling
-│   │   ├── reels.py           # User gallery listings & deletions
-│   │   └── ...
-│   └── services/
-│       ├── ffmpeg_service.py  # Concat file building and FFmpeg stitching
-│       ├── storage_service.py # Cloudinary asset uploads and deletions
-│       └── email_service.py   # Gmail SMTP secure OTP dispatcher
-│
-├── frontend/
-│   ├── app.py                 # Flask server (serving HTML templates)
-│   ├── templates/             # Jinja2 HTML pages
-│   └── static/
-│       ├── css/               # Modular styling rules
-│       └── js/                # API wrapper, gallery loops, & creation steppers
-│
-├── .env.example               # Reference configurations template
-├── run.py                     # Launcher file for backend FastAPI
-└── requirements.txt           # Python dependency manifests
+### Prerequisites
+* **Python 3.11+**
+* **Node.js 20+** and **npm**
+* **FFmpeg** installed and added to your system `PATH`
+* **Docker & Docker Compose** (optional, recommended for local DBs)
+
+---
+
+### Option A: Run via Docker Compose (Fastest)
+
+Boot the entire stack (FastAPI API, ARQ Worker, MongoDB 7, and Redis 7):
+
+```bash
+docker compose up --build
 ```
 
+* API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+* Health Probe: [http://localhost:8000/health/live](http://localhost:8000/health/live)
+
 ---
 
-## ⚙️ Installation & Local Setup
+### Option B: Local Native Setup
 
-### 📋 Prerequisites
-* **Python 3.10+**
-* **MongoDB Instance** (Local or MongoDB Atlas Cluster)
-* **FFmpeg** installed and added to your system's PATH.
-
-### 1. Clone the repository and navigate inside:
+#### 1. Setup Python Virtual Environment & Install Dependencies
 ```bash
+# Clone the repository
 git clone https://github.com/Ladnil03/Vidsnap-AI-reel-generator.git
 cd vidsnap-ai
+
+# Create and activate virtualenv
+python -m venv .venv
+# On Windows:
+.venv\Scripts\activate
+# On Linux/macOS:
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt -r requirements-dev.txt
 ```
 
-### 2. Set up a virtual environment:
-```bash
-# On Windows
-python -m venv env
-.\env\Scripts\activate
-
-# On macOS/Linux
-python3 -m venv env
-source env/bin/activate
-```
-
-### 3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Configure Environment Variables:
-Copy the `.env.example` file to `.env` in the root folder and fill in the details:
+#### 2. Configure Environment
 ```bash
 cp .env.example .env
+# Edit .env with your MongoDB, Redis, and secret keys
 ```
 
-Review the values inside `.env`:
-* **MongoDB**: Enter your connection string and database name.
-* **Cloudinary**: Input your credentials (`cloud_name`, `api_key`, `api_secret`).
-* **Gmail SMTP**: Configure `EMAIL_FROM` and `GMAIL_APP_PASSWORD` (see Gmail setup guide below).
+#### 3. Run Services
 
----
-
-## ✉️ Gmail SMTP App Password Configuration
-
-To allow VidSnap AI to send Forgot Password OTP emails to any address for free, set up a secure **Google App Password**:
-
-1. Open your **[Google Account](https://myaccount.google.com/)** settings.
-2. Go to the **Security** tab.
-3. Turn **ON** **2-Step Verification** (required to generate App Passwords).
-4. Search for **"App Passwords"** in the top bar.
-5. Create a new App Password, name it **"VidSnap AI"**, and hit generate.
-6. Copy the **16-character code** generated (e.g. `abcd efgh ijkl mnop`).
-7. Paste this code into your `.env` file as `GMAIL_APP_PASSWORD` and set your Gmail address as `EMAIL_FROM`.
-
----
-
-## 🏃 Running the Application
-
-For local development, you need to run both the FastAPI backend and the Flask frontend server. Ensure your virtual environment is active in both terminals.
-
-### Start the Backend (FastAPI on Port 8000)
+**Terminal 1 — API Server:**
 ```bash
 python run.py
+# Server runs on http://localhost:8000
 ```
 
-### Start the Frontend (Flask on Port 5500)
+**Terminal 2 — ARQ Background Worker:**
 ```bash
-python frontend/app.py
+python -m arq backend.workers.media_worker.WorkerSettings
 ```
 
-Navigate your browser to **`http://localhost:5500`** to access the web portal. To view/interact with the interactive API schemas, visit **`http://localhost:8000/docs`**.
+**Terminal 3 — Next.js Frontend:**
+```bash
+cd frontend
+npm install
+npm run dev
+# Frontend runs on http://localhost:3000
+```
 
 ---
 
-## 👑 Creating an Admin Account
+## 🧪 Testing & Quality Assurance
 
-Admin users can view all users, manage token budgets, inspect global feedback, and view platform logs.
-To create your first admin user, run the interactive helper CLI:
+The codebase enforces strict test-driven development and code quality standards:
+
 ```bash
-python create_admin.py
+# Run complete test suite with 80%+ coverage enforcement
+python -m pytest tests/ -v --cov=backend/app --cov-fail-under=80
+
+# Run security regression tests
+python -m pytest tests/security/ -v
+
+# Run linter (Ruff)
+python -m ruff check backend tests
+
+# Run static type checker (Mypy)
+python -m mypy backend/app/identity backend/app/core/config.py backend/app/core/security.py
+
+# Frontend validation
+cd frontend
+npx tsc --noEmit
+npm run build
 ```
-Log in on the main site (`http://localhost:5500/login`) using the credentials you entered.
 
 ---
 
-## ☁️ Deployment Guidelines (Render)
+## 🔒 Security Architecture
 
-When deploying to Render, configure the services as follows:
-
-1. **FastAPI Backend (Web Service)**:
-   * Build Command: `pip install -r requirements.txt`
-   * Start Command: `uvicorn backend.main:app --host 0.0.0.0 --port 10000`
-   * *Note: Render's Free tier blocks SMTP ports 25, 465, and 587. If you deploy the backend on Render's Free tier, SMTP-based email flows will be blocked. To send emails in production on a free plan, verify a custom domain on **Resend.com** and swap the SMTP connection out for Resend's HTTP API.*
-2. **Flask Frontend (Web Service)**:
-   * Build Command: `pip install -r requirements.txt`
-   * Start Command: `gunicorn --bind 0.0.0.0:10000 frontend.app:app`
-   * Set Environment Variable: `BACKEND_URL` pointing to your deployed FastAPI service URL.
+* **Authentication**: Short-lived JWT access tokens (15m) paired with rotating refresh tokens (7d) stored in HTTP-only, SameSite cookies.
+* **Token Family Reuse Detection**: Refresh tokens are grouped into cryptographic token families (`family_id`). Any replay of a revoked or rotated token immediately revokes all tokens in that family.
+* **Idempotent Job Creation**: Video creation accepts `Idempotency-Key` headers, preventing duplicate token deductions and double-queuing during network retries.
+* **Rate Limiting**: Sliding-window Redis rate limits on login (`10/min`), registration (`3/hour`), and general APIs (`60/min`) with anti-enumeration constant-time responses.
+* **Security Headers**: Production-enforced HSTS (`Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`), Content-Security-Policy (CSP), `X-Content-Type-Options: nosniff`, and `X-Frame-Options: DENY`.
+* **Private Watch Rooms**: Zero-trust room authorization on both REST endpoints and real-time WebSocket handshakes.

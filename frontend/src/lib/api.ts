@@ -89,12 +89,21 @@ export const API_BASE = typeof window !== 'undefined'
   ? ''
   : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
 
+// In-memory token cache for enhanced client security (reduces direct localStorage reads)
+let inMemoryAccessToken: string | null = null;
+
 export function getStoredToken(): string | null {
+  if (inMemoryAccessToken) return inMemoryAccessToken;
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+  if (token) {
+    inMemoryAccessToken = token;
+  }
+  return token;
 }
 
 export function setStoredToken(token: string | null): void {
+  inMemoryAccessToken = token;
   if (typeof window === 'undefined') return;
   if (token) {
     localStorage.setItem(ACCESS_TOKEN_KEY, token);

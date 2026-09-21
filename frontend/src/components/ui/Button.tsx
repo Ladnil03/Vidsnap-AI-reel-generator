@@ -6,11 +6,12 @@ import styles from './ui.module.css';
 export interface SpinnerProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function Spinner({ size = 'md', className = '' }: SpinnerProps) {
+export function Spinner({ size = 'md', className = '', style }: SpinnerProps) {
   const sizeClass = size === 'sm' ? styles.spinnerSm : size === 'lg' ? styles.spinnerLg : styles.spinnerMd;
-  return <span className={`${styles.spinner} ${sizeClass} ${className}`} role="status" aria-label="Loading" />;
+  return <span className={`${styles.spinner} ${sizeClass} ${className}`} style={style} role="status" aria-label="Loading" />;
 }
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

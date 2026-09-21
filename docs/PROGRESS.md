@@ -44,3 +44,6 @@
 - S1 DONE: Defined tokens.css, globals.css reset, next/font (Outfit, Plus Jakarta, Noto fallbacks), ThemeProvider with zero-flash hydration, docs/design-tokens.json, and check-contrast.mjs / check-colors.mjs tooling. Build and all WCAG AA contrast pairs passing.
 - S2 DONE: Built 22 accessible UI primitives in src/components/ui/ using CSS Modules, interactive dev /styleguide route showing all primitives in Paper and Forest themes, and docs/design-system.md. Production build and typecheck green.
 - S3 DONE: Redesigned App Shell (Logo, Navbar, MobileNav, Footer, NotificationsDrawer, ReportModal, CompanionWidget) with responsive layout, safe-area insets, theme/lang switches, and palette tokens. Production build and typecheck green.
+- S4 Core Experience: DONE
+  - Key files changed: frontend/src/app/page.tsx, frontend/src/app/feed/page.tsx, frontend/src/app/feed/feed.module.css, frontend/src/components/EngagementBar.tsx, frontend/src/components/MoodSelector.tsx, frontend/src/app/explore/page.tsx, frontend/src/app/create/page.tsx, frontend/src/components/ui/Button.tsx, frontend/src/components/ui/Tabs.tsx.
+  - Notes: Redesigned landing, 100dvh snap feed with dark Forest-900 player surface, engagement rail with comments drawer, explore grid, and dual-mode studio with neural TTS & native multipart upload. Production build and typecheck green.

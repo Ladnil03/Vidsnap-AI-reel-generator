@@ -1,25 +1,25 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { Sparkles } from 'lucide-react';
 import { api } from '@/lib/api';
 import { MoodType } from '@/lib/types';
+import { Spinner } from './ui';
 
 interface MoodOption {
   type: MoodType;
   label: string;
   emoji: string;
-  gradient: string;
-  glowColor: string;
 }
 
 const MOODS: MoodOption[] = [
-  { type: 'energized', label: 'Energized', emoji: '⚡', gradient: 'from-amber-500/20 to-orange-500/20', glowColor: '#f59e0b' },
-  { type: 'chill', label: 'Chill', emoji: '🌊', gradient: 'from-teal-500/20 to-cyan-500/20', glowColor: '#06b6d4' },
-  { type: 'focused', label: 'Focused', emoji: '🎯', gradient: 'from-indigo-500/20 to-purple-500/20', glowColor: '#8b5cf6' },
-  { type: 'curious', label: 'Curious', emoji: '🔍', gradient: 'from-blue-500/20 to-sky-500/20', glowColor: '#0ea5e9' },
-  { type: 'melancholic', label: 'Melancholic', emoji: '🌧️', gradient: 'from-slate-500/20 to-blue-500/20', glowColor: '#64748b' },
-  { type: 'inspired', label: 'Inspired', emoji: '💡', gradient: 'from-emerald-500/20 to-green-500/20', glowColor: '#10b981' },
-  { type: 'humorous', label: 'Humorous', emoji: '😂', gradient: 'from-yellow-500/20 to-amber-500/20', glowColor: '#eab308' },
+  { type: 'energized', label: 'Energized', emoji: '⚡' },
+  { type: 'chill', label: 'Chill', emoji: '🌊' },
+  { type: 'focused', label: 'Focused', emoji: '🎯' },
+  { type: 'curious', label: 'Curious', emoji: '🔍' },
+  { type: 'melancholic', label: 'Melancholic', emoji: '🌧️' },
+  { type: 'inspired', label: 'Inspired', emoji: '💡' },
+  { type: 'humorous', label: 'Humorous', emoji: '😂' },
 ];
 
 interface MoodSelectorProps {
@@ -36,8 +36,8 @@ export function MoodSelector({ currentMood, onMoodChange, compact = false }: Moo
     if (currentMood !== undefined) {
       setActiveMood(currentMood);
     } else {
-      // Fetch user's stored mood from API
-      api.companion.getMood()
+      api.companion
+        .getMood()
         .then((m) => {
           if (m?.consent_given) setActiveMood(m.mood);
         })
@@ -53,23 +53,51 @@ export function MoodSelector({ currentMood, onMoodChange, compact = false }: Moo
     try {
       await api.companion.setMood(mood, true);
     } catch {
-      // Silently persist or fallback locally
+      // Graceful fallback
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between text-xs text-slate-400">
-        <span className="font-semibold tracking-wider uppercase flex items-center gap-1.5">
-          <span>✨ Current Vibe</span>
-          {loading && <span className="animate-spin text-[10px]">⏳</span>}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: 'var(--text-xs)',
+          color: 'var(--text-muted)',
+        }}
+      >
+        <span
+          style={{
+            fontWeight: 'var(--font-weight-semibold)',
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+        >
+          <Sparkles size={13} style={{ color: 'var(--raw-sage)' }} />
+          <span>Viewing Vibe</span>
+          {loading && <Spinner size="sm" />}
         </span>
-        <span className="text-[11px] text-slate-500">Zero tracking • Consent-gated</span>
+        <span style={{ fontSize: '10px' }}>Consent-gated • Zero tracking</span>
       </div>
 
-      <div className={`flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none ${compact ? 'flex-wrap' : ''}`}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-2)',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+          paddingBottom: '4px',
+          flexWrap: compact ? 'wrap' : 'nowrap',
+        }}
+      >
         {MOODS.map((m) => {
           const isSelected = activeMood === m.type;
           return (
@@ -78,18 +106,24 @@ export function MoodSelector({ currentMood, onMoodChange, compact = false }: Moo
               type="button"
               onClick={() => handleSelectMood(m.type)}
               style={{
-                borderColor: isSelected ? m.glowColor : 'rgba(255, 255, 255, 0.1)',
-                boxShadow: isSelected ? `0 0 15px -3px ${m.glowColor}50` : 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: compact ? '4px 10px' : '6px 14px',
+                borderRadius: 'var(--radius-pill)',
+                border: '1px solid',
+                borderColor: isSelected ? 'var(--brand-primary)' : 'var(--border-subtle)',
+                backgroundColor: isSelected ? 'var(--accent-soft)' : 'var(--surface-paper)',
+                color: isSelected ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                fontWeight: isSelected ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
+                fontSize: compact ? 'var(--text-xs)' : 'var(--text-sm)',
+                cursor: 'pointer',
+                transition: 'all var(--transition-fast)',
+                boxShadow: isSelected ? 'var(--shadow-sm)' : 'none',
+                whiteSpace: 'nowrap',
               }}
-              className={`flex items-center gap-1.5 rounded-full border transition-all duration-200 cursor-pointer ${
-                compact ? 'px-2.5 py-1 text-xs' : 'px-3.5 py-1.5 text-sm'
-              } ${
-                isSelected
-                  ? 'bg-gradient-to-r text-white font-medium scale-105'
-                  : 'bg-slate-900/60 text-slate-300 hover:border-slate-600 hover:text-white'
-              }`}
             >
-              <span className="text-sm">{m.emoji}</span>
+              <span>{m.emoji}</span>
               <span>{m.label}</span>
             </button>
           );

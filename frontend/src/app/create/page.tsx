@@ -1,69 +1,66 @@
 'use client';
 
-/**
- * VidSnap.AI Reel Studio 2.0
- * Dual Creation Mode:
- *   Mode A: AI Reel Generator (Images + Script -> Edge-TTS + FFmpeg 720p)
- *   Mode B: Native Video Pipeline (Direct Video Upload + 720p Transcode + AI Hashtags + Drafts/Scheduling)
- */
-
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { 
-  Sparkles, 
-  UploadCloud, 
-  Image as ImageIcon, 
-  Film, 
-  X, 
-  ChevronLeft, 
-  ChevronRight, 
-  Volume2, 
-  Clock, 
-  Coins, 
-  Loader2, 
-  Download, 
-  Share2, 
-  RotateCcw,
-  LogIn,
+import {
+  Sparkles,
+  UploadCloud,
+  Film,
+  X,
+  Clock,
+  Coins,
+  Download,
+  Share2,
   Video,
-  Hash,
-  Eye,
-  Calendar,
-  Save,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Play,
+  RotateCcw,
+  Volume2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../components/Toast';
+import { useToast } from '../../components/ui';
 import { api } from '../../lib/api';
-import { ReelJob, VoiceOption, VideoContent } from '../../lib/types';
-import { EngagementBar } from '../../components/EngagementBar';
+import { ReelJob, JobStatusType, VoiceOption, VideoContent } from '../../lib/types';
+import {
+  Button,
+  IconButton,
+  Card,
+  Badge,
+  Input,
+  Textarea,
+  Select,
+  FormField,
+  Tabs,
+  TabPanel,
+  ProgressBar,
+  Spinner,
+  PageHeader,
+  EmptyState,
+} from '@/components/ui';
 
 const VOICES: VoiceOption[] = [
   { id: 'en-US-AriaNeural', name: 'Aria', accent: 'US Natural', gender: 'Female', lang: 'English' },
   { id: 'en-US-GuyNeural', name: 'Guy', accent: 'US Natural', gender: 'Male', lang: 'English' },
   { id: 'en-IN-NeerjaNeural', name: 'Neerja', accent: 'Indian Accent', gender: 'Female', lang: 'English' },
   { id: 'en-IN-PrabhatNeural', name: 'Prabhat', accent: 'Indian Accent', gender: 'Male', lang: 'English' },
-  { id: 'en-GB-SoniaNeural', name: 'Sonia', accent: 'British Accent', gender: 'Female', lang: 'English' },
   { id: 'hi-IN-SwaraNeural', name: 'Swara', accent: 'Hindi Accent', gender: 'Female', lang: 'Hindi' },
 ];
 
 const SCRIPT_INSPIRERS = [
-  { label: '🔥 Hook Idea', text: 'Here is the one secret that top creators never tell you about growing an audience...' },
-  { label: '🌍 Story Fact', text: 'Did you know that 90% of the world\'s data was created in just the last two years?' },
-  { label: '🚀 Motivational', text: 'Success isn\'t about never failing. It\'s about showing up every single day with relentless focus.' },
-  { label: '✨ Travel Wonder', text: 'Three hidden natural wonders on Earth that look like they belong on another planet.' },
+  { label: '🌿 Nature Hook', text: 'Deep in the heart of the ancient canopy, hidden life begins at sunrise...' },
+  { label: '💡 Tech Fact', text: 'Artificial intelligence is fundamentally changing how creators produce media in 2026...' },
+  { label: '🚀 Creator Motivation', text: 'You do not need an expensive studio to make an impact. All you need is a story.' },
 ];
 
 export default function CreateReelPage() {
-  const { user, loading: authLoading, updateTokenBalance, refreshUser } = useAuth();
+  const { user, updateTokenBalance, refreshUser } = useAuth();
   const { success, error: toastError, info } = useToast();
 
-  // Mode Selection: 'generator' (Images+TTS) vs 'native_video' (Direct Video)
-  const [studioMode, setStudioMode] = useState<'generator' | 'native_video'>('generator');
+  const [activeTab, setActiveTab] = useState('generator');
 
-  // MODE A: Image + Script State
+  // MODE A: Generator
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -74,23 +71,16 @@ export default function CreateReelPage() {
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<ReelJob | null>(null);
 
-  // MODE B: Native Video Pipeline State
+  // MODE B: Native Video
   const videoInputRef = useRef<HTMLInputElement>(null);
   const [nativeVideoFile, setNativeVideoFile] = useState<File | null>(null);
   const [nativeVideoPreview, setNativeVideoPreview] = useState<string | null>(null);
   const [videoTitle, setVideoTitle] = useState('');
   const [videoDescription, setVideoDescription] = useState('');
   const [videoHashtags, setVideoHashtags] = useState('');
-  const [visibility, setVisibility] = useState('public');
-  const [isScheduled, setIsScheduled] = useState(false);
-  const [scheduledDate, setScheduledDate] = useState('');
-  const [generatingTags, setGeneratingTags] = useState(false);
   const [uploadingNative, setUploadingNative] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [uploadPhase, setUploadPhase] = useState<string>('');
   const [publishedVideo, setPublishedVideo] = useState<VideoContent | null>(null);
 
-  // Cleanup object URLs
   useEffect(() => {
     return () => {
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
@@ -98,7 +88,7 @@ export default function CreateReelPage() {
     };
   }, [previewUrls, nativeVideoPreview]);
 
-  // Polling loop for active generator job
+  // Polling loop for active job
   useEffect(() => {
     if (!activeJobId) return;
 
@@ -113,19 +103,21 @@ export default function CreateReelPage() {
         if (job.status === 'completed') {
           clearInterval(interval);
           try {
-            confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+            confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
           } catch {
             // Non-fatal
           }
-          success('Your AI Reel has been rendered successfully!');
-          refreshUser();
+          success('Your AI Reel has been rendered successfully in 720p!');
+          setSubmitting(false);
+          refreshUser?.();
         } else if (job.status === 'failed') {
           clearInterval(interval);
-          toastError(job.error_msg || 'Reel generation encountered an error.');
-          refreshUser();
+          setSubmitting(false);
+          toastError(job.error_msg || 'Generation failed. Your token credit has been automatically refunded.');
+          refreshUser?.();
         }
       } catch {
-        // Polling retry
+        // Continue polling
       }
     }, 2500);
 
@@ -135,35 +127,32 @@ export default function CreateReelPage() {
     };
   }, [activeJobId, refreshUser, success, toastError]);
 
-  // Handle Mode A Image files
-  const handleFiles = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const newFiles = Array.from(files);
+  const handleFileSelect = (files: FileList | null) => {
+    if (!files) return;
+    const newFiles = Array.from(files).filter((f) => f.type.startsWith('image/'));
     const combined = [...selectedFiles, ...newFiles].slice(0, 5);
-    if (combined.length > 5) info('Maximum 5 images allowed per reel.');
+
     setSelectedFiles(combined);
-    setPreviewUrls(combined.map((f) => URL.createObjectURL(f)));
+    setPreviewUrls((prev) => {
+      prev.forEach((url) => URL.revokeObjectURL(url));
+      return combined.map((f) => URL.createObjectURL(f));
+    });
   };
 
-  const removeImage = (index: number) => {
+  const removeFile = (index: number) => {
     const updated = selectedFiles.filter((_, i) => i !== index);
     setSelectedFiles(updated);
-    setPreviewUrls(updated.map((f) => URL.createObjectURL(f)));
+    setPreviewUrls((prev) => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
-  const moveImage = (index: number, direction: 'left' | 'right') => {
-    const targetIdx = direction === 'left' ? index - 1 : index + 1;
-    if (targetIdx < 0 || targetIdx >= selectedFiles.length) return;
-    const updated = [...selectedFiles];
-    const temp = updated[index];
-    updated[index] = updated[targetIdx];
-    updated[targetIdx] = temp;
-    setSelectedFiles(updated);
-    setPreviewUrls(updated.map((f) => URL.createObjectURL(f)));
-  };
-
-  // Submit Mode A Reel Job
-  const handleGenerateReel = async () => {
+  const handleGenerate = async () => {
+    if (!user) {
+      info('Please sign in to create reels.');
+      return;
+    }
     if (selectedFiles.length === 0) {
       toastError('Please upload at least 1 image.');
       return;
@@ -172,69 +161,55 @@ export default function CreateReelPage() {
       toastError('Please enter a voiceover script.');
       return;
     }
-    if ((user?.tokens_remaining ?? 0) < 1) {
-      toastError('No creation tokens remaining.');
+    if ((user.tokens_remaining ?? 0) < 1) {
+      toastError('Insufficient creation tokens. Earn more via daily streaks!');
       return;
     }
 
     setSubmitting(true);
-    setJobStatus(null);
     try {
       const formData = new FormData();
+      selectedFiles.forEach((file) => formData.append('images', file));
       formData.append('voiceover_text', voiceoverText);
       formData.append('voice', selectedVoice);
       formData.append('duration', String(duration));
-      selectedFiles.forEach((f) => formData.append('images', f));
 
-      const resp = await api.reelStudio.createJobMultipart(formData);
-      setActiveJobId(resp.job_id);
-      setJobStatus({ job_id: resp.job_id, status: 'queued', progress_stage: 'queued' });
-      if (user) updateTokenBalance(user.tokens_remaining - 1);
-      success('Job enqueued! FFmpeg rendering started in the background.');
+      const res = await api.reelStudio.createJobMultipart(formData);
+
+      setActiveJobId(res.job_id);
+      setJobStatus({
+        job_id: res.job_id,
+        status: (res.status as JobStatusType) || 'queued',
+        progress_stage: 'queued',
+        created_at: new Date().toISOString(),
+      });
+      if (user?.tokens_remaining !== undefined) {
+        updateTokenBalance?.(Math.max(0, user.tokens_remaining - 1));
+      }
+      success('Job queued! Media worker is synthesizing voiceover and rendering video.');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to launch job';
-      toastError(msg);
-    } finally {
       setSubmitting(false);
+      toastError((err as Error).message || 'Failed to submit creation job.');
     }
   };
 
-  // Handle Mode B Native Video Selection
-  const handleVideoFile = (files: FileList | null) => {
+  const handleNativeVideoSelect = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
-    if (file.size > 50 * 1024 * 1024) {
-      toastError('Video file exceeds the 50MB free-tier limit.');
+    if (!file.type.startsWith('video/')) {
+      toastError('Please select a valid MP4 or WebM video file.');
       return;
     }
     setNativeVideoFile(file);
+    if (nativeVideoPreview) URL.revokeObjectURL(nativeVideoPreview);
     setNativeVideoPreview(URL.createObjectURL(file));
-    if (!videoTitle) {
-      const baseName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-      setVideoTitle(baseName);
-    }
   };
 
-  // Mode B: AI Hashtag Suggestion
-  const handleSuggestTags = async () => {
-    if (!videoTitle.trim()) {
-      toastError('Please enter a video title first.');
+  const handlePublishNative = async () => {
+    if (!user) {
+      info('Please sign in to publish video.');
       return;
     }
-    setGeneratingTags(true);
-    try {
-      const res = await api.content.suggestTags(videoTitle, videoDescription);
-      setVideoHashtags(res.hashtags.join(', '));
-      success('AI generated hashtags added!');
-    } catch {
-      toastError('Failed to generate tags.');
-    } finally {
-      setGeneratingTags(false);
-    }
-  };
-
-  // Submit Mode B Native Video with direct R2 upload and fallback
-  const handleUploadNativeVideo = async (isDraft: boolean = false) => {
     if (!nativeVideoFile) {
       toastError('Please select a video file.');
       return;
@@ -245,482 +220,449 @@ export default function CreateReelPage() {
     }
 
     setUploadingNative(true);
-    setUploadProgress(0);
-    setUploadPhase('Preparing upload...');
-
     try {
-      const parsedTags = videoHashtags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean);
-      const scheduledIso = isScheduled && scheduledDate ? new Date(scheduledDate).toISOString() : undefined;
+      const formData = new FormData();
+      formData.append('title', videoTitle);
+      formData.append('video', nativeVideoFile);
+      if (videoDescription) formData.append('description', videoDescription);
+      if (videoHashtags) formData.append('hashtags', videoHashtags);
+      formData.append('visibility', 'public');
 
-      let res: VideoContent | null = null;
-
-      // Step 1: Attempt browser-direct signed upload to Cloudinary / Object Storage
-      try {
-        setUploadPhase('Requesting direct edge upload URL...');
-        const presigned = await api.media.getVideoUploadUrl({
-          filename: nativeVideoFile.name,
-          content_type: nativeVideoFile.type || 'video/mp4',
-          size_bytes: nativeVideoFile.size,
-        });
-
-        if (presigned?.upload_url && presigned?.key) {
-          setUploadPhase('Uploading directly to edge storage...');
-          await api.media.uploadToPresigned(
-            presigned.upload_url,
-            nativeVideoFile,
-            nativeVideoFile.type || 'video/mp4',
-            (percent) => {
-              setUploadProgress(percent);
-            },
-            presigned.method || 'PUT',
-            presigned.fields
-          );
-
-          setUploadPhase('Registering video post...');
-          res = await api.content.createVideoFromKey({
-            key: presigned.key,
-            title: videoTitle,
-            description: videoDescription,
-            hashtags: parsedTags,
-            visibility: visibility as any,
-            scheduled_at: scheduledIso,
-            is_draft: isDraft,
-          });
-        }
-      } catch (directErr) {
-        console.warn('Direct edge upload failed or unsupported; falling back to multipart upload:', directErr);
-      }
-
-      // Step 2: Fallback to standard multipart upload if direct-to-R2 was not completed
-      if (!res) {
-        setUploadPhase('Uploading via backend stream...');
-        const formData = new FormData();
-        formData.append('video', nativeVideoFile);
-        formData.append('title', videoTitle);
-        formData.append('description', videoDescription);
-        formData.append('hashtags', videoHashtags);
-        formData.append('visibility', visibility);
-        formData.append('is_draft', String(isDraft));
-        if (scheduledIso) {
-          formData.append('scheduled_at', scheduledIso);
-        }
-        res = await api.content.uploadNativeVideo(formData);
-      }
+      const res = await api.content.uploadNativeVideo(formData);
 
       setPublishedVideo(res);
-      try {
-        confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
-      } catch {
-        // Non-fatal
-      }
-      success(isDraft ? 'Draft saved successfully!' : 'Video uploaded! Enqueued for 720p vertical transcoding.');
+      success('Video published successfully to the universal feed!');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Upload failed';
-      toastError(msg);
+      toastError((err as Error).message || 'Failed to publish video.');
     } finally {
       setUploadingNative(false);
-      setUploadProgress(null);
-      setUploadPhase('');
     }
   };
 
-  // Auth gate check
-  if (!authLoading && !user) {
-    return (
-      <div className="container" style={{ textAlign: 'center', padding: '80px 16px' }}>
-        <div className="glass-card" style={{ maxWidth: '480px', margin: '0 auto', padding: '40px' }}>
-          <Sparkles size={36} color="var(--primary-light)" style={{ margin: '0 auto 16px auto' }} />
-          <h2 style={{ fontSize: '1.75rem', marginBottom: '10px' }}>Sign In to Create Reels</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '1.6' }}>
-            Access the AI Reel Generator and Native Video Transcoder with 5 free credits.
-          </p>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-            <Link href="/login" className="btn btn-secondary"><LogIn size={16} /><span>Sign In</span></Link>
-            <Link href="/register" className="btn btn-primary"><span>Sign Up (5 Tokens)</span></Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="container" style={{ paddingBottom: '60px' }}>
-      {/* Studio Header Bar */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '16px',
-        marginBottom: '28px',
-        paddingBottom: '20px',
-        borderBottom: '1px solid var(--glass-border)',
-      }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Sparkles size={26} color="var(--primary-light)" />
-            <span>AI Reel Studio 2.0</span>
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>
-            Choose between AI Reel Generation (Photos + Script) or Native Video 720p Processing.
-          </p>
-        </div>
+    <div className="container" style={{ maxWidth: '960px', paddingBottom: 'var(--space-16)' }}>
+      {/* Header */}
+      <PageHeader
+        title="AI Reel Studio"
+        description="Craft vertical 720p social reels with neural voice synthesis or direct video transcode."
+        action={
+          user ? (
+            <Badge variant="sage" icon={<Coins size={14} />}>
+              {user.tokens_remaining ?? 0} Tokens Available
+            </Badge>
+          ) : (
+            <Link href="/login">
+              <Button variant="secondary" size="sm">
+                Sign in to Create
+              </Button>
+            </Link>
+          )
+        }
+      />
 
-        {/* Mode Selector Tabs */}
-        <div style={{
-          display: 'flex',
-          gap: '6px',
-          background: 'var(--bg-surface)',
-          padding: '4px',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--glass-border)',
-        }}>
-          <button
-            onClick={() => setStudioMode('generator')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              color: studioMode === 'generator' ? '#fff' : 'var(--text-secondary)',
-              background: studioMode === 'generator' ? 'var(--primary-gradient)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            <ImageIcon size={15} />
-            <span>AI Images + Script</span>
-          </button>
+      {/* Mode Switcher Tabs */}
+      <Tabs
+        tabs={[
+          { id: 'generator', label: 'AI Story Studio (1-5 Photos + Voiceover)', icon: <Sparkles size={16} /> },
+          { id: 'native', label: 'Direct Video Upload (720p Transcode)', icon: <Film size={16} /> },
+        ]}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        style={{ marginBottom: 'var(--space-6)' }}
+      />
 
-          <button
-            onClick={() => setStudioMode('native_video')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              color: studioMode === 'native_video' ? '#fff' : 'var(--text-secondary)',
-              background: studioMode === 'native_video' ? 'var(--primary-gradient)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            <Video size={15} />
-            <span>Upload Native Video</span>
-          </button>
-        </div>
-      </div>
+      {/* ========================================================================
+          MODE A: AI Image + Script Reel Generator
+          ======================================================================== */}
+      <TabPanel id="generator" activeTab={activeTab}>
+        {jobStatus?.status === 'completed' && jobStatus.reel_url ? (
+          /* Rendered Result View */
+          <Card variant="raised" style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
+            <Badge variant="success" icon={<CheckCircle2 size={14} />} style={{ marginBottom: 'var(--space-3)' }}>
+              Render Complete
+            </Badge>
+            <h3 style={{ fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-4)' }}>
+              Your Reel is Ready!
+            </h3>
 
-      {/* ======================================================================
-          MODE A: AI REEL GENERATOR (Photos + Script)
-          ====================================================================== */}
-      {studioMode === 'generator' && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: activeJobId ? '1fr 380px' : '1fr',
-          gap: '32px',
-          alignItems: 'start',
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* 1. Images */}
-            <div className="glass-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <ImageIcon size={20} color="var(--accent-cyan)" />
-                  <span>1. Select Images (1 to 5)</span>
-                </h2>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{selectedFiles.length}/5 Selected</span>
+            <div
+              style={{
+                maxWidth: '320px',
+                aspectRatio: '9 / 16',
+                margin: '0 auto var(--space-6) auto',
+                borderRadius: 'var(--radius-xl)',
+                overflow: 'hidden',
+                backgroundColor: 'var(--player-bg)',
+                border: '1px solid var(--player-border)',
+                boxShadow: 'var(--shadow-lg)',
+              }}
+            >
+              <video
+                src={jobStatus.reel_url}
+                controls
+                autoPlay
+                playsInline
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+              <a href={jobStatus.reel_url} download="vidsnap-reel.mp4" target="_blank" rel="noreferrer">
+                <Button variant="primary" leftIcon={<Download size={16} />}>
+                  Download 720p MP4
+                </Button>
+              </a>
+              <Link href="/gallery">
+                <Button variant="secondary">View in Gallery</Button>
+              </Link>
+              <Button
+                variant="ghost"
+                leftIcon={<RotateCcw size={16} />}
+                onClick={() => {
+                  setJobStatus(null);
+                  setActiveJobId(null);
+                  setSelectedFiles([]);
+                  setPreviewUrls([]);
+                  setVoiceoverText('');
+                }}
+              >
+                Create Another
+              </Button>
+            </div>
+          </Card>
+        ) : submitting || (jobStatus && jobStatus.status !== 'completed' && jobStatus.status !== 'failed') ? (
+          /* Job Status Timeline */
+          <Card variant="raised" style={{ textAlign: 'center', padding: 'var(--space-10) var(--space-6)' }}>
+            <Spinner size="lg" style={{ margin: '0 auto var(--space-4) auto' }} />
+            <h3 style={{ fontSize: 'var(--text-xl)', marginBottom: 'var(--space-2)' }}>
+              Generating Your 720p Reel
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-6)' }}>
+              Edge-TTS is synthesizing neural voiceover and FFmpeg media worker is assembling your vertical video.
+            </p>
+
+            {/* Timeline Progress Stages */}
+            <div style={{ maxWidth: '480px', margin: '0 auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', marginBottom: 'var(--space-2)', color: 'var(--text-muted)' }}>
+                <span style={{ color: 'var(--brand-primary)', fontWeight: 'bold' }}>1. Queued</span>
+                <span style={{ color: jobStatus?.progress_stage === 'tts' || jobStatus?.progress_stage === 'rendering' ? 'var(--brand-primary)' : 'inherit' }}>
+                  2. Neural Voiceover
+                </span>
+                <span style={{ color: jobStatus?.progress_stage === 'rendering' ? 'var(--brand-primary)' : 'inherit' }}>
+                  3. FFmpeg 720p
+                </span>
+                <span>4. Complete</span>
               </div>
+              <ProgressBar
+                value={
+                  jobStatus?.progress_stage === 'rendering'
+                    ? 75
+                    : jobStatus?.progress_stage === 'tts'
+                    ? 45
+                    : 20
+                }
+              />
+            </div>
+          </Card>
+        ) : (
+          /* Multi-Step Creation Wizard Form */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+            {/* Step 1: Upload Images */}
+            <Card>
+              <h3 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-2)' }}>
+                1. Upload Images (1 to 5)
+              </h3>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 'var(--space-4)' }}>
+                High-resolution portrait or landscape photos. FFmpeg will apply intelligent blurred 9:16 background padding.
+              </p>
 
+              {/* Drag and drop dropzone */}
               <div
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  handleFileSelect(e.dataTransfer.files);
+                }}
                 style={{
-                  border: '2px dashed var(--glass-border-hover)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '32px 20px',
+                  border: '2px dashed var(--border-medium)',
+                  borderRadius: 'var(--radius-lg)',
+                  padding: 'var(--space-8)',
                   textAlign: 'center',
                   cursor: 'pointer',
-                  background: 'rgba(255, 255, 255, 0.015)',
+                  backgroundColor: 'var(--surface-sunken)',
+                  transition: 'border-color var(--transition-fast)',
                 }}
               >
-                <UploadCloud size={36} color="var(--primary-light)" style={{ margin: '0 auto 10px auto' }} />
-                <p style={{ fontWeight: 600, fontSize: '0.925rem', marginBottom: '2px' }}>
-                  Drag & drop photos here, or click to browse
-                </p>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Supports JPEG, PNG, WebP</p>
-                <input ref={fileInputRef} type="file" multiple accept="image/*" style={{ display: 'none' }} onChange={(e) => handleFiles(e.target.files)} />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => handleFileSelect(e.target.files)}
+                />
+                <UploadCloud size={36} style={{ color: 'var(--brand-primary)', margin: '0 auto var(--space-2) auto' }} />
+                <div style={{ fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--text-sm)' }}>
+                  Drag and drop images here, or click to browse
+                </div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  PNG, JPG, or WebP up to 10MB each
+                </div>
               </div>
 
+              {/* Thumbnails preview */}
               {previewUrls.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px', marginTop: '16px' }}>
-                  {previewUrls.map((url, idx) => (
-                    <div key={idx} style={{ position: 'relative', aspectRatio: '9/16', borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
+                <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)', flexWrap: 'wrap' }}>
+                  {previewUrls.map((url, i) => (
+                    <div
+                      key={url}
+                      style={{
+                        position: 'relative',
+                        width: '90px',
+                        height: '120px',
+                        borderRadius: 'var(--radius-md)',
+                        overflow: 'hidden',
+                        border: '1px solid var(--border-medium)',
+                      }}
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt={`Slide ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <button onClick={() => removeImage(idx)} style={{ position: 'absolute', top: '4px', right: '4px', width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(244, 63, 94, 0.8)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <img src={url} alt={`Slide ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '2px',
+                          left: '4px',
+                          fontSize: '10px',
+                          fontWeight: 'bold',
+                          color: 'var(--cream-50)',
+                          backgroundColor: 'rgba(0,0,0,0.6)',
+                          padding: '1px 4px',
+                          borderRadius: 'var(--radius-pill)',
+                        }}
+                      >
+                        #{i + 1}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(i)}
+                        aria-label="Remove image"
+                        style={{
+                          position: 'absolute',
+                          top: '2px',
+                          right: '2px',
+                          backgroundColor: 'var(--danger)',
+                          color: 'var(--color-cream-100)',
+                          borderRadius: 'var(--radius-pill)',
+                          width: '18px',
+                          height: '18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                        }}
+                      >
                         <X size={12} />
                       </button>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </Card>
 
-            {/* 2. Script */}
-            <div className="glass-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Volume2 size={20} color="var(--primary-light)" />
-                  <span>2. Voiceover Script</span>
-                </h2>
-                <span style={{ fontSize: '0.8rem', color: voiceoverText.length > 900 ? 'var(--accent-rose)' : 'var(--text-muted)' }}>
-                  {voiceoverText.length} / 900
+            {/* Step 2: Voiceover Script */}
+            <Card>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
+                <h3 style={{ fontSize: 'var(--text-lg)' }}>2. Voiceover Narrative</h3>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                  {voiceoverText.length}/900 characters
                 </span>
               </div>
 
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-                {SCRIPT_INSPIRERS.map((chip, idx) => (
-                  <button key={idx} type="button" onClick={() => setVoiceoverText(chip.text)} style={{ padding: '4px 10px', borderRadius: 'var(--radius-full)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                    {chip.label}
+              {/* Inspiration Pills */}
+              <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-3)' }}>
+                {SCRIPT_INSPIRERS.map((insp) => (
+                  <button
+                    key={insp.label}
+                    type="button"
+                    onClick={() => setVoiceoverText(insp.text)}
+                    style={{
+                      fontSize: '11px',
+                      padding: '3px 10px',
+                      borderRadius: 'var(--radius-pill)',
+                      border: '1px solid var(--border-subtle)',
+                      backgroundColor: 'var(--surface-paper)',
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {insp.label}
                   </button>
                 ))}
               </div>
 
-              <textarea className="form-textarea" placeholder="Enter narration script for your reel..." maxLength={900} rows={4} value={voiceoverText} onChange={(e) => setVoiceoverText(e.target.value)} />
-            </div>
+              <Textarea
+                value={voiceoverText}
+                onChange={(e) => setVoiceoverText(e.target.value.slice(0, 900))}
+                placeholder="Write an engaging script for your reel. Microsoft Edge-TTS will speak it fluently..."
+                rows={4}
+              />
+            </Card>
 
-            {/* 3. Settings & Launch */}
-            <div className="glass-card">
-              <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <Clock size={20} color="var(--accent-emerald)" />
-                <span>3. Voice Talent & Timing</span>
-              </h2>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '20px' }}>
-                <div>
-                  <label className="form-label">Voice</label>
-                  <select className="form-select" value={selectedVoice} onChange={(e) => setSelectedVoice(e.target.value)}>
-                    {VOICES.map((v) => (
-                      <option key={v.id} value={v.id} style={{ background: '#0e131f' }}>{v.name} ({v.accent})</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="form-label">Seconds per Slide ({duration}s)</label>
-                  <input type="range" min={1} max={10} step={1} value={duration} onChange={(e) => setDuration(parseInt(e.target.value, 10))} style={{ width: '100%', accentColor: 'var(--primary)' }} />
-                </div>
-              </div>
-
-              <button onClick={handleGenerateReel} disabled={submitting || selectedFiles.length === 0 || !voiceoverText.trim()} className="btn btn-primary btn-lg" style={{ width: '100%', padding: '14px' }}>
-                {submitting ? <Loader2 size={18} className="spin" /> : <Sparkles size={18} />}
-                <span>Render AI Reel (Costs 1 Token)</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Live Progress or Player Column */}
-          {activeJobId && (
-            <div className="glass-card" style={{ position: 'sticky', top: '88px', textAlign: 'center', padding: '24px' }}>
-              <h3 style={{ fontSize: '1.15rem', marginBottom: '14px' }}>
-                {jobStatus?.status === 'completed' ? '🎉 Reel Rendered!' : 'Encoding Reel...'}
+            {/* Step 3: Voice and Timing */}
+            <Card>
+              <h3 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-4)' }}>
+                3. Voice & Timing Configuration
               </h3>
 
-              {jobStatus?.status !== 'completed' && jobStatus?.status !== 'failed' && (
-                <div style={{ padding: '20px 0' }}>
-                  <Loader2 size={36} color="var(--primary-light)" style={{ animation: 'spinSlow 2s linear infinite', margin: '0 auto 16px auto' }} />
-                  <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Stage: {jobStatus?.progress_stage || 'Processing'}</div>
-                </div>
-              )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--space-4)' }}>
+                <FormField id="f-voice" label="Neural Voice (Edge-TTS)">
+                  <Select
+                    id="f-voice"
+                    value={selectedVoice}
+                    onChange={(e) => setSelectedVoice(e.target.value)}
+                    options={VOICES.map((v) => ({
+                      value: v.id,
+                      label: `${v.name} (${v.lang} - ${v.accent}, ${v.gender})`,
+                    }))}
+                  />
+                </FormField>
 
-              {jobStatus?.status === 'completed' && jobStatus.reel_url && (
-                <div>
-                  <div className="reel-aspect-container" style={{ width: '100%', maxWidth: '280px', margin: '0 auto 16px auto' }}>
-                    <video src={jobStatus.reel_url} controls autoPlay loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                  <a href={jobStatus.reel_url} download="reel.mp4" className="btn btn-primary" style={{ width: '100%', marginBottom: '8px' }}>
-                    <Download size={16} /><span>Download MP4</span>
-                  </a>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+                <FormField id="f-dur" label={`Slide Duration: ${duration}s / image`}>
+                  <input
+                    type="range"
+                    id="f-dur"
+                    min={1}
+                    max={8}
+                    value={duration}
+                    onChange={(e) => setDuration(Number(e.target.value))}
+                    style={{ width: '100%', accentColor: 'var(--brand-primary)', cursor: 'pointer' }}
+                  />
+                </FormField>
+              </div>
+            </Card>
 
-      {/* ======================================================================
-          MODE B: NATIVE VIDEO PIPELINE (Direct Video Upload + Transcoding)
-          ====================================================================== */}
-      {studioMode === 'native_video' && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: nativeVideoFile ? '1.2fr 0.8fr' : '1fr',
-          gap: '32px',
-          alignItems: 'start',
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Video File Dropzone */}
-            <div className="glass-card">
-              <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <Video size={20} color="var(--accent-cyan)" />
-                <span>1. Upload Video File</span>
-              </h2>
-
-              <div
-                onClick={() => videoInputRef.current?.click()}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => { e.preventDefault(); handleVideoFile(e.dataTransfer.files); }}
-                style={{
-                  border: '2px dashed var(--glass-border-hover)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '36px 20px',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  background: 'rgba(255, 255, 255, 0.015)',
-                }}
+            {/* Generate Trigger */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
+              <Button
+                variant="primary"
+                size="lg"
+                leftIcon={<Sparkles size={18} />}
+                onClick={handleGenerate}
+                disabled={selectedFiles.length === 0 || !voiceoverText.trim()}
               >
-                <Video size={40} color="var(--accent-cyan)" style={{ margin: '0 auto 10px auto' }} />
-                <p style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '4px' }}>
-                  {nativeVideoFile ? nativeVideoFile.name : 'Drag & drop a video file here, or browse'}
-                </p>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                  Supports MP4, WebM, MOV (Max 50MB, up to 60 seconds)
-                </p>
-                <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/quicktime" style={{ display: 'none' }} onChange={(e) => handleVideoFile(e.target.files)} />
-              </div>
-            </div>
-
-            {/* Video Details Form */}
-            <div className="glass-card">
-              <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <Film size={20} color="var(--primary-light)" />
-                <span>2. Video Metadata & Discovery</span>
-              </h2>
-
-              <div className="form-group">
-                <label className="form-label">Title</label>
-                <input type="text" required placeholder="Punchy title for your reel..." className="form-input" value={videoTitle} onChange={(e) => setVideoTitle(e.target.value)} />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Description (Optional)</label>
-                <textarea className="form-textarea" rows={3} placeholder="Tell viewers what happens in this clip..." value={videoDescription} onChange={(e) => setVideoDescription(e.target.value)} />
-              </div>
-
-              {/* AI Hashtags Generator */}
-              <div className="form-group">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <label className="form-label">Hashtags</label>
-                  <button type="button" onClick={handleSuggestTags} disabled={generatingTags || !videoTitle.trim()} style={{ fontSize: '0.78rem', color: 'var(--primary-light)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Sparkles size={13} />
-                    <span>{generatingTags ? 'Generating...' : 'AI Suggest Tags'}</span>
-                  </button>
-                </div>
-                <input type="text" placeholder="#Trending, #Viral, #Tech..." className="form-input" value={videoHashtags} onChange={(e) => setVideoHashtags(e.target.value)} />
-              </div>
-
-              {/* Visibility & Scheduling */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '16px' }}>
-                <div>
-                  <label className="form-label">Visibility</label>
-                  <select className="form-select" value={visibility} onChange={(e) => setVisibility(e.target.value)}>
-                    <option value="public" style={{ background: '#0e131f' }}>Public</option>
-                    <option value="unlisted" style={{ background: '#0e131f' }}>Unlisted</option>
-                    <option value="private" style={{ background: '#0e131f' }}>Private</option>
-                  </select>
-                </div>
-
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                    <input id="schedToggle" type="checkbox" checked={isScheduled} onChange={(e) => setIsScheduled(e.target.checked)} style={{ cursor: 'pointer' }} />
-                    <label htmlFor="schedToggle" className="form-label" style={{ cursor: 'pointer', margin: 0 }}>Schedule Release</label>
-                  </div>
-                  {isScheduled && (
-                    <input type="datetime-local" className="form-input" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} />
-                  )}
-                </div>
-              </div>
-
-              {/* Direct Upload Progress Indicator */}
-              {uploadingNative && (
-                <div style={{ marginTop: '20px', background: 'rgba(255, 255, 255, 0.03)', padding: '14px 18px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
-                    <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Loader2 size={13} className="spin" />
-                      <span>{uploadPhase || 'Uploading...'}</span>
-                    </span>
-                    <span style={{ fontWeight: 600, color: 'var(--accent-cyan)' }}>
-                      {uploadProgress !== null ? `${uploadProgress}%` : ''}
-                    </span>
-                  </div>
-                  <div style={{ width: '100%', height: '6px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{
-                      width: `${uploadProgress ?? 100}%`,
-                      height: '100%',
-                      background: 'linear-gradient(90deg, var(--primary), var(--accent-cyan))',
-                      transition: 'width 0.2s ease',
-                      borderRadius: '3px',
-                    }} />
-                  </div>
-                </div>
-              )}
-
-              {/* Action buttons */}
-              <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-                <button
-                  type="button"
-                  onClick={() => handleUploadNativeVideo(true)}
-                  disabled={uploadingNative || !nativeVideoFile}
-                  className="btn btn-secondary"
-                  style={{ flex: 1, padding: '12px' }}
-                >
-                  <Save size={16} />
-                  <span>Save as Draft</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleUploadNativeVideo(false)}
-                  disabled={uploadingNative || !nativeVideoFile || !videoTitle.trim()}
-                  className="btn btn-primary"
-                  style={{ flex: 2, padding: '12px' }}
-                >
-                  {uploadingNative ? <Loader2 size={18} className="spin" /> : <Sparkles size={18} />}
-                  <span>{isScheduled ? 'Schedule Video' : 'Publish to 720p Reel'}</span>
-                </button>
-              </div>
+                Generate 720p Reel (Costs 1 Token)
+              </Button>
             </div>
           </div>
+        )}
+      </TabPanel>
 
-          {/* Native Video Preview Column */}
-          {nativeVideoPreview && (
-            <div className="glass-card" style={{ position: 'sticky', top: '88px', textAlign: 'center', padding: '24px' }}>
-              <h3 style={{ fontSize: '1.15rem', marginBottom: '14px' }}>Video Preview</h3>
-              <div className="reel-aspect-container" style={{ width: '100%', maxWidth: '280px', margin: '0 auto 16px auto' }}>
-                <video src={nativeVideoPreview} controls autoPlay loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-
-              {publishedVideo && (
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-emerald)', fontSize: '0.85rem', fontWeight: 600, justifyContent: 'center', marginBottom: '12px' }}>
-                    <CheckCircle2 size={16} />
-                    <span>Transcoding Enqueued!</span>
-                  </div>
-                  <EngagementBar videoId={publishedVideo.video_id} videoUrl={publishedVideo.video_url} />
-                </div>
-              )}
+      {/* ========================================================================
+          MODE B: Direct Video Upload Pipeline
+          ======================================================================== */}
+      <TabPanel id="native" activeTab={activeTab}>
+        {publishedVideo ? (
+          <Card variant="raised" style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
+            <Badge variant="success" icon={<CheckCircle2 size={14} />} style={{ marginBottom: 'var(--space-3)' }}>
+              Published
+            </Badge>
+            <h3 style={{ fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-4)' }}>
+              Video is Live in the Universal Feed!
+            </h3>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-3)' }}>
+              <Link href="/feed">
+                <Button variant="primary">View in Feed</Button>
+              </Link>
+              <Button variant="ghost" onClick={() => setPublishedVideo(null)}>
+                Upload Another Video
+              </Button>
             </div>
-          )}
-        </div>
-      )}
+          </Card>
+        ) : (
+          <Card>
+            <h3 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-4)' }}>
+              Direct Video Upload
+            </h3>
+
+            {/* Video Dropzone */}
+            <div
+              onClick={() => videoInputRef.current?.click()}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                handleNativeVideoSelect(e.dataTransfer.files);
+              }}
+              style={{
+                border: '2px dashed var(--border-medium)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-8)',
+                textAlign: 'center',
+                cursor: 'pointer',
+                backgroundColor: 'var(--surface-sunken)',
+                marginBottom: 'var(--space-4)',
+              }}
+            >
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/mp4,video/webm"
+                style={{ display: 'none' }}
+                onChange={(e) => handleNativeVideoSelect(e.target.files)}
+              />
+              <Video size={36} style={{ color: 'var(--brand-primary)', margin: '0 auto var(--space-2) auto' }} />
+              <div style={{ fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--text-sm)' }}>
+                {nativeVideoFile ? nativeVideoFile.name : 'Select or drop MP4/WebM vertical video'}
+              </div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '4px' }}>
+                720p or 1080p vertical video up to 50MB
+              </div>
+            </div>
+
+            {/* Metadata Fields */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+              <FormField id="v-title" label="Title" required>
+                <Input
+                  id="v-title"
+                  value={videoTitle}
+                  onChange={(e) => setVideoTitle(e.target.value)}
+                  placeholder="Enter a catchy title..."
+                />
+              </FormField>
+
+              <FormField id="v-desc" label="Description">
+                <Textarea
+                  id="v-desc"
+                  value={videoDescription}
+                  onChange={(e) => setVideoDescription(e.target.value)}
+                  placeholder="Tell viewers what this reel is about..."
+                  rows={3}
+                />
+              </FormField>
+
+              <FormField id="v-tags" label="Hashtags (comma separated)">
+                <Input
+                  id="v-tags"
+                  value={videoHashtags}
+                  onChange={(e) => setVideoHashtags(e.target.value)}
+                  placeholder="nature, reels, travel, tech"
+                />
+              </FormField>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--space-2)' }}>
+                <Button
+                  variant="primary"
+                  onClick={handlePublishNative}
+                  loading={uploadingNative}
+                  disabled={!nativeVideoFile || !videoTitle.trim()}
+                >
+                  Publish Video
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+      </TabPanel>
     </div>
   );
 }

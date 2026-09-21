@@ -16,6 +16,7 @@ export interface TabsProps {
   onChange: (tabId: string) => void;
   className?: string;
   ariaLabel?: string;
+  style?: React.CSSProperties;
 }
 
 export function Tabs({
@@ -24,6 +25,7 @@ export function Tabs({
   onChange,
   className = '',
   ariaLabel = 'Navigation Tabs',
+  style,
 }: TabsProps) {
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 

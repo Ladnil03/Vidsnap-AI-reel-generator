@@ -94,7 +94,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 # Install dependencies
-pip install -r requirements.txt -r requirements-dev.txt
+pip install -r backend/requirements.txt -r backend/requirements-dev.txt
 ```
 
 #### 2. Configure Environment

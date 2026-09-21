@@ -58,7 +58,7 @@ venv: ## Create virtual environment
 
 .PHONY: install
 install: ## Install all dependencies (production + dev)
-	$(PIP) install -r requirements.txt -r requirements-dev.txt
+	$(PIP) install -r backend/requirements.txt -r backend/requirements-dev.txt
 
 # ──────────────────────────────────────────
 # Testing & Quality

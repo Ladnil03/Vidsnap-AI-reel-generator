@@ -6,6 +6,7 @@ import logging
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo import ASCENDING, DESCENDING, IndexModel
+from pymongo.errors import OperationFailure
 
 from backend.app.core.config import settings
 
@@ -13,6 +14,52 @@ logger = logging.getLogger(__name__)
 
 _client: AsyncIOMotorClient | None = None
 _db: AsyncIOMotorDatabase | None = None
+
+
+class _SafeCollection:
+    """Wrapper that prevents startup crashes when an index already exists under a different legacy name."""
+
+    def __init__(self, collection):
+        self._col = collection
+        self.name = getattr(collection, "name", "collection")
+
+    async def create_index(self, *args, **kwargs):
+        try:
+            return await self._col.create_index(*args, **kwargs)
+        except OperationFailure as err:
+            if getattr(err, "code", None) == 85 or "already exists" in str(err) or "IndexOptionsConflict" in str(err):
+                logger.warning(
+                    "Index on '%s' already exists with a different name or options; reusing existing index: %s",
+                    self.name,
+                    err,
+                )
+                return None
+            raise
+
+    async def create_indexes(self, models, **kwargs):
+        created = []
+        for model in models:
+            try:
+                res = await self._col.create_indexes([model], **kwargs)
+                created.extend(res if isinstance(res, list) else [res])
+            except OperationFailure as err:
+                if getattr(err, "code", None) == 85 or "already exists" in str(err) or "IndexOptionsConflict" in str(err):
+                    logger.warning(
+                        "Index on '%s' already exists with a different name or options; reusing existing index: %s",
+                        self.name,
+                        err,
+                    )
+                else:
+                    raise
+        return created
+
+
+class _SafeDatabaseWrapper:
+    def __init__(self, db: AsyncIOMotorDatabase):
+        self._db = db
+
+    def __getitem__(self, name: str) -> _SafeCollection:
+        return _SafeCollection(self._db[name])
 
 
 async def connect_db() -> AsyncIOMotorDatabase:
@@ -45,6 +92,7 @@ async def connect_db() -> AsyncIOMotorDatabase:
 async def ensure_indexes(db: AsyncIOMotorDatabase) -> None:
     """Ensure all required collection indexes exist."""
     logger.info("Ensuring database indexes...")
+    db = _SafeDatabaseWrapper(db)  # type: ignore[assignment]
 
     # Users collection indexes
     users = db["users"]

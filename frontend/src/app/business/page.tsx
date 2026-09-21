@@ -32,9 +32,27 @@ import {
   Campaign,
   CollabApplication,
 } from '@/lib/types';
+import {
+  Button,
+  Card,
+  Badge,
+  Input,
+  Select,
+  Textarea,
+  FormField,
+  Modal,
+  EmptyState,
+  Spinner,
+} from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
+import styles from './business.module.css';
+
+const CATEGORIES = ['all', 'tech', 'lifestyle', 'fitness', 'gaming', 'comedy', 'music'];
 
 export default function BusinessHubPage() {
   const { user } = useAuth();
+  const { success: toastSuccess, error: toastError } = useToast();
+
   const [activeTab, setActiveTab] = useState<'marketplace' | 'brand_manager' | 'my_collabs'>('marketplace');
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [myCollabs, setMyCollabs] = useState<CollabApplication[]>([]);
@@ -64,9 +82,6 @@ export default function BusinessHubPage() {
   const [campaignApps, setCampaignApps] = useState<CollabApplication[]>([]);
   const [appsLoading, setAppsLoading] = useState(false);
 
-  // Feedback Notification
-  const [bannerMsg, setBannerMsg] = useState<string | null>(null);
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -85,6 +100,7 @@ export default function BusinessHubPage() {
       }
     } catch (err) {
       console.error('Failed to load marketplace data:', err);
+      toastError('Failed to load marketplace campaigns');
     } finally {
       setLoading(false);
     }
@@ -106,13 +122,14 @@ export default function BusinessHubPage() {
         applyPitch,
         applyPortfolioId || undefined
       );
-      setBannerMsg(`Application submitted to ${applyCampaign.company_name}! 🚀`);
+      toastSuccess(`Application submitted to ${applyCampaign.company_name}!`);
       setApplyCampaign(null);
       setApplyPitch('');
       setApplyPortfolioId('');
       await loadData();
-    } catch (err: any) {
-      setBannerMsg(err.message || 'Application submission failed');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Application submission failed';
+      toastError(msg);
     } finally {
       setApplySubmitting(false);
     }
@@ -138,7 +155,7 @@ export default function BusinessHubPage() {
         deadline: new Date(newDeadline).toISOString(),
       });
 
-      setBannerMsg('Campaign brief published to Collab Marketplace! 📢');
+      toastSuccess('Campaign brief published to Collab Marketplace!');
       setShowNewCampaignModal(false);
       setNewTitle('');
       setNewDesc('');
@@ -146,8 +163,9 @@ export default function BusinessHubPage() {
       setNewRequirements('');
       setNewDeadline('');
       await loadData();
-    } catch (err: any) {
-      setBannerMsg(err.message || 'Campaign creation failed');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Campaign creation failed';
+      toastError(msg);
     } finally {
       setCreateCampaignLoading(false);
     }
@@ -160,255 +178,138 @@ export default function BusinessHubPage() {
       setViewCampaignApps(camp);
       const apps = await api.business.getCampaignApplications(camp.campaign_id);
       setCampaignApps(apps);
-    } catch (err: any) {
-      setBannerMsg(err.message || 'Could not load applications');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not load applications';
+      toastError(msg);
     } finally {
       setAppsLoading(false);
     }
   };
 
   // Update Application Status (Accept / Shortlist / Reject)
-  const handleStatusUpdate = async (appId: string, status: any) => {
+  const handleStatusUpdate = async (appId: string, status: 'shortlisted' | 'accepted' | 'rejected') => {
     try {
       await api.business.updateApplicationStatus(appId, status);
-      setBannerMsg(`Applicant marked as ${status}!`);
+      toastSuccess(`Applicant marked as ${status}!`);
       if (viewCampaignApps) {
         const apps = await api.business.getCampaignApplications(viewCampaignApps.campaign_id);
         setCampaignApps(apps);
       }
-    } catch (err: any) {
-      setBannerMsg(err.message || 'Status update failed');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Status update failed';
+      toastError(msg);
     }
   };
 
   return (
-    <div style={{ minHeight: '100vh', paddingTop: '88px', paddingBottom: '80px' }}>
-      <div className="container" style={{ maxWidth: '1120px' }}>
-        {/* Banner Alert */}
-        {bannerMsg && (
-          <div
-            style={{
-              padding: '12px 20px',
-              borderRadius: 'var(--radius-md)',
-              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2))',
-              border: '1px solid rgba(168, 85, 247, 0.4)',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              marginBottom: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <span>{bannerMsg}</span>
-            <button
-              onClick={() => setBannerMsg(null)}
-              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}
+    <div className={styles.container}>
+      {/* HERO HEADER */}
+      <Card variant="default" className={styles.heroHeader} style={{ padding: 'var(--space-8)' }}>
+        <div className={styles.heroContent}>
+          <div className={styles.heroTag}>
+            <Briefcase size={16} />
+            <span>Sponsorship & Collaboration Platform</span>
+          </div>
+          <h1 className={styles.heroTitle}>
+            Collab Marketplace & Brand Hub
+          </h1>
+          <p className={styles.heroSubtitle}>
+            Connecting verified brands with creators for high-engagement short video campaigns, transparent terms, and brand-safety verification.
+          </p>
+        </div>
+
+        {user && (
+          <div>
+            <Button
+              variant="primary"
+              onClick={() => setShowNewCampaignModal(true)}
+              leftIcon={<Megaphone size={16} />}
             >
-              ✕
-            </button>
+              Post Campaign Brief
+            </Button>
           </div>
         )}
+      </Card>
 
-        {/* HERO HEADER */}
-        <div
-          style={{
-            background: 'var(--glass-bg)',
-            backdropFilter: 'var(--glass-blur)',
-            border: '1px solid var(--glass-border)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '32px',
-            marginBottom: '32px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '20px',
-          }}
+      {/* SECTION TABS */}
+      <div className={styles.tabNav}>
+        <button
+          onClick={() => setActiveTab('marketplace')}
+          className={`${styles.tabButton} ${activeTab === 'marketplace' ? styles.tabButtonActive : ''}`}
         >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-light)', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px' }}>
-              <Briefcase size={16} />
-              <span>SPONSORSHIP & COLLABORATION PLATFORM</span>
-            </div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 10px 0' }}>
-              Collab Marketplace & Brand Hub 💼
-            </h1>
-            <p style={{ color: 'var(--text-secondary)', margin: 0, maxWidth: '650px', fontSize: '0.95rem' }}>
-              Connecting verified brands with creators for high-engagement short video campaigns, transparent terms, and brand-safety verification.
-            </p>
+          <Briefcase size={16} />
+          <span>Collab Marketplace</span>
+        </button>
+
+        {user && (
+          <>
+            <button
+              onClick={() => setActiveTab('my_collabs')}
+              className={`${styles.tabButton} ${activeTab === 'my_collabs' ? styles.tabButtonActive : ''}`}
+            >
+              <Users size={16} />
+              <span>My Pitches & Collabs ({myCollabs.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('brand_manager')}
+              className={`${styles.tabButton} ${activeTab === 'brand_manager' ? styles.tabButtonActive : ''}`}
+            >
+              <Building2 size={16} />
+              <span>Brand Manager</span>
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* TAB 1: COLLAB MARKETPLACE */}
+      {activeTab === 'marketplace' && (
+        <div>
+          {/* Category Filter Pills */}
+          <div className={styles.categoryRow}>
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`${styles.categoryChip} ${selectedCategory === cat ? styles.categoryChipActive : ''}`}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
 
-          {user && (
-            <div>
-              <button
-                onClick={() => setShowNewCampaignModal(true)}
-                className="btn btn-primary"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-              >
-                <Megaphone size={16} />
-                Post Campaign Brief
-              </button>
+          {/* Campaign Cards Grid */}
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '60px 0' }}>
+              <Spinner size="lg" />
             </div>
-          )}
-        </div>
-
-        {/* SECTION TABS */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '8px',
-            borderBottom: '1px solid var(--glass-border)',
-            paddingBottom: '12px',
-            marginBottom: '28px',
-          }}
-        >
-          <button
-            onClick={() => setActiveTab('marketplace')}
-            style={{
-              padding: '8px 20px',
-              borderRadius: 'var(--radius-full)',
-              background: activeTab === 'marketplace' ? 'var(--primary-gradient)' : 'transparent',
-              color: activeTab === 'marketplace' ? '#fff' : 'var(--text-secondary)',
-              border: activeTab === 'marketplace' ? 'none' : '1px solid var(--glass-border)',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            <Briefcase size={16} />
-            Collab Marketplace 🌐
-          </button>
-
-          {user && (
-            <>
-              <button
-                onClick={() => setActiveTab('my_collabs')}
-                style={{
-                  padding: '8px 20px',
-                  borderRadius: 'var(--radius-full)',
-                  background: activeTab === 'my_collabs' ? 'var(--primary-gradient)' : 'transparent',
-                  color: activeTab === 'my_collabs' ? '#fff' : 'var(--text-secondary)',
-                  border: activeTab === 'my_collabs' ? 'none' : '1px solid var(--glass-border)',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  fontSize: '0.95rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}
-              >
-                <Users size={16} />
-                My Pitches & Collabs 🤝 ({myCollabs.length})
-              </button>
-
-              <button
-                onClick={() => setActiveTab('brand_manager')}
-                style={{
-                  padding: '8px 20px',
-                  borderRadius: 'var(--radius-full)',
-                  background: activeTab === 'brand_manager' ? 'var(--primary-gradient)' : 'transparent',
-                  color: activeTab === 'brand_manager' ? '#fff' : 'var(--text-secondary)',
-                  border: activeTab === 'brand_manager' ? 'none' : '1px solid var(--glass-border)',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  fontSize: '0.95rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}
-              >
-                <Building2 size={16} />
-                Brand Manager 📢
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* TAB 1: COLLAB MARKETPLACE */}
-        {activeTab === 'marketplace' && (
-          <div>
-            {/* Category Filter Pills */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
-              {['all', 'tech', 'lifestyle', 'fitness', 'gaming', 'comedy', 'music'].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 'var(--radius-full)',
-                    background: selectedCategory === cat ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                    color: selectedCategory === cat ? 'var(--primary-light)' : 'var(--text-secondary)',
-                    border: selectedCategory === cat ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid transparent',
-                    fontSize: '0.825rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    textTransform: 'capitalize',
-                  }}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            {/* Campaign Cards Grid */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                gap: '24px',
-              }}
-            >
+          ) : campaigns.length === 0 ? (
+            <EmptyState
+              icon={<Briefcase size={40} />}
+              title="No Campaigns Available"
+              description={`No campaigns found in category "${selectedCategory}". Check back soon or post a new brief!`}
+            />
+          ) : (
+            <div className={styles.campaignGrid}>
               {campaigns.map((camp) => (
-                <div
-                  key={camp.campaign_id}
-                  style={{
-                    background: 'var(--glass-bg)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '24px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                  }}
-                >
+                <Card key={camp.campaign_id} variant="default" className={styles.campaignCard} style={{ padding: 'var(--space-5)' }}>
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary-light)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div className={styles.campaignHeader}>
+                      <span className={styles.companyName}>
                         <Building2 size={14} /> {camp.company_name}
                       </span>
-                      <span
-                        style={{
-                          padding: '2px 8px',
-                          borderRadius: 'var(--radius-full)',
-                          background: 'rgba(16, 185, 129, 0.15)',
-                          color: '#10b981',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                        }}
-                      >
+                      <Badge variant="sage" size="sm">
                         {camp.budget_perk}
-                      </span>
+                      </Badge>
                     </div>
 
-                    <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0 0 8px 0' }}>
-                      {camp.title}
-                    </h3>
+                    <h3 className={styles.campaignTitle}>{camp.title}</h3>
+                    <p className={styles.campaignDesc}>{camp.description}</p>
 
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 16px 0', lineHeight: 1.5 }}>
-                      {camp.description}
-                    </p>
-
-                    {camp.requirements.length > 0 && (
-                      <div style={{ marginBottom: '16px' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 700 }}>
-                          Requirements:
-                        </div>
-                        <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    {camp.requirements && camp.requirements.length > 0 && (
+                      <div className={styles.requirementsBlock}>
+                        <div className={styles.requirementsTitle}>Deliverables:</div>
+                        <ul className={styles.requirementsList}>
                           {camp.requirements.map((req, i) => (
                             <li key={i}>{req}</li>
                           ))}
@@ -417,545 +318,376 @@ export default function BusinessHubPage() {
                     )}
                   </div>
 
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
-                      <span>{camp.applications_count} applicants</span>
+                  <div className={styles.campaignFooter}>
+                    <div className={styles.campaignMeta}>
+                      <span>{camp.applications_count || 0} applicants</span>
                       <span>Target: {camp.target_creators_count} creators</span>
                     </div>
 
                     {user ? (
-                      <button
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        style={{ width: '100%' }}
                         onClick={() => setApplyCampaign(camp)}
-                        className="btn btn-primary btn-sm"
-                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                        leftIcon={<Send size={14} />}
                       >
-                        <Send size={14} />
                         Apply to Collab
-                      </button>
+                      </Button>
                     ) : (
-                      <Link
-                        href="/login"
-                        className="btn btn-secondary btn-sm"
-                        style={{ width: '100%', textAlign: 'center', display: 'block' }}
-                      >
-                        Log in to Pitch
+                      <Link href="/login" style={{ width: '100%' }}>
+                        <Button variant="secondary" size="sm" style={{ width: '100%' }}>
+                          Log in to Pitch
+                        </Button>
                       </Link>
                     )}
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
+      )}
 
-        {/* TAB 2: MY COLLABS */}
-        {activeTab === 'my_collabs' && (
-          <div>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '16px' }}>
-              Your Submitted Collaboration Pitches
-            </h2>
-            {myCollabs.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {myCollabs.map((collab) => (
-                  <div
-                    key={collab.application_id}
-                    style={{
-                      background: 'var(--glass-bg)',
-                      border: '1px solid var(--glass-border)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '20px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: '16px',
-                    }}
-                  >
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                        <span style={{ fontWeight: 700, fontSize: '1rem' }}>Campaign: {collab.campaign_id}</span>
-                        <span
-                          style={{
-                            padding: '2px 8px',
-                            borderRadius: '999px',
-                            background:
-                              collab.status === 'accepted'
-                                ? 'rgba(16, 185, 129, 0.15)'
-                                : collab.status === 'shortlisted'
-                                ? 'rgba(56, 189, 248, 0.15)'
-                                : 'rgba(255, 255, 255, 0.08)',
-                            color:
-                              collab.status === 'accepted'
-                                ? '#10b981'
-                                : collab.status === 'shortlisted'
-                                ? '#38bdf8'
-                                : 'var(--text-secondary)',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            textTransform: 'uppercase',
-                          }}
-                        >
-                          {collab.status}
-                        </span>
-                      </div>
+      {/* TAB 2: MY COLLABS */}
+      {activeTab === 'my_collabs' && (
+        <div>
+          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, marginBottom: 'var(--space-4)', color: 'var(--color-text)' }}>
+            Your Submitted Collaboration Pitches
+          </h2>
+          {myCollabs.length > 0 ? (
+            <div className={styles.applicationList}>
+              {myCollabs.map((collab) => (
+                <Card key={collab.application_id} variant="default" className={styles.applicationCard} style={{ padding: 'var(--space-5)' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                      <span style={{ fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--color-text)' }}>
+                        Campaign ID: {collab.campaign_id}
+                      </span>
+                      <Badge
+                        variant={
+                          collab.status === 'accepted'
+                            ? 'moss'
+                            : collab.status === 'shortlisted'
+                            ? 'sage'
+                            : 'default'
+                        }
+                        size="sm"
+                      >
+                        {collab.status}
+                      </Badge>
+                    </div>
 
-                      <p style={{ margin: '0 0 6px 0', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                        "{collab.pitch}"
-                      </p>
+                    <p className={styles.applicationPitch}>
+                      &ldquo;{collab.pitch}&rdquo;
+                    </p>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        <span>Submitted on {new Date(collab.created_at).toLocaleDateString()}</span>
-                        <span>•</span>
-                        <span style={{ color: collab.brand_safety.is_brand_safe ? '#10b981' : '#f43f5e' }}>
-                          Brand Safety Score: {collab.brand_safety.score}/100
-                        </span>
-                      </div>
+                    <div className={styles.applicationMeta}>
+                      <span>Submitted: {new Date(collab.created_at).toLocaleDateString()}</span>
+                      <span>·</span>
+                      <span className={collab.brand_safety?.is_brand_safe ? styles.brandSafetySafe : styles.brandSafetyRisk}>
+                        Brand Safety Score: {collab.brand_safety?.score || 100}/100
+                      </span>
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div
-                style={{
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px dashed var(--glass-border)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '50px 20px',
-                  textAlign: 'center',
-                  color: 'var(--text-muted)',
-                }}
-              >
-                <Briefcase size={36} style={{ opacity: 0.5, marginBottom: '10px' }} />
-                <div>You haven't pitched to any campaigns yet.</div>
-                <button
-                  onClick={() => setActiveTab('marketplace')}
-                  className="btn btn-primary btn-sm"
-                  style={{ marginTop: '14px' }}
-                >
-                  Browse Collab Marketplace
-                </button>
-              </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={<Briefcase size={40} />}
+              title="No Pitches Yet"
+              description="You haven't pitched to any campaigns yet. Discover brands and submit creative pitches."
+              actionLabel="Browse Marketplace"
+              onAction={() => setActiveTab('marketplace')}
+            />
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: BRAND MANAGER (FOR BRAND OWNERS) */}
+      {activeTab === 'brand_manager' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-5)' }}>
+            <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
+              Your Brand Campaigns & Applicants
+            </h2>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowNewCampaignModal(true)}
+              leftIcon={<Megaphone size={14} />}
+            >
+              New Campaign Brief
+            </Button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            {campaigns
+              .filter((c) => c.business_id === businessProfile?.business_id)
+              .map((camp) => (
+                <Card key={camp.campaign_id} variant="default" className={styles.applicationCard} style={{ padding: 'var(--space-5)' }}>
+                  <div>
+                    <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, margin: '0 0 var(--space-1) 0', color: 'var(--color-text)' }}>
+                      {camp.title}
+                    </h3>
+                    <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+                      Budget: <strong>{camp.budget_perk}</strong> · Applicants: <strong>{camp.applications_count || 0}</strong>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleViewApplications(camp)}
+                  >
+                    Review Applicants ({camp.applications_count || 0})
+                  </Button>
+                </Card>
+              ))}
+
+            {campaigns.filter((c) => c.business_id === businessProfile?.business_id).length === 0 && (
+              <EmptyState
+                icon={<Megaphone size={40} />}
+                title="No Campaigns Posted"
+                description="Publish a campaign brief to recruit creators and manage submissions."
+                actionLabel="Post Campaign Brief"
+                onAction={() => setShowNewCampaignModal(true)}
+              />
             )}
           </div>
-        )}
 
-        {/* TAB 3: BRAND MANAGER (FOR BRAND OWNERS) */}
-        {activeTab === 'brand_manager' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '1.3rem', fontWeight: 700, margin: 0 }}>
-                Your Brand Campaigns & Applicants
-              </h2>
-              <button
-                onClick={() => setShowNewCampaignModal(true)}
-                className="btn btn-primary btn-sm"
-              >
-                + New Campaign Brief
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {campaigns
-                .filter((c) => c.business_id === businessProfile?.business_id)
-                .map((camp) => (
-                  <div
-                    key={camp.campaign_id}
-                    style={{
-                      background: 'var(--glass-bg)',
-                      border: '1px solid var(--glass-border)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '20px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: '14px',
-                    }}
-                  >
-                    <div>
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 6px 0' }}>
-                        {camp.title}
-                      </h3>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        Budget: {camp.budget_perk} • Applicants: {camp.applications_count}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleViewApplications(camp)}
-                      className="btn btn-secondary btn-sm"
-                    >
-                      Review Applicants ({camp.applications_count})
-                    </button>
-                  </div>
-                ))}
-
-              {campaigns.filter((c) => c.business_id === businessProfile?.business_id).length === 0 && (
-                <div
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px dashed var(--glass-border)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '40px',
-                    textAlign: 'center',
-                    color: 'var(--text-muted)',
-                  }}
+          {/* Application Review Drawer / Section */}
+          {viewCampaignApps && (
+            <Card variant="raised" className={styles.drawerContainer} style={{ padding: 'var(--space-6)' }}>
+              <div className={styles.drawerHeader}>
+                <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
+                  Applicants for: &ldquo;{viewCampaignApps.title}&rdquo;
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setViewCampaignApps(null)}
                 >
-                  <Megaphone size={36} style={{ opacity: 0.5, marginBottom: '8px' }} />
-                  <div>No campaigns posted yet. Click "+ New Campaign Brief" above to recruit creators!</div>
+                  ✕ Close
+                </Button>
+              </div>
+
+              {appsLoading ? (
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <Spinner size="md" />
+                </div>
+              ) : campaignApps.length > 0 ? (
+                <div className={styles.applicationList}>
+                  {campaignApps.map((app) => (
+                    <Card key={app.application_id} variant="default" className={styles.applicationCard} style={{ padding: 'var(--space-4)' }}>
+                      <div>
+                        <div className={styles.applicationCreator}>
+                          <span style={{ fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--color-text)' }}>
+                            {app.creator_name}
+                          </span>
+                          <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
+                            @{app.creator_handle}
+                          </span>
+                          <Badge
+                            variant={app.brand_safety?.is_brand_safe ? 'moss' : 'danger'}
+                            size="sm"
+                          >
+                            Safety: {app.brand_safety?.score || 100}/100
+                          </Badge>
+                        </div>
+                        <p className={styles.applicationPitch}>
+                          &ldquo;{app.pitch}&rdquo;
+                        </p>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleStatusUpdate(app.application_id, 'shortlisted')}
+                        >
+                          Shortlist
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleStatusUpdate(app.application_id, 'accepted')}
+                          leftIcon={<Check size={14} />}
+                        >
+                          Accept
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleStatusUpdate(app.application_id, 'rejected')}
+                          leftIcon={<X size={14} />}
+                        >
+                          Decline
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: 'var(--space-6)' }}>
+                  No applications received for this campaign yet.
                 </div>
               )}
-            </div>
+            </Card>
+          )}
+        </div>
+      )}
 
-            {/* Application Review Drawer / Section */}
-            {viewCampaignApps && (
-              <div
-                style={{
-                  marginTop: '32px',
-                  background: 'rgba(15, 23, 42, 0.8)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '24px',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>
-                    Applicants for: "{viewCampaignApps.title}"
-                  </h3>
-                  <button
-                    onClick={() => setViewCampaignApps(null)}
-                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-                  >
-                    ✕ Close
-                  </button>
-                </div>
+      {/* APPLY TO CAMPAIGN MODAL */}
+      <Modal
+        isOpen={Boolean(applyCampaign)}
+        onClose={() => setApplyCampaign(null)}
+        title={applyCampaign ? `Pitch for: ${applyCampaign.title}` : ''}
+        size="md"
+      >
+        <form onSubmit={handleApplyToCampaign} className={styles.formGrid}>
+          <FormField label="Your Pitch to Brand" required hint="Describe your creative concept and why you're a great fit">
+            <Textarea
+              required
+              minLength={10}
+              placeholder="Describe your concept for this reel..."
+              value={applyPitch}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setApplyPitch(e.target.value)}
+              rows={4}
+            />
+          </FormField>
 
-                {campaignApps.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    {campaignApps.map((app) => (
-                      <div
-                        key={app.application_id}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.03)',
-                          border: '1px solid rgba(255, 255, 255, 0.08)',
-                          borderRadius: 'var(--radius-md)',
-                          padding: '18px',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                          gap: '16px',
-                        }}
-                      >
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                            <span style={{ fontWeight: 700, fontSize: '1rem' }}>{app.creator_name}</span>
-                            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>@{app.creator_handle}</span>
-                            <span
-                              style={{
-                                padding: '1px 8px',
-                                borderRadius: '999px',
-                                background: app.brand_safety.is_brand_safe ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
-                                color: app.brand_safety.is_brand_safe ? '#10b981' : '#f43f5e',
-                                fontSize: '0.7rem',
-                                fontWeight: 700,
-                              }}
-                            >
-                              Brand Safety: {app.brand_safety.score}/100
-                            </span>
-                          </div>
-                          <p style={{ margin: '0 0 6px 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                            "{app.pitch}"
-                          </p>
-                        </div>
+          <FormField label="Portfolio Reel ID / Link (Optional)">
+            <Input
+              type="text"
+              placeholder="e.g. vid_your_best_tech_reel"
+              value={applyPortfolioId}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setApplyPortfolioId(e.target.value)}
+            />
+          </FormField>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <button
-                            onClick={() => handleStatusUpdate(app.application_id, 'shortlisted')}
-                            className="btn btn-secondary btn-sm"
-                          >
-                            Shortlist
-                          </button>
-                          <button
-                            onClick={() => handleStatusUpdate(app.application_id, 'accepted')}
-                            className="btn btn-primary btn-sm"
-                            style={{ background: '#10b981' }}
-                          >
-                            <Check size={14} /> Accept
-                          </button>
-                          <button
-                            onClick={() => handleStatusUpdate(app.application_id, 'rejected')}
-                            className="btn btn-secondary btn-sm"
-                            style={{ color: '#f43f5e' }}
-                          >
-                            <X size={14} /> Decline
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
-                    No applications received for this campaign yet.
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* APPLY TO CAMPAIGN MODAL */}
-        {applyCampaign && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.75)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1100,
-              padding: '20px',
-            }}
-          >
-            <div
-              style={{
-                background: '#0f172a',
-                border: '1px solid var(--glass-border)',
-                borderRadius: 'var(--radius-lg)',
-                padding: '32px',
-                maxWidth: '520px',
-                width: '100%',
-              }}
+          <div className={styles.modalFooter}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setApplyCampaign(null)}
             >
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 6px 0' }}>
-                Pitch for: {applyCampaign.title}
-              </h2>
-              <div style={{ color: 'var(--primary-light)', fontSize: '0.85rem', marginBottom: '16px' }}>
-                Reward: {applyCampaign.budget_perk} • Brand: {applyCampaign.company_name}
-              </div>
-
-              <form onSubmit={handleApplyToCampaign} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Your Pitch to Brand *
-                  </label>
-                  <textarea
-                    required
-                    minLength={10}
-                    placeholder="Describe your creative concept for this reel and why you are a great match for their brand..."
-                    value={applyPitch}
-                    onChange={(e) => setApplyPitch(e.target.value)}
-                    className="input"
-                    rows={4}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Portfolio Reel ID / Link (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. vid_your_best_tech_reel"
-                    value={applyPortfolioId}
-                    onChange={(e) => setApplyPortfolioId(e.target.value)}
-                    className="input"
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '12px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setApplyCampaign(null)}
-                    className="btn btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={applySubmitting}
-                    className="btn btn-primary"
-                  >
-                    {applySubmitting ? 'Submitting Pitch...' : 'Submit Collab Pitch 🚀'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* CREATE CAMPAIGN BRIEF MODAL */}
-        {showNewCampaignModal && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.75)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1100,
-              padding: '20px',
-            }}
-          >
-            <div
-              style={{
-                background: '#0f172a',
-                border: '1px solid var(--glass-border)',
-                borderRadius: 'var(--radius-lg)',
-                padding: '32px',
-                maxWidth: '560px',
-                width: '100%',
-                maxHeight: '90vh',
-                overflowY: 'auto',
-              }}
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={applySubmitting}
+              leftIcon={<Send size={14} />}
             >
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 8px 0' }}>
-                Post a Campaign Brief 📢
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>
-                Publish a campaign to invite pitches from verified short-form video creators.
-              </p>
-
-              <form onSubmit={handleCreateCampaign} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Campaign Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Wireless Noise-Cancelling Earbuds Showcase"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    className="input"
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Category Niche *
-                  </label>
-                  <select
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    className="input"
-                    style={{ width: '100%' }}
-                  >
-                    <option value="tech">Technology & AI</option>
-                    <option value="lifestyle">Lifestyle & Fashion</option>
-                    <option value="fitness">Health & Fitness</option>
-                    <option value="gaming">Gaming</option>
-                    <option value="comedy">Comedy & Entertainment</option>
-                    <option value="music">Music & Beats</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Budget / Creator Perk *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. $800 + Free Product Sample or ₹30,000 INR"
-                    value={newBudget}
-                    onChange={(e) => setNewBudget(e.target.value)}
-                    className="input"
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Target Number of Creators
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={newTargetCreators}
-                    onChange={(e) => setNewTargetCreators(Number(e.target.value))}
-                    className="input"
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Campaign Brief & Deliverables *
-                  </label>
-                  <textarea
-                    required
-                    minLength={10}
-                    placeholder="Describe what kind of short video content you are seeking, key talking points, and visual style..."
-                    value={newDesc}
-                    onChange={(e) => setNewDesc(e.target.value)}
-                    className="input"
-                    rows={3}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Specific Requirements (one per line)
-                  </label>
-                  <textarea
-                    placeholder="Must be vertical 9:16 format&#10;Tag #BrandName in caption&#10;Video length between 30-45s"
-                    value={newRequirements}
-                    onChange={(e) => setNewRequirements(e.target.value)}
-                    className="input"
-                    rows={3}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Application Deadline *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={newDeadline}
-                    onChange={(e) => setNewDeadline(e.target.value)}
-                    className="input"
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '12px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowNewCampaignModal(false)}
-                    className="btn btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={createCampaignLoading}
-                    className="btn btn-primary"
-                  >
-                    {createCampaignLoading ? 'Publishing...' : 'Publish Brief 📢'}
-                  </button>
-                </div>
-              </form>
-            </div>
+              Submit Collab Pitch
+            </Button>
           </div>
-        )}
-      </div>
+        </form>
+      </Modal>
+
+      {/* CREATE CAMPAIGN BRIEF MODAL */}
+      <Modal
+        isOpen={showNewCampaignModal}
+        onClose={() => setShowNewCampaignModal(false)}
+        title="Post a Campaign Brief 📢"
+        size="lg"
+      >
+        <form onSubmit={handleCreateCampaign} className={styles.formGrid}>
+          <FormField label="Campaign Title" required>
+            <Input
+              type="text"
+              required
+              placeholder="e.g. Wireless Noise-Cancelling Earbuds Showcase"
+              value={newTitle}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTitle(e.target.value)}
+            />
+          </FormField>
+
+          <FormField label="Category Niche" required>
+            <Select
+              value={newCategory}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewCategory(e.target.value)}
+              options={[
+                { value: 'tech', label: 'Technology & AI' },
+                { value: 'lifestyle', label: 'Lifestyle & Fashion' },
+                { value: 'fitness', label: 'Health & Fitness' },
+                { value: 'gaming', label: 'Gaming' },
+                { value: 'comedy', label: 'Comedy & Entertainment' },
+                { value: 'music', label: 'Music & Beats' },
+              ]}
+            />
+          </FormField>
+
+          <FormField label="Budget / Creator Perk" required>
+            <Input
+              type="text"
+              required
+              placeholder="e.g. $800 + Free Product Sample or ₹30,000 INR"
+              value={newBudget}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewBudget(e.target.value)}
+            />
+          </FormField>
+
+          <FormField label="Target Number of Creators">
+            <Input
+              type="number"
+              min={1}
+              max={50}
+              value={newTargetCreators}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTargetCreators(Number(e.target.value))}
+            />
+          </FormField>
+
+          <FormField label="Campaign Brief & Deliverables" required>
+            <Textarea
+              required
+              minLength={10}
+              placeholder="Describe what kind of short video content you seek..."
+              value={newDesc}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewDesc(e.target.value)}
+              rows={3}
+            />
+          </FormField>
+
+          <FormField label="Specific Requirements (one per line)">
+            <Textarea
+              placeholder="Must be vertical 9:16 format&#10;Tag #BrandName in caption&#10;Video length between 30-45s"
+              value={newRequirements}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewRequirements(e.target.value)}
+              rows={3}
+            />
+          </FormField>
+
+          <FormField label="Application Deadline" required>
+            <Input
+              type="date"
+              required
+              value={newDeadline}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewDeadline(e.target.value)}
+            />
+          </FormField>
+
+          <div className={styles.modalFooter}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowNewCampaignModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={createCampaignLoading}
+              leftIcon={<Megaphone size={14} />}
+            >
+              Publish Brief
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -7,8 +7,19 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, Users, Film, MessageSquare, LayoutDashboard, AlertTriangle, ShieldAlert, Activity } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import {
+  ShieldCheck,
+  Users,
+  Film,
+  MessageSquare,
+  LayoutDashboard,
+  AlertTriangle,
+  ShieldAlert,
+  Activity,
+} from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Card, Button, Spinner } from '@/components/ui';
+import styles from './admin.module.css';
 
 export default function AdminLayout({
   children,
@@ -22,199 +33,104 @@ export default function AdminLayout({
 
   if (loading) {
     return (
-      <div className="container" style={{ textAlign: 'center', padding: '80px 0' }}>
-        <p style={{ color: 'var(--text-secondary)' }}>Verifying administrative permissions...</p>
+      <div className={styles.container} style={{ textAlign: 'center', padding: '80px 0' }}>
+        <Spinner size="lg" />
+        <p style={{ color: 'var(--color-text-muted)', marginTop: 'var(--space-4)', fontSize: 'var(--text-sm)' }}>
+          Verifying administrative permissions...
+        </p>
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="container" style={{ textAlign: 'center', padding: '80px 16px' }}>
-        <div className="glass-card" style={{ maxWidth: '460px', margin: '0 auto', padding: '40px' }}>
-          <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '50%',
-            background: 'rgba(244, 63, 94, 0.15)',
-            color: 'var(--accent-rose)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px auto',
-          }}>
+      <div className={styles.container}>
+        <Card variant="default" className={styles.restrictedCard} style={{ padding: 'var(--space-8)' }}>
+          <div className={styles.restrictedIcon}>
             <AlertTriangle size={28} />
           </div>
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Access Restricted</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px', lineHeight: '1.6' }}>
+          <h2 style={{ fontSize: 'var(--text-2xl)', fontFamily: 'var(--font-display)', marginBottom: 'var(--space-2)', color: 'var(--color-text)' }}>
+            Access Restricted
+          </h2>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-6)', lineHeight: 1.6 }}>
             This portal is restricted to platform administrators. Your account ({user?.email || 'Guest'}) does not possess the required `admin` role.
           </p>
-          <Link href="/" className="btn btn-secondary">
-            Return to Home
+          <Link href="/">
+            <Button variant="secondary">
+              Return to Home
+            </Button>
           </Link>
-        </div>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="container" style={{ paddingBottom: '60px' }}>
+    <div className={styles.container}>
       {/* Admin Portal Header */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '16px',
-        marginBottom: '28px',
-        paddingBottom: '20px',
-        borderBottom: '1px solid var(--glass-border)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: 'var(--radius-md)',
-            background: 'rgba(6, 182, 212, 0.15)',
-            border: '1px solid rgba(6, 182, 212, 0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#38bdf8',
-          }}>
+      <div className={styles.portalHeader}>
+        <div className={styles.headerIdentity}>
+          <div className={styles.headerIcon}>
             <ShieldCheck size={22} />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.75rem' }}>Platform Administration</h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+            <h1 className={styles.portalTitle}>Platform Administration</h1>
+            <p className={styles.portalSubtitle}>
               RBAC Protected: System control, credit ledger updates, and video moderation.
             </p>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div style={{
-          display: 'flex',
-          gap: '6px',
-          background: 'var(--bg-surface)',
-          padding: '4px',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--glass-border)',
-        }}>
+        <nav className={styles.navTabs} aria-label="Admin Navigation">
           <Link
             href="/admin"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              color: isActive('/admin') ? '#fff' : 'var(--text-secondary)',
-              background: isActive('/admin') ? 'var(--primary-gradient)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
+            className={`${styles.navTab} ${isActive('/admin') ? styles.navTabActive : ''}`}
           >
-            <LayoutDashboard size={15} />
+            <LayoutDashboard size={14} />
             <span>Overview</span>
           </Link>
 
           <Link
             href="/admin/users"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              color: isActive('/admin/users') ? '#fff' : 'var(--text-secondary)',
-              background: isActive('/admin/users') ? 'var(--primary-gradient)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
+            className={`${styles.navTab} ${isActive('/admin/users') ? styles.navTabActive : ''}`}
           >
-            <Users size={15} />
+            <Users size={14} />
             <span>Users</span>
           </Link>
 
           <Link
             href="/admin/reels"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              color: isActive('/admin/reels') ? '#fff' : 'var(--text-secondary)',
-              background: isActive('/admin/reels') ? 'var(--primary-gradient)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
+            className={`${styles.navTab} ${isActive('/admin/reels') ? styles.navTabActive : ''}`}
           >
-            <Film size={15} />
+            <Film size={14} />
             <span>Reels</span>
           </Link>
 
           <Link
             href="/admin/moderation"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              color: isActive('/admin/moderation') ? '#fff' : 'var(--text-secondary)',
-              background: isActive('/admin/moderation') ? 'var(--primary-gradient)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
+            className={`${styles.navTab} ${isActive('/admin/moderation') ? styles.navTabActive : ''}`}
           >
-            <ShieldAlert size={15} />
+            <ShieldAlert size={14} />
             <span>Moderation</span>
           </Link>
 
           <Link
             href="/admin/system"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              color: isActive('/admin/system') ? '#fff' : 'var(--text-secondary)',
-              background: isActive('/admin/system') ? 'var(--primary-gradient)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
+            className={`${styles.navTab} ${isActive('/admin/system') ? styles.navTabActive : ''}`}
           >
-            <Activity size={15} />
+            <Activity size={14} />
             <span>System</span>
           </Link>
 
           <Link
             href="/admin/feedback"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              color: isActive('/admin/feedback') ? '#fff' : 'var(--text-secondary)',
-              background: isActive('/admin/feedback') ? 'var(--primary-gradient)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            }}
+            className={`${styles.navTab} ${isActive('/admin/feedback') ? styles.navTabActive : ''}`}
           >
-            <MessageSquare size={15} />
+            <MessageSquare size={14} />
             <span>Feedback</span>
           </Link>
-        </div>
+        </nav>
       </div>
 
       {children}

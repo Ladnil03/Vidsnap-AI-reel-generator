@@ -6,10 +6,17 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Film, Search, Play, Download, X, Calendar, Clock, Loader2 } from 'lucide-react';
-import { api } from '../../../lib/api';
-import { useToast } from '../../../components/Toast';
-import { AdminReel } from '../../../lib/types';
+import { Film, Search, Play, Download, X } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
+import { AdminReel } from '@/lib/types';
+import {
+  Button,
+  Input,
+  Badge,
+  Spinner,
+} from '@/components/ui';
+import styles from '../admin.module.css';
 
 export default function AdminReelsPage() {
   const { error: toastError } = useToast();
@@ -44,100 +51,98 @@ export default function AdminReelsPage() {
   return (
     <div>
       {/* Header & Search */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '16px',
-        marginBottom: '24px',
-      }}>
+      <div className={styles.toolbar}>
         <div>
-          <h2 style={{ fontSize: '1.4rem', marginBottom: '4px' }}>Platform Reel Directory</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+          <h2 style={{ fontSize: 'var(--text-xl)', fontFamily: 'var(--font-display)', margin: '0 0 var(--space-1) 0', color: 'var(--color-text)' }}>
+            Platform Reel Directory
+          </h2>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)', margin: 0 }}>
             {reels.length} total reels rendered by the FFmpeg worker.
           </p>
         </div>
 
-        <div style={{ position: 'relative', width: '280px' }}>
-          <input
+        <div style={{ width: '280px' }}>
+          <Input
             type="text"
             placeholder="Search by creator email..."
-            className="form-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ paddingLeft: '36px', fontSize: '0.85rem' }}
+            leftIcon={<Search size={16} />}
           />
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: 'var(--text-muted)' }} />
         </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <Loader2 size={32} color="var(--primary-light)" style={{ animation: 'spinSlow 2s linear infinite', margin: '0 auto 12px auto' }} />
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Loading reels...</p>
+        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+          <Spinner size="lg" />
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-3)' }}>
+            Loading reels...
+          </p>
         </div>
       ) : (
-        <div className="glass-card" style={{ padding: '0', overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+        <div className={styles.tableWrapper}>
+          <table className={styles.adminTable}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-secondary)', background: 'rgba(255, 255, 255, 0.02)' }}>
-                <th style={{ padding: '14px 18px', fontWeight: 600 }}>Job ID</th>
-                <th style={{ padding: '14px 18px', fontWeight: 600 }}>Creator Email</th>
-                <th style={{ padding: '14px 18px', fontWeight: 600 }}>Status</th>
-                <th style={{ padding: '14px 18px', fontWeight: 600 }}>Duration</th>
-                <th style={{ padding: '14px 18px', fontWeight: 600 }}>Created</th>
-                <th style={{ padding: '14px 18px', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+              <tr>
+                <th>Job ID</th>
+                <th>Creator Email</th>
+                <th>Status</th>
+                <th>Duration</th>
+                <th>Created</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredReels.map((r) => (
-                <tr key={r.job_id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                  <td style={{ padding: '14px 18px', fontFamily: 'var(--font-family-mono)', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                <tr key={r.job_id}>
+                  <td style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
                     {r.job_id.slice(0, 12)}...
                   </td>
 
-                  <td style={{ padding: '14px 18px', color: 'var(--text-primary)', fontWeight: 500 }}>
+                  <td style={{ color: 'var(--color-text)', fontWeight: 600 }}>
                     {r.user_email}
                   </td>
 
-                  <td style={{ padding: '14px 18px' }}>
-                    <span className={`badge ${r.status === 'completed' ? 'badge-success' : 'badge-warning'}`}>
+                  <td>
+                    <Badge
+                      variant={r.status === 'completed' ? 'success' : 'warning'}
+                      size="sm"
+                    >
                       {r.status}
-                    </span>
+                    </Badge>
                   </td>
 
-                  <td style={{ padding: '14px 18px', color: 'var(--text-secondary)' }}>
+                  <td style={{ color: 'var(--color-text-muted)' }}>
                     {r.duration ? `${r.duration}s` : 'N/A'}
                   </td>
 
-                  <td style={{ padding: '14px 18px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                  <td style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>
                     {r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Recent'}
                   </td>
 
-                  <td style={{ padding: '14px 18px', textAlign: 'right' }}>
+                  <td style={{ textAlign: 'right' }}>
                     {r.reel_url ? (
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                        <button
+                      <div style={{ display: 'inline-flex', gap: 'var(--space-2)', justifyContent: 'flex-end' }}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           onClick={() => setActiveModalReel(r)}
-                          className="btn btn-secondary btn-sm"
-                          style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                          leftIcon={<Play size={13} />}
                         >
-                          <Play size={13} />
-                          <span>Preview</span>
-                        </button>
+                          Preview
+                        </Button>
                         <a
                           href={r.reel_url}
                           download="reel.mp4"
-                          className="btn btn-secondary btn-sm"
-                          style={{ padding: '6px 10px' }}
                           title="Download MP4"
                         >
-                          <Download size={13} />
+                          <Button variant="ghost" size="sm" aria-label="Download MP4">
+                            <Download size={13} />
+                          </Button>
                         </a>
                       </div>
                     ) : (
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>No URL</span>
+                      <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>No URL</span>
                     )}
                   </td>
                 </tr>
@@ -149,64 +154,30 @@ export default function AdminReelsPage() {
 
       {/* Fullscreen Video Modal */}
       {activeModalReel && activeModalReel.reel_url && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.85)',
-          backdropFilter: 'blur(12px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: '20px',
-        }}>
-          <div style={{
-            position: 'relative',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            maxWidth: '380px',
-            width: '100%',
-          }}>
-            <button
-              onClick={() => setActiveModalReel(null)}
-              style={{
-                position: 'absolute',
-                top: '-44px',
-                right: 0,
-                color: '#fff',
-                background: 'rgba(255, 255, 255, 0.1)',
-                borderRadius: '50%',
-                width: '36px',
-                height: '36px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <X size={20} />
-            </button>
+        <div className={styles.modalBackdrop}>
+          <div className={styles.videoModalContent}>
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-2)' }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setActiveModalReel(null)}
+                style={{ color: 'var(--color-cream-100)' }}
+                aria-label="Close preview"
+              >
+                <X size={20} />
+              </Button>
+            </div>
 
-            <div className="reel-aspect-container" style={{ width: '100%', marginBottom: '16px' }}>
+            <div className={styles.videoContainer}>
               <video
                 src={activeModalReel.reel_url}
                 controls
                 autoPlay
                 loop
                 playsInline
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                className={styles.videoPlayer}
               />
             </div>
-
-            <a
-              href={activeModalReel.reel_url}
-              download="moderation_reel.mp4"
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '10px' }}
-            >
-              <Download size={16} />
-              <span>Download for Inspection</span>
-            </a>
           </div>
         </div>
       )}

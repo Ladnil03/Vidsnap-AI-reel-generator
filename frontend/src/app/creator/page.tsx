@@ -4,9 +4,10 @@
  * VidSnap.AI Creator Studio (/creator)
  * Creator management dashboard: Verification, Audience Analytics,
  * Creator Copilot AI viral strategy assistant, and Community Event Scheduling.
+ * Redesigned in the Forest & Paper design system.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Sparkles,
@@ -32,11 +33,27 @@ import {
   CreatorCopilotResponse,
   CreatorEvent,
   CreatorProfile,
-  VerificationStatusType,
 } from '@/lib/types';
+import {
+  Button,
+  IconButton,
+  Card,
+  Badge,
+  Input,
+  Textarea,
+  Select,
+  FormField,
+  Modal,
+  Spinner,
+  EmptyState,
+  useToast,
+} from '@/components/ui';
+import styles from './creator.module.css';
 
 export default function CreatorStudioPage() {
   const { user } = useAuth();
+  const { error: toastError, success: toastSuccess } = useToast();
+
   const [profile, setProfile] = useState<CreatorProfile | null>(null);
   const [analytics, setAnalytics] = useState<CreatorAnalytics | null>(null);
   const [events, setEvents] = useState<CreatorEvent[]>([]);
@@ -64,10 +81,7 @@ export default function CreatorStudioPage() {
   const [eventDate, setEventDate] = useState('');
   const [eventSubmitting, setEventSubmitting] = useState(false);
 
-  // Notification Banner
-  const [bannerMsg, setBannerMsg] = useState<string | null>(null);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -87,11 +101,11 @@ export default function CreatorStudioPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     loadData();
-  }, [user]);
+  }, [loadData]);
 
   // Handle Copilot Strategy Request
   const handleGenerateCopilot = async (e: React.FormEvent) => {
@@ -106,8 +120,9 @@ export default function CreatorStudioPage() {
         copilotMood || undefined
       );
       setCopilotResponse(res);
-    } catch (err: any) {
-      setBannerMsg(err.message || 'Copilot generation failed');
+      toastSuccess('Copilot strategy generated!');
+    } catch (err: unknown) {
+      toastError((err as Error).message || 'Copilot generation failed');
     } finally {
       setCopilotLoading(false);
     }
@@ -118,939 +133,464 @@ export default function CreatorStudioPage() {
     e.preventDefault();
     try {
       setVerifySubmitting(true);
-      const links = verifyPortfolio
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
-      await api.creator.applyVerification(verifyNiche, links, verifyStatement);
-      setBannerMsg('Verification application submitted! Our team is reviewing your profile. 🌟');
+      await api.creator.applyVerification(
+        verifyNiche,
+        verifyPortfolio ? [verifyPortfolio] : [],
+        verifyStatement
+      );
+      setProfile((prev) => prev ? { ...prev, verification_status: 'pending' } : null);
       setShowVerifyModal(false);
-      await loadData();
-    } catch (err: any) {
-      setBannerMsg(err.message || 'Verification submission failed');
+      toastSuccess('Verification application submitted for review!');
+    } catch (err: unknown) {
+      toastError((err as Error).message || 'Application failed');
     } finally {
       setVerifySubmitting(false);
     }
   };
 
-  // Handle Schedule Event
-  const handleCreateEvent = async (e: React.FormEvent) => {
+  // Handle Event Creation
+  const handleScheduleEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!eventTitle || !eventDate) return;
+    if (!eventTitle.trim() || !eventDate) return;
 
     try {
       setEventSubmitting(true);
-      await api.creator.createEvent(
-        eventTitle,
+      const newEv = await api.creator.createEvent(
+        eventTitle.trim(),
         new Date(eventDate).toISOString(),
-        eventDesc || undefined
+        eventDesc.trim() || undefined
       );
-      setBannerMsg('Community Event scheduled successfully! 📅');
+      setEvents((prev) => [newEv, ...prev]);
       setEventTitle('');
       setEventDesc('');
       setEventDate('');
-      const updatedEvents = await api.creator.listEvents(user?.user_id, 20);
-      setEvents(updatedEvents);
-    } catch (err: any) {
-      setBannerMsg(err.message || 'Event creation failed');
+      toastSuccess('Event scheduled successfully!');
+    } catch (err: unknown) {
+      toastError((err as Error).message || 'Event creation failed');
     } finally {
       setEventSubmitting(false);
     }
   };
 
-  const copyToClipboard = (text: string, index: number) => {
-    navigator.clipboard.writeText(text);
-    setCopiedIndex(index);
-    setTimeout(() => setCopiedIndex(null), 2000);
+  const copyHook = (text: string, idx: number) => {
+    if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText(text);
+      setCopiedIndex(idx);
+      setTimeout(() => setCopiedIndex(null), 2000);
+      toastSuccess('Hook copied to clipboard!');
+    }
   };
 
   if (!user) {
     return (
-      <div style={{ minHeight: '80vh', paddingTop: '120px', textAlign: 'center' }}>
-        <div className="container" style={{ maxWidth: '600px' }}>
-          <div
-            style={{
-              background: 'var(--glass-bg)',
-              padding: '40px',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--glass-border)',
-            }}
-          >
-            <Sparkles size={48} color="var(--primary-light)" style={{ marginBottom: '16px' }} />
-            <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '12px' }}>
-              Welcome to Creator Studio
-            </h1>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
-              Sign in or create an account to access Creator Copilot AI, audience analytics, and brand sponsorships.
-            </p>
-            <Link href="/login" className="btn btn-primary btn-lg">
-              Sign In to Creator Studio
-            </Link>
-          </div>
-        </div>
+      <div className={styles.container}>
+        <EmptyState
+          icon={<Video size={40} />}
+          title="Sign in to Access Creator Studio"
+          description="Track your performance metrics, unlock monetization badges, and consult your AI viral strategy copilot."
+          actionLabel="Sign In"
+          onAction={() => {
+            window.location.href = '/login';
+          }}
+        />
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', paddingTop: '88px', paddingBottom: '80px' }}>
-      <div className="container" style={{ maxWidth: '1120px' }}>
-        {/* Banner Alert */}
-        {bannerMsg && (
-          <div
-            style={{
-              padding: '12px 20px',
-              borderRadius: 'var(--radius-md)',
-              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2))',
-              border: '1px solid rgba(168, 85, 247, 0.4)',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              marginBottom: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <span>{bannerMsg}</span>
-            <button
-              onClick={() => setBannerMsg(null)}
-              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* CREATOR HERO PROFILE CARD */}
-        <div
-          style={{
-            background: 'var(--glass-bg)',
-            backdropFilter: 'var(--glass-blur)',
-            border: '1px solid var(--glass-border)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '28px',
-            marginBottom: '32px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '20px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-            <div
-              style={{
-                width: '68px',
-                height: '68px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.8rem',
-                fontWeight: 800,
-                color: '#fff',
-                boxShadow: '0 4px 20px rgba(99, 102, 241, 0.3)',
-              }}
-            >
-              {profile?.display_name?.charAt(0).toUpperCase() || 'C'}
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                <h1 style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0 }}>
-                  {profile?.display_name || user.name}
-                </h1>
-                {profile?.verification_status === 'verified' ? (
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '2px 8px',
-                      borderRadius: '999px',
-                      background: 'rgba(56, 189, 248, 0.15)',
-                      border: '1px solid rgba(56, 189, 248, 0.4)',
-                      color: '#38bdf8',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                    }}
-                  >
-                    <ShieldCheck size={14} /> Verified
-                  </span>
-                ) : profile?.verification_status === 'pending' ? (
-                  <span
-                    style={{
-                      padding: '2px 8px',
-                      borderRadius: '999px',
-                      background: 'rgba(234, 179, 8, 0.15)',
-                      color: '#eab308',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                    }}
-                  >
-                    Pending Review
-                  </span>
-                ) : null}
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                <span>@{profile?.handle || user.name.toLowerCase().replace(' ', '_')}</span>
-                <span>•</span>
-                <span style={{ textTransform: 'capitalize' }}>{profile?.niche || 'General'} Creator</span>
-                <span>•</span>
-                <span>{profile?.followers_count || 0} Followers</span>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            {profile?.verification_status !== 'verified' && profile?.verification_status !== 'pending' && (
-              <button
-                onClick={() => setShowVerifyModal(true)}
-                className="btn btn-secondary btn-sm"
-                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <Award size={16} />
-                Get Verified Badge
-              </button>
+    <div className={styles.container}>
+      {/* Page Header */}
+      <div className={styles.header}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+            <Badge variant="sage" size="sm">
+              <ShieldCheck size={12} style={{ marginRight: '4px' }} />
+              <span>Creator Hub</span>
+            </Badge>
+            {profile?.verification_status === 'verified' && (
+              <Badge variant="success" size="sm">
+                Verified Creator
+              </Badge>
             )}
-            <Link
-              href="/create"
-              className="btn btn-primary btn-sm"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginLeft: '10px' }}
-            >
-              <Video size={16} />
-              Create Reel
-            </Link>
           </div>
+          <h1 className={styles.title}>Creator Studio</h1>
+          <p className={styles.description}>
+            Empower your short-form reach with audience analytics, AI viral copilot, and scheduled community events.
+          </p>
         </div>
 
-        {/* METRICS ROW */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '16px',
-            marginBottom: '32px',
-          }}
-        >
-          <div
-            style={{
-              background: 'var(--glass-bg)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: 'var(--radius-md)',
-              padding: '20px',
-            }}
+        {profile?.verification_status !== 'verified' && (
+          <Button
+            variant="secondary"
+            leftIcon={<Award size={18} />}
+            onClick={() => setShowVerifyModal(true)}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '0.825rem', marginBottom: '8px' }}>
-              <Eye size={16} color="var(--primary-light)" />
-              <span>Total Impressions</span>
-            </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800 }}>
-              {analytics?.total_impressions.toLocaleString() || 0}
-            </div>
-          </div>
-
-          <div
-            style={{
-              background: 'var(--glass-bg)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: 'var(--radius-md)',
-              padding: '20px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '0.825rem', marginBottom: '8px' }}>
-              <TrendingUp size={16} color="#10b981" />
-              <span>Video Views</span>
-            </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800 }}>
-              {analytics?.total_views.toLocaleString() || 0}
-            </div>
-          </div>
-
-          <div
-            style={{
-              background: 'var(--glass-bg)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: 'var(--radius-md)',
-              padding: '20px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '0.825rem', marginBottom: '8px' }}>
-              <Clock size={16} color="#38bdf8" />
-              <span>Watch Time</span>
-            </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800 }}>
-              {Math.round((analytics?.total_watch_seconds || 0) / 60)} <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>mins</span>
-            </div>
-          </div>
-
-          <div
-            style={{
-              background: 'var(--glass-bg)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: 'var(--radius-md)',
-              padding: '20px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '0.825rem', marginBottom: '8px' }}>
-              <Zap size={16} color="#eab308" />
-              <span>Completion Rate</span>
-            </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800 }}>
-              {analytics?.avg_completion_rate_pct || 0}%
-            </div>
-          </div>
-        </div>
-
-        {/* TABS SELECTOR */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '8px',
-            borderBottom: '1px solid var(--glass-border)',
-            paddingBottom: '12px',
-            marginBottom: '28px',
-          }}
-        >
-          <button
-            onClick={() => setActiveTab('copilot')}
-            style={{
-              padding: '8px 20px',
-              borderRadius: 'var(--radius-full)',
-              background: activeTab === 'copilot' ? 'var(--primary-gradient)' : 'transparent',
-              color: activeTab === 'copilot' ? '#fff' : 'var(--text-secondary)',
-              border: activeTab === 'copilot' ? 'none' : '1px solid var(--glass-border)',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            <Sparkles size={16} />
-            Creator Copilot 🤖
-          </button>
-
-          <button
-            onClick={() => setActiveTab('analytics')}
-            style={{
-              padding: '8px 20px',
-              borderRadius: 'var(--radius-full)',
-              background: activeTab === 'analytics' ? 'var(--primary-gradient)' : 'transparent',
-              color: activeTab === 'analytics' ? '#fff' : 'var(--text-secondary)',
-              border: activeTab === 'analytics' ? 'none' : '1px solid var(--glass-border)',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            <BarChart3 size={16} />
-            Audience Insights 📊
-          </button>
-
-          <button
-            onClick={() => setActiveTab('events')}
-            style={{
-              padding: '8px 20px',
-              borderRadius: 'var(--radius-full)',
-              background: activeTab === 'events' ? 'var(--primary-gradient)' : 'transparent',
-              color: activeTab === 'events' ? '#fff' : 'var(--text-secondary)',
-              border: activeTab === 'events' ? 'none' : '1px solid var(--glass-border)',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            <Calendar size={16} />
-            Live Events & Parties 📅
-          </button>
-        </div>
-
-        {/* TAB 1: CREATOR COPILOT */}
-        {activeTab === 'copilot' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '28px' }}>
-            {/* Input Form */}
-            <div
-              style={{
-                background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: 'var(--radius-md)',
-                padding: '24px',
-              }}
-            >
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 14px 0' }}>
-                Viral Hook & Strategy Generator
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>
-                Creator Copilot uses retention models to suggest 3-second visual hooks, predict viral potential, and pinpoint peak audience hours.
-              </p>
-
-              <form onSubmit={handleGenerateCopilot} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Reel Topic / Idea *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 5 AI tools that will replace boring daily tasks"
-                    value={copilotTopic}
-                    onChange={(e) => setCopilotTopic(e.target.value)}
-                    className="input"
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Target Audience (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. University students, Freelancers, Tech geeks"
-                    value={copilotAudience}
-                    onChange={(e) => setCopilotAudience(e.target.value)}
-                    className="input"
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Mood / Tone
-                  </label>
-                  <select
-                    value={copilotMood}
-                    onChange={(e) => setCopilotMood(e.target.value)}
-                    className="input"
-                    style={{ width: '100%' }}
-                  >
-                    <option value="engaging">Energetic & Fast-Paced ⚡</option>
-                    <option value="chill">Chill & Aesthetic 🌿</option>
-                    <option value="inspiring">Inspiring & Motivational ✨</option>
-                    <option value="humorous">Humorous & Relatable 😂</option>
-                    <option value="curious">Curiosity Gap & Mysterious 🕵️</option>
-                  </select>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={copilotLoading}
-                  className="btn btn-primary"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '8px' }}
-                >
-                  <Sparkles size={16} />
-                  {copilotLoading ? 'Analyzing Topic...' : 'Generate Viral Strategy ✨'}
-                </button>
-              </form>
-            </div>
-
-            {/* Results Panel */}
-            <div>
-              {copilotResponse ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {/* Viral Potential Gauge */}
-                  <div
-                    style={{
-                      background: 'var(--glass-bg)',
-                      border: '1px solid rgba(99, 102, 241, 0.4)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '20px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                        Viral Potential Score
-                      </div>
-                      <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#10b981' }}>
-                        {copilotResponse.viral_potential_score} / 100
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                        {copilotResponse.viral_score_breakdown}
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        padding: '8px 14px',
-                        background: 'rgba(16, 185, 129, 0.15)',
-                        color: '#10b981',
-                        borderRadius: 'var(--radius-md)',
-                        fontWeight: 700,
-                        fontSize: '0.85rem',
-                      }}
-                    >
-                      High Resonance 🔥
-                    </div>
-                  </div>
-
-                  {/* Hooks Proposals */}
-                  <div
-                    style={{
-                      background: 'var(--glass-bg)',
-                      border: '1px solid var(--glass-border)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '20px',
-                    }}
-                  >
-                    <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '12px' }}>
-                      Recommended Opening Hooks (0–3s)
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      {copilotResponse.hooks.map((h, i) => (
-                        <div
-                          key={i}
-                          style={{
-                            background: 'rgba(255, 255, 255, 0.03)',
-                            border: '1px solid rgba(255, 255, 255, 0.06)',
-                            borderRadius: 'var(--radius-sm)',
-                            padding: '14px',
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-light)' }}>
-                              {h.hook_style}
-                            </span>
-                            <button
-                              onClick={() => copyToClipboard(h.hook_text, i)}
-                              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem' }}
-                            >
-                              {copiedIndex === i ? <CheckCircle2 size={14} color="#10b981" /> : <Copy size={14} />}
-                              {copiedIndex === i ? 'Copied' : 'Copy'}
-                            </button>
-                          </div>
-                          <p style={{ margin: 0, fontSize: '0.9rem', fontStyle: 'italic' }}>
-                            "{h.hook_text}"
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Optimal Timing & Hashtags */}
-                  <div
-                    style={{
-                      background: 'var(--glass-bg)',
-                      border: '1px solid var(--glass-border)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '20px',
-                    }}
-                  >
-                    <div style={{ marginBottom: '14px' }}>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Optimal Posting Window</div>
-                      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--primary-light)' }}>
-                        {copilotResponse.optimal_posting_window}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Target Hashtags</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                        {copilotResponse.recommended_hashtags.map((tag, idx) => (
-                          <span
-                            key={idx}
-                            style={{
-                              padding: '3px 10px',
-                              borderRadius: '999px',
-                              background: 'rgba(99, 102, 241, 0.15)',
-                              color: 'var(--primary-light)',
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                            }}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px dashed var(--glass-border)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '60px 20px',
-                    textAlign: 'center',
-                    color: 'var(--text-muted)',
-                  }}
-                >
-                  <Sparkles size={36} style={{ marginBottom: '12px', opacity: 0.5 }} />
-                  <div style={{ fontSize: '1rem', fontWeight: 600 }}>No active strategy generated</div>
-                  <div style={{ fontSize: '0.85rem' }}>Enter an idea on the left and click Generate to see AI hooks.</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: AUDIENCE INSIGHTS */}
-        {activeTab === 'analytics' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Trend Chart Mock */}
-            <div
-              style={{
-                background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: 'var(--radius-md)',
-                padding: '24px',
-              }}
-            >
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px' }}>
-                Daily Views Trajectory (Past 14 Days)
-              </h3>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  gap: '12px',
-                  height: '140px',
-                  paddingTop: '20px',
-                }}
-              >
-                {analytics?.daily_views_trend.map((point, idx) => {
-                  const maxViews = Math.max(...(analytics.daily_views_trend.map((p) => p.views) || [1]));
-                  const heightPct = Math.min(100, Math.max(15, Math.round((point.views / maxViews) * 100)));
-
-                  return (
-                    <div
-                      key={idx}
-                      style={{
-                        flex: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '6px',
-                        height: '100%',
-                        justifyContent: 'flex-end',
-                      }}
-                    >
-                      <div
-                        title={`${point.date}: ${point.views} views`}
-                        style={{
-                          width: '100%',
-                          height: `${heightPct}%`,
-                          background: 'linear-gradient(180deg, var(--primary-light), rgba(99, 102, 241, 0.2))',
-                          borderRadius: '4px',
-                        }}
-                      />
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                        {point.date.slice(5)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Tags & Moods Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-              <div
-                style={{
-                  background: 'var(--glass-bg)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '20px',
-                }}
-              >
-                <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '14px' }}>
-                  Top Performing Tags
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {analytics?.top_tags.map((t, idx) => (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--primary-light)' }}>
-                        #{t.tag}
-                      </span>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        {t.views.toLocaleString()} views
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div
-                style={{
-                  background: 'var(--glass-bg)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '20px',
-                }}
-              >
-                <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '14px' }}>
-                  Audience Mood Distribution
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {analytics?.audience_mood_affinity.map((m, idx) => (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ textTransform: 'capitalize', fontSize: '0.9rem' }}>
-                        {m.mood}
-                      </span>
-                      <span style={{ fontWeight: 700, color: '#10b981', fontSize: '0.85rem' }}>
-                        {m.pct}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: COMMUNITY EVENTS */}
-        {activeTab === 'events' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '28px' }}>
-            {/* Schedule Form */}
-            <div
-              style={{
-                background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: 'var(--radius-md)',
-                padding: '24px',
-              }}
-            >
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '14px' }}>
-                Schedule Watch Party or Event
-              </h3>
-              <form onSubmit={handleCreateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Event Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Exclusive Reel Premiere & AMA"
-                    value={eventTitle}
-                    onChange={(e) => setEventTitle(e.target.value)}
-                    className="input"
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Description
-                  </label>
-                  <textarea
-                    placeholder="Tell your followers what you'll be watching or discussing..."
-                    value={eventDesc}
-                    onChange={(e) => setEventDesc(e.target.value)}
-                    className="input"
-                    rows={3}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Date & Time *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={eventDate}
-                    onChange={(e) => setEventDate(e.target.value)}
-                    className="input"
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={eventSubmitting}
-                  className="btn btn-primary"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                >
-                  <Calendar size={16} />
-                  {eventSubmitting ? 'Scheduling...' : 'Schedule Event'}
-                </button>
-              </form>
-            </div>
-
-            {/* Events List */}
-            <div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '16px' }}>
-                Your Scheduled Events
-              </h3>
-              {events.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  {events.map((evt) => (
-                    <div
-                      key={evt.event_id}
-                      style={{
-                        background: 'var(--glass-bg)',
-                        border: '1px solid var(--glass-border)',
-                        borderRadius: 'var(--radius-md)',
-                        padding: '18px',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span style={{ fontWeight: 700, fontSize: '1rem' }}>{evt.title}</span>
-                        <span
-                          style={{
-                            padding: '2px 8px',
-                            borderRadius: '999px',
-                            background: 'rgba(56, 189, 248, 0.15)',
-                            color: '#38bdf8',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            textTransform: 'uppercase',
-                          }}
-                        >
-                          {evt.status}
-                        </span>
-                      </div>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 10px 0' }}>
-                        {evt.description || 'No description provided.'}
-                      </p>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Clock size={14} />
-                        <span>{new Date(evt.scheduled_at).toLocaleString()}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px dashed var(--glass-border)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '40px 20px',
-                    textAlign: 'center',
-                    color: 'var(--text-muted)',
-                  }}
-                >
-                  <Calendar size={32} style={{ marginBottom: '8px', opacity: 0.5 }} />
-                  <div>No scheduled events yet. Schedule one on the left!</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* VERIFICATION MODAL */}
-        {showVerifyModal && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.75)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1100,
-              padding: '20px',
-            }}
-          >
-            <div
-              style={{
-                background: '#0f172a',
-                border: '1px solid var(--glass-border)',
-                borderRadius: 'var(--radius-lg)',
-                padding: '32px',
-                maxWidth: '520px',
-                width: '100%',
-              }}
-            >
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 8px 0' }}>
-                Apply for Creator Verification 🌟
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>
-                Verified creators earn an official verification badge, priority discovery recommendations, and access to brand sponsorships.
-              </p>
-
-              <form onSubmit={handleApplyVerification} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Primary Category Niche *
-                  </label>
-                  <select
-                    value={verifyNiche}
-                    onChange={(e) => setVerifyNiche(e.target.value)}
-                    className="input"
-                    style={{ width: '100%' }}
-                  >
-                    <option value="tech">Technology & AI</option>
-                    <option value="comedy">Comedy & Entertainment</option>
-                    <option value="fitness">Health & Fitness</option>
-                    <option value="art">Art & Visuals</option>
-                    <option value="gaming">Gaming</option>
-                    <option value="music">Music & Performance</option>
-                    <option value="lifestyle">Lifestyle & Travel</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Portfolio / Social Links (comma separated)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="https://youtube.com/@handle, https://x.com/handle"
-                    value={verifyPortfolio}
-                    onChange={(e) => setVerifyPortfolio(e.target.value)}
-                    className="input"
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Why should your profile be verified? *
-                  </label>
-                  <textarea
-                    required
-                    minLength={10}
-                    placeholder="Describe your content background, creative process, and audience..."
-                    value={verifyStatement}
-                    onChange={(e) => setVerifyStatement(e.target.value)}
-                    className="input"
-                    rows={4}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '12px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowVerifyModal(false)}
-                    className="btn btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={verifySubmitting}
-                    className="btn btn-primary"
-                  >
-                    {verifySubmitting ? 'Submitting...' : 'Submit Application'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+            {profile?.verification_status === 'pending' ? 'Verification In Review' : 'Apply for Verification'}
+          </Button>
         )}
       </div>
+
+      {/* KPI Stats Grid */}
+      <div className={styles.kpiGrid}>
+        <div className={styles.kpiCard}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-1)' }}>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Total Views</span>
+            <Eye size={16} style={{ color: 'var(--color-moss-500)' }} />
+          </div>
+          <div className={styles.kpiValue}>
+            {loading ? '...' : (analytics?.total_views || 0).toLocaleString()}
+          </div>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Last 30 days</span>
+        </div>
+
+        <div className={styles.kpiCard}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-1)' }}>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Watch Time</span>
+            <Clock size={16} style={{ color: 'var(--color-moss-500)' }} />
+          </div>
+          <div className={styles.kpiValue}>
+            {loading ? '...' : `${Math.round((analytics?.total_watch_seconds || 0) / 60)}m`}
+          </div>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Cumulative audience duration</span>
+        </div>
+
+        <div className={styles.kpiCard}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-1)' }}>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Total Impressions</span>
+            <ThumbsUp size={16} style={{ color: 'var(--color-moss-500)' }} />
+          </div>
+          <div className={styles.kpiValue}>
+            {loading ? '...' : (analytics?.total_impressions || 0).toLocaleString()}
+          </div>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Content discovery reach</span>
+        </div>
+
+        <div className={styles.kpiCard}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-1)' }}>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Engagement Rate</span>
+            <TrendingUp size={16} style={{ color: 'var(--color-moss-500)' }} />
+          </div>
+          <div className={styles.kpiValue}>
+            {loading ? '...' : `${(analytics?.engagement_rate_pct || 0).toFixed(1)}%`}
+          </div>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Views to interaction ratio</span>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className={styles.tabBar}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('copilot')}
+          className={`${styles.tabBtn} ${activeTab === 'copilot' ? styles.tabBtnActive : ''}`}
+        >
+          <Sparkles size={16} />
+          <span>AI Viral Copilot</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('analytics')}
+          className={`${styles.tabBtn} ${activeTab === 'analytics' ? styles.tabBtnActive : ''}`}
+        >
+          <BarChart3 size={16} />
+          <span>Audience Analytics</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('events')}
+          className={`${styles.tabBtn} ${activeTab === 'events' ? styles.tabBtnActive : ''}`}
+        >
+          <Calendar size={16} />
+          <span>Watch Events</span>
+        </button>
+      </div>
+
+      {/* TAB 1: AI Viral Copilot */}
+      {activeTab === 'copilot' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--space-6)' }}>
+          <Card variant="raised">
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
+              Consult Creator Copilot
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-6)' }}>
+              Formulate viral hook angles, caption structures, and optimal posting schedules powered by LLM routing.
+            </p>
+
+            <form onSubmit={handleGenerateCopilot} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+              <FormField label="Video Topic / Concept" required>
+                <Input
+                  type="text"
+                  required
+                  placeholder="e.g. 3 Hidden Features in Python 3.14 You Didn't Know"
+                  value={copilotTopic}
+                  onChange={(e) => setCopilotTopic(e.target.value)}
+                />
+              </FormField>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                <FormField label="Target Audience">
+                  <Input
+                    type="text"
+                    placeholder="e.g. Junior software developers"
+                    value={copilotAudience}
+                    onChange={(e) => setCopilotAudience(e.target.value)}
+                  />
+                </FormField>
+
+                <FormField label="Tone / Energy">
+                  <Select
+                    value={copilotMood}
+                    onChange={(e) => setCopilotMood(e.target.value)}
+                    options={[
+                      { value: 'engaging', label: '⚡ High Energy & Hook-Heavy' },
+                      { value: 'informative', label: '🧠 Deep Dive & Educational' },
+                      { value: 'chill', label: '🌿 Relaxed & Storytelling' },
+                      { value: 'humorous', label: '😂 Funny & Relatable' },
+                    ]}
+                  />
+                </FormField>
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                loading={copilotLoading}
+                disabled={copilotLoading || !copilotTopic.trim()}
+                leftIcon={<Sparkles size={16} />}
+                style={{ marginTop: 'var(--space-2)', alignSelf: 'flex-start' }}
+              >
+                Generate Viral Blueprint
+              </Button>
+            </form>
+          </Card>
+
+          {/* Copilot Output Display */}
+          {copilotResponse && (
+            <Card variant="raised">
+              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-4)' }}>
+                🚀 Strategy Blueprint
+              </h3>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                {/* Hooks list */}
+                <div>
+                  <h4 style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 'var(--space-2)' }}>
+                    High-Retention Hook Options
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                    {copilotResponse.hooks.map((hook, idx: number) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: 'var(--space-3)',
+                          background: 'var(--bg-sunken)',
+                          borderRadius: 'var(--radius-md)',
+                          fontSize: 'var(--text-sm)',
+                        }}
+                      >
+                        <span style={{ color: 'var(--text-primary)' }}>&quot;{hook.hook_text}&quot; <small style={{ color: 'var(--text-muted)' }}>({hook.hook_style})</small></span>
+                        <IconButton
+                          icon={copiedIndex === idx ? <CheckCircle2 size={16} style={{ color: 'var(--success)' }} /> : <Copy size={16} />}
+                          aria-label="Copy hook"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyHook(hook.hook_text, idx)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Call to action & hashtags */}
+                <div>
+                  <h4 style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 'var(--space-2)' }}>
+                    Suggested Call to Action
+                  </h4>
+                  <div
+                    style={{
+                      padding: 'var(--space-4)',
+                      background: 'var(--bg-sunken)',
+                      borderRadius: 'var(--radius-md)',
+                      fontSize: 'var(--text-sm)',
+                      lineHeight: 1.5,
+                      whiteSpace: 'pre-line',
+                    }}
+                  >
+                    {copilotResponse.suggested_call_to_action}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: Audience Analytics */}
+      {activeTab === 'analytics' && (
+        <div>
+          {/* Top Tags Table */}
+          <div style={{ marginBottom: 'var(--space-6)' }}>
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-3)' }}>
+              Top Tag Niches
+            </h3>
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Tag</th>
+                    <th>Views</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analytics?.top_tags && analytics.top_tags.length > 0 ? (
+                    analytics.top_tags.map((tagItem, idx: number) => (
+                      <tr key={idx}>
+                        <td style={{ fontWeight: 600 }}>#{tagItem.tag}</td>
+                        <td>{tagItem.views.toLocaleString()}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={2} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--space-6)' }}>
+                        No tag engagement data available yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: Watch Events */}
+      {activeTab === 'events' && (
+        <div>
+          {/* Schedule Form */}
+          <Card variant="raised" style={{ marginBottom: 'var(--space-6)' }}>
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
+              Schedule Community Watch Party
+            </h3>
+            <form onSubmit={handleScheduleEvent} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)', alignItems: 'end' }}>
+              <FormField label="Event Title" required>
+                <Input
+                  type="text"
+                  required
+                  placeholder="e.g. Friday Community Screening"
+                  value={eventTitle}
+                  onChange={(e) => setEventTitle(e.target.value)}
+                />
+              </FormField>
+
+              <FormField label="Date & Time" required>
+                <Input
+                  type="datetime-local"
+                  required
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                />
+              </FormField>
+
+              <Button
+                type="submit"
+                variant="primary"
+                loading={eventSubmitting}
+                leftIcon={<Plus size={16} />}
+              >
+                Schedule Event
+              </Button>
+            </form>
+          </Card>
+
+          {/* Events List */}
+          <div className={styles.tableWrapper}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Event Name</th>
+                  <th>Scheduled Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {events.length > 0 ? (
+                  events.map((ev) => (
+                    <tr key={ev.event_id}>
+                      <td style={{ fontWeight: 600 }}>{ev.title}</td>
+                      <td>{new Date(ev.scheduled_at).toLocaleString()}</td>
+                      <td>
+                        <Badge variant="sage" size="sm">
+                          {ev.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--space-6)' }}>
+                      No upcoming community events scheduled.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* VERIFICATION APPLICATION MODAL */}
+      <Modal
+        isOpen={showVerifyModal}
+        onClose={() => setShowVerifyModal(false)}
+        title="Apply for Creator Verification"
+        size="md"
+      >
+        <form onSubmit={handleApplyVerification} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <FormField label="Primary Creative Niche" required>
+            <Select
+              value={verifyNiche}
+              onChange={(e) => setVerifyNiche(e.target.value)}
+              options={[
+                { value: 'tech', label: 'Tech & Software' },
+                { value: 'comedy', label: 'Comedy & Entertainment' },
+                { value: 'fitness', label: 'Fitness & Health' },
+                { value: 'art', label: 'Art, VFX & Design' },
+                { value: 'education', label: 'Education & Knowledge' },
+              ]}
+            />
+          </FormField>
+
+          <FormField label="Portfolio Link (YouTube, Instagram, or Website)">
+            <Input
+              type="url"
+              placeholder="https://..."
+              value={verifyPortfolio}
+              onChange={(e) => setVerifyPortfolio(e.target.value)}
+            />
+          </FormField>
+
+          <FormField label="Statement of Intent">
+            <Textarea
+              rows={3}
+              placeholder="Tell our review team about your creative content style..."
+              value={verifyStatement}
+              onChange={(e) => setVerifyStatement(e.target.value)}
+            />
+          </FormField>
+
+          <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+            <Button type="button" variant="ghost" onClick={() => setShowVerifyModal(false)} style={{ flex: 1 }}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" loading={verifySubmitting} style={{ flex: 2 }}>
+              Submit Application
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

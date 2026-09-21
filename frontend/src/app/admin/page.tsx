@@ -17,8 +17,10 @@ import {
   Server, 
   HardDrive 
 } from 'lucide-react';
-import { api } from '../../lib/api';
-import { AdminReel, AdminUser, FeedbackItem } from '../../lib/types';
+import { api } from '@/lib/api';
+import { AdminReel, AdminUser, FeedbackItem } from '@/lib/types';
+import { Card, Spinner } from '@/components/ui';
+import styles from './admin.module.css';
 
 export default function AdminDashboardPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -50,140 +52,154 @@ export default function AdminDashboardPage() {
   const totalTokensDistributed = users.reduce((acc, u) => acc + (u.tokens_remaining || 0), 0);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
       {/* Metric Cards Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '20px',
-      }}>
-        <div className="glass-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Total Users</span>
-            <div style={{ padding: '8px', borderRadius: 'var(--radius-sm)', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--primary-light)' }}>
+      <div className={styles.kpiGrid}>
+        <Card variant="default" className={styles.kpiCard} style={{ padding: 'var(--space-5)' }}>
+          <div className={styles.kpiHeader}>
+            <span className={styles.kpiLabel}>Total Users</span>
+            <div className={styles.kpiIcon}>
               <Users size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '4px' }}>
+          <div className={styles.kpiValue}>
             {loading ? '...' : users.length}
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Registered accounts</span>
-        </div>
+          <span className={styles.kpiSubtext}>Registered accounts</span>
+        </Card>
 
-        <div className="glass-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Completed Reels</span>
-            <div style={{ padding: '8px', borderRadius: 'var(--radius-sm)', background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)' }}>
+        <Card variant="default" className={styles.kpiCard} style={{ padding: 'var(--space-5)' }}>
+          <div className={styles.kpiHeader}>
+            <span className={styles.kpiLabel}>Completed Reels</span>
+            <div className={styles.kpiIcon}>
               <Film size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '4px' }}>
+          <div className={styles.kpiValue}>
             {loading ? '...' : reels.length}
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Rendered via FFmpeg</span>
-        </div>
+          <span className={styles.kpiSubtext}>Rendered via FFmpeg</span>
+        </Card>
 
-        <div className="glass-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Active Token Pool</span>
-            <div style={{ padding: '8px', borderRadius: 'var(--radius-sm)', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)' }}>
+        <Card variant="default" className={styles.kpiCard} style={{ padding: 'var(--space-5)' }}>
+          <div className={styles.kpiHeader}>
+            <span className={styles.kpiLabel}>Active Token Pool</span>
+            <div className={styles.kpiIcon}>
               <Coins size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '4px' }}>
+          <div className={styles.kpiValue}>
             {loading ? '...' : totalTokensDistributed}
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Circulating user credits</span>
-        </div>
+          <span className={styles.kpiSubtext}>Circulating user credits</span>
+        </Card>
 
-        <div className="glass-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>User Feedback</span>
-            <div style={{ padding: '8px', borderRadius: 'var(--radius-sm)', background: 'rgba(217, 70, 239, 0.15)', color: 'var(--accent-pink)' }}>
+        <Card variant="default" className={styles.kpiCard} style={{ padding: 'var(--space-5)' }}>
+          <div className={styles.kpiHeader}>
+            <span className={styles.kpiLabel}>User Feedback</span>
+            <div className={styles.kpiIcon}>
               <MessageSquare size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '4px' }}>
+          <div className={styles.kpiValue}>
             {loading ? '...' : feedback.length}
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Messages received</span>
-        </div>
+          <span className={styles.kpiSubtext}>Messages received</span>
+        </Card>
       </div>
 
       {/* Free-Tier Infrastructure Health Card */}
-      <div className="glass-card">
-        <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Server size={18} color="#38bdf8" />
+      <Card variant="default" style={{ padding: 'var(--space-6)' }}>
+        <h3 style={{ fontSize: 'var(--text-lg)', fontFamily: 'var(--font-display)', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--color-text)' }}>
+          <Server size={18} style={{ color: 'var(--color-forest-600)' }} />
           <span>Infrastructure Topology (₹0 / month Target)</span>
         </h3>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '16px',
-        }}>
-          <div style={{ background: 'var(--bg-surface-elevated)', padding: '14px', borderRadius: 'var(--radius-md)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-emerald)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px' }}>
+        <div className={styles.topologyGrid}>
+          <div className={styles.topologyItem}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1-5)', color: 'var(--color-moss-600)', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--space-1)' }}>
               <CheckCircle2 size={14} />
               <span>MongoDB Atlas M0</span>
             </div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>512MB shared tier with unique & TTL indexes.</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.5 }}>
+              512MB shared tier with unique & TTL indexes.
+            </p>
           </div>
 
-          <div style={{ background: 'var(--bg-surface-elevated)', padding: '14px', borderRadius: 'var(--radius-md)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-emerald)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px' }}>
+          <div className={styles.topologyItem}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1-5)', color: 'var(--color-moss-600)', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--space-1)' }}>
               <CheckCircle2 size={14} />
               <span>Redis ARQ Media Worker</span>
             </div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Asynchronous 2-concurrency queue with auto-retry.</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.5 }}>
+              Asynchronous 2-concurrency queue with auto-retry.
+            </p>
           </div>
 
-          <div style={{ background: 'var(--bg-surface-elevated)', padding: '14px', borderRadius: 'var(--radius-md)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-emerald)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px' }}>
+          <div className={styles.topologyItem}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1-5)', color: 'var(--color-moss-600)', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--space-1)' }}>
               <CheckCircle2 size={14} />
               <span>Microsoft Edge-TTS</span>
             </div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Neural voiceover engine with zero API charges.</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.5 }}>
+              Neural voiceover engine with zero API charges.
+            </p>
           </div>
 
-          <div style={{ background: 'var(--bg-surface-elevated)', padding: '14px', borderRadius: 'var(--radius-md)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-emerald)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px' }}>
+          <div className={styles.topologyItem}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1-5)', color: 'var(--color-moss-600)', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--space-1)' }}>
               <CheckCircle2 size={14} />
               <span>FFmpeg 720p Dual-Layer</span>
             </div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>H.264 vertical video encoding with faststart.</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.5 }}>
+              H.264 vertical video encoding with faststart.
+            </p>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Quick Action Navigation Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '20px',
-      }}>
-        <Link href="/admin/users" className="glass-card glass-card-interactive" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <h4 style={{ fontSize: '1.1rem', marginBottom: '4px' }}>Manage Users & Credits</h4>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem' }}>View accounts, grant or deduct tokens</p>
-          </div>
-          <ArrowRight size={20} color="var(--primary-light)" />
+      <div className={styles.quickNavGrid}>
+        <Link href="/admin/users" style={{ textDecoration: 'none' }}>
+          <Card variant="raised" interactive className={styles.quickNavCard}>
+            <div>
+              <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, margin: '0 0 var(--space-1) 0', color: 'var(--color-text)' }}>
+                Manage Users & Credits
+              </h4>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)', margin: 0 }}>
+                View accounts, grant or deduct tokens
+              </p>
+            </div>
+            <ArrowRight size={18} style={{ color: 'var(--color-forest-600)' }} />
+          </Card>
         </Link>
 
-        <Link href="/admin/reels" className="glass-card glass-card-interactive" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <h4 style={{ fontSize: '1.1rem', marginBottom: '4px' }}>Reel Moderation</h4>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem' }}>Inspect rendered reels across all users</p>
-          </div>
-          <ArrowRight size={20} color="var(--primary-light)" />
+        <Link href="/admin/reels" style={{ textDecoration: 'none' }}>
+          <Card variant="raised" interactive className={styles.quickNavCard}>
+            <div>
+              <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, margin: '0 0 var(--space-1) 0', color: 'var(--color-text)' }}>
+                Reel Moderation
+              </h4>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)', margin: 0 }}>
+                Inspect rendered reels across all users
+              </p>
+            </div>
+            <ArrowRight size={18} style={{ color: 'var(--color-forest-600)' }} />
+          </Card>
         </Link>
 
-        <Link href="/admin/feedback" className="glass-card glass-card-interactive" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <h4 style={{ fontSize: '1.1rem', marginBottom: '4px' }}>User Feedback Inbox</h4>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem' }}>Read comments, ratings, and bug reports</p>
-          </div>
-          <ArrowRight size={20} color="var(--primary-light)" />
+        <Link href="/admin/feedback" style={{ textDecoration: 'none' }}>
+          <Card variant="raised" interactive className={styles.quickNavCard}>
+            <div>
+              <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, margin: '0 0 var(--space-1) 0', color: 'var(--color-text)' }}>
+                User Feedback Inbox
+              </h4>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', margin: 0 }}>
+                Read comments, ratings, and bug reports
+              </p>
+            </div>
+            <ArrowRight size={18} style={{ color: 'var(--color-forest-600)' }} />
+          </Card>
         </Link>
       </div>
     </div>

@@ -1,0 +1,293 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+  padding-bottom: var(--space-12);
+}
+
+.portalHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justifyContent: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.headerIdentity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.headerIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--color-sage-100);
+  border: 1px solid var(--color-forest-200);
+  display: flex;
+  align-items: center;
+  justifyContent: center;
+  color: var(--color-forest-700);
+}
+
+:global([data-theme='dark']) .headerIcon {
+  background: var(--color-forest-800);
+  border-color: var(--color-forest-600);
+  color: var(--color-sage-300);
+}
+
+.portalTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.portalSubtitle {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  margin: 0;
+}
+
+.navTabs {
+  display: flex;
+  gap: var(--space-1);
+  background: var(--color-surface);
+  padding: var(--space-1);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  overflow-x: auto;
+}
+
+.navTab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3-5);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  transition: all var(--duration-fast) var(--ease-standard);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.navTab:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+.navTabActive {
+  background: var(--color-forest-700);
+  color: var(--color-cream-50);
+}
+
+:global([data-theme='dark']) .navTabActive {
+  background: var(--color-forest-600);
+  color: var(--color-cream-50);
+}
+
+.restrictedCard {
+  max-width: 460px;
+  margin: var(--space-16) auto;
+  text-align: center;
+  padding: var(--space-8);
+}
+
+.restrictedIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  background: var(--color-terracotta-100);
+  color: var(--color-terracotta-700);
+  display: flex;
+  align-items: center;
+  justifyContent: center;
+  margin: 0 auto var(--space-4) auto;
+}
+
+:global([data-theme='dark']) .restrictedIcon {
+  background: var(--color-terracotta-900);
+  color: var(--color-terracotta-300);
+}
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-5);
+  margin-bottom: var(--space-8);
+}
+
+.kpiCard {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpiHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.kpiLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kpiIcon {
+  padding: var(--space-1-5);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-hover);
+  color: var(--color-forest-700);
+  display: flex;
+  align-items: center;
+  justifyContent: center;
+}
+
+:global([data-theme='dark']) .kpiIcon {
+  color: var(--color-sage-300);
+}
+
+.kpiValue {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  color: var(--color-text);
+  margin-bottom: var(--space-1);
+}
+
+.kpiSubtext {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.adminTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: var(--text-xs);
+}
+
+.adminTable th {
+  padding: var(--space-3) var(--space-4);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background: var(--color-surface-hover);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.adminTable td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.adminTable tr:last-child td {
+  border-bottom: none;
+}
+
+.adminTable tr:hover td {
+  background: var(--color-surface-hover);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justifyContent: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.topologyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+
+.topologyItem {
+  background: var(--color-surface-hover);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.quickNavGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.quickNavCard {
+  display: flex;
+  align-items: center;
+  justifyContent: space-between;
+  padding: var(--space-5);
+  text-decoration: none;
+  color: inherit;
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.quickNavCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-forest-400);
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 32, 18, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justifyContent: center;
+  z-index: var(--z-modal);
+  padding: var(--space-4);
+}
+
+.videoModalContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 380px;
+  width: 100%;
+}
+
+.videoContainer {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-forest-950);
+  border: 1px solid var(--color-forest-800);
+  box-shadow: var(--shadow-xl);
+}
+
+.videoPlayer {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

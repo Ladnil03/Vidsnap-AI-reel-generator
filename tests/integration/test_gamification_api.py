@@ -3,6 +3,7 @@ Integration tests for Gamification & Engagement REST API (/api/v1/gamification).
 Verifies level status, XP awarding, daily streaks, quest progress, badge unlocking, and leaderboards.
 """
 
+from datetime import datetime, timezone
 from typing import Any
 
 import pytest
@@ -57,6 +58,7 @@ async def test_award_xp_and_streak_api(
     async_client: AsyncClient, mock_db, gamer_user: dict[str, Any]
 ):
     """Test POST /api/v1/gamification/xp/award and POST /api/v1/gamification/streaks/record."""
+    gamer_user["roles"] = ["admin"]
     app.dependency_overrides[get_current_user] = lambda: gamer_user
     app.dependency_overrides[get_optional_current_user] = lambda: gamer_user
 
@@ -87,9 +89,11 @@ async def test_award_xp_and_streak_api(
         assert streak_res.status_code == 200
         s_data = streak_res.json()
         assert s_data["current_streak"] == 1
-        assert s_data["last_active_date"] == "2026-09-20"
+        today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        assert s_data["last_active_date"] == today_str
     finally:
         app.dependency_overrides.clear()
+
 
 
 @pytest.mark.asyncio
@@ -97,6 +101,7 @@ async def test_challenges_and_claim_api(
     async_client: AsyncClient, mock_db, gamer_user: dict[str, Any]
 ):
     """Test GET /api/v1/gamification/challenges and claiming completed quest."""
+    gamer_user["roles"] = ["admin"]
     app.dependency_overrides[get_current_user] = lambda: gamer_user
     app.dependency_overrides[get_optional_current_user] = lambda: gamer_user
 

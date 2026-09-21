@@ -123,6 +123,20 @@ class ContentService:
 
         await db.videos.insert_one(doc)
         logger.info("Video %s created by user %s with status %s", video_id, user_id, v_status.value)
+
+        # Server-side XP award for publishing a reel
+        if v_status == ContentStatus.PUBLISHED:
+            try:
+                from backend.app.gamification.models import XPAction
+                from backend.app.gamification.service import GamificationService
+                await GamificationService.award_xp(
+                    user_id=user_id,
+                    action=XPAction.CREATE_REEL,
+                    idempotency_key=f"create_reel:{user_id}:{video_id}",
+                )
+            except Exception as e:
+                logger.debug("Gamification XP award on create_video skipped: %s", e)
+
         return cls._doc_to_response(doc)
 
     @classmethod
@@ -256,6 +270,18 @@ class ContentService:
         if not res:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found or permission denied.")
 
+        if request.status == ContentStatus.PUBLISHED:
+            try:
+                from backend.app.gamification.models import XPAction
+                from backend.app.gamification.service import GamificationService
+                await GamificationService.award_xp(
+                    user_id=user_id,
+                    action=XPAction.CREATE_REEL,
+                    idempotency_key=f"create_reel:{user_id}:{video_id}",
+                )
+            except Exception as e:
+                logger.debug("Gamification XP award on update_video skipped: %s", e)
+
         return cls._doc_to_response(res)
 
     @classmethod
@@ -315,6 +341,18 @@ class ContentService:
                     )
             except Exception as e:
                 logger.debug("Like notification dispatch skipped: %s", e)
+
+            # Award XP for liking reel (server-derived key per video+user to prevent farm via like/unlike)
+            try:
+                from backend.app.gamification.models import XPAction
+                from backend.app.gamification.service import GamificationService
+                await GamificationService.award_xp(
+                    user_id=user_id,
+                    action=XPAction.LIKE_REEL,
+                    idempotency_key=f"like_reel:{user_id}:{video_id}",
+                )
+            except Exception as e:
+                logger.debug("Gamification XP award on like skipped: %s", e)
 
             return LikeResponse(video_id=video_id, liked=True, likes_count=count)
 
@@ -381,6 +419,18 @@ class ContentService:
                 )
         except Exception as e:
             logger.debug("Comment notification dispatch skipped: %s", e)
+
+        # Award XP for commenting on reel (server-derived key per video+user to prevent comment spamming)
+        try:
+            from backend.app.gamification.models import XPAction
+            from backend.app.gamification.service import GamificationService
+            await GamificationService.award_xp(
+                user_id=user_id,
+                action=XPAction.COMMENT_REEL,
+                idempotency_key=f"comment_reel:{user_id}:{video_id}",
+            )
+        except Exception as e:
+            logger.debug("Gamification XP award on comment skipped: %s", e)
 
         return CommentResponse(
             comment_id=comment_id,

@@ -16,6 +16,7 @@ from backend.app.identity.models import (
     ResetPasswordRequest,
     SignupRequest,
     TokenRefreshRequest,
+    UpdateProfileRequest,
     UserResponse,
 )
 from backend.app.identity.service import IdentityService
@@ -162,5 +163,26 @@ async def get_me(current_user: dict[str, Any] = Depends(get_current_user)) -> Us
         email=current_user["email"],
         roles=current_user.get("roles", ["user"]),
         tokens_remaining=current_user.get("tokens_remaining", 0),
+        timezone=current_user.get("timezone", "UTC"),
         created_at=current_user.get("created_at", datetime.now(timezone.utc)),
     )
+
+
+@router.patch("/api/v1/users/me", response_model=UserResponse)
+async def update_me(
+    request: UpdateProfileRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+) -> UserResponse:
+    """Update profile attributes such as display name and timezone."""
+    from datetime import datetime, timezone
+    updated_user = await IdentityService.update_profile(current_user["user_id"], request)
+    return UserResponse(
+        user_id=updated_user["user_id"],
+        name=updated_user.get("name", ""),
+        email=updated_user["email"],
+        roles=updated_user.get("roles", ["user"]),
+        tokens_remaining=updated_user.get("tokens_remaining", 0),
+        timezone=updated_user.get("timezone", "UTC"),
+        created_at=updated_user.get("created_at", datetime.now(timezone.utc)),
+    )
+

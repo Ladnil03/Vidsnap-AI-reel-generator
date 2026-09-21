@@ -132,6 +132,18 @@ class RoomService:
         # Register host presence
         await cls.update_presence(room_id, user_id, user_name, is_host=True)
 
+        # Award XP for hosting watch party room
+        try:
+            from backend.app.gamification.models import XPAction
+            from backend.app.gamification.service import GamificationService
+            await GamificationService.award_xp(
+                user_id=user_id,
+                action=XPAction.WATCH_PARTY_HOST,
+                idempotency_key=f"watch_party_host:{user_id}:{room_id}",
+            )
+        except Exception as e:
+            logger.debug("Gamification XP award on host room skipped: %s", e)
+
         return await cls.get_room(room_id, requester_user_id=user_id)
 
     @classmethod

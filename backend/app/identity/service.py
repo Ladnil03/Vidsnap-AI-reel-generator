@@ -31,6 +31,7 @@ from backend.app.identity.models import (
     LoginRequest,
     ResetPasswordRequest,
     SignupRequest,
+    UpdateProfileRequest,
     UserResponse,
     UserRole,
 )
@@ -66,6 +67,7 @@ class IdentityService:
             "password_hash": hashed_password,
             "roles": [UserRole.USER.value],
             "tokens_remaining": settings.free_tokens_on_signup,
+            "timezone": "UTC",
             "created_at": now,
             "updated_at": now,
         }
@@ -137,6 +139,7 @@ class IdentityService:
             email=user["email"],
             roles=roles,
             tokens_remaining=user.get("tokens_remaining", 0),
+            timezone=user.get("timezone", "UTC"),
             created_at=user["created_at"],
         )
 
@@ -300,3 +303,23 @@ class IdentityService:
         # Revoke all active refresh tokens for this user
         await db.refresh_tokens.delete_many({"user_id": otp_record["user_id"]})
         logger.info("Password successfully reset for user: %s", email)
+
+    @staticmethod
+    async def update_profile(user_id: str, request: UpdateProfileRequest) -> dict[str, Any]:
+        """Update user profile fields such as name and timezone."""
+        db = get_db()
+        updates: dict[str, Any] = {"updated_at": datetime.now(timezone.utc)}
+        if request.name is not None:
+            updates["name"] = request.name.strip()
+        if request.timezone is not None:
+            updates["timezone"] = request.timezone
+
+        updated_user = await db.users.find_one_and_update(
+            {"user_id": user_id},
+            {"$set": updates},
+            return_document=True,
+        )
+        if not updated_user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+        return updated_user
+

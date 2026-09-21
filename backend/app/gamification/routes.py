@@ -22,7 +22,11 @@ from backend.app.gamification.models import (
     UserLevel,
 )
 from backend.app.gamification.service import BADGE_CATALOG, GamificationService
-from backend.app.identity.dependencies import get_current_user, get_optional_current_user
+from backend.app.identity.dependencies import (
+    get_current_admin,
+    get_current_user,
+    get_optional_current_user,
+)
 
 router = APIRouter(prefix="/api/v1/gamification", tags=["Gamification & Engagement"])
 
@@ -60,7 +64,7 @@ async def get_user_level(
 )
 async def award_action_xp(
     request: AwardXPRequest,
-    current_user: dict[str, Any] = Depends(get_current_user),
+    current_user: dict[str, Any] = Depends(get_current_admin),
 ) -> AwardXPResponse:
     """
     Award XP for verified user actions with daily anti-abuse rate limits
@@ -99,11 +103,12 @@ async def record_streak_activity(
     current_user: dict[str, Any] = Depends(get_current_user),
 ) -> StreakState:
     """Record streak activity for today with consecutive rollover or freeze shield protection."""
+    # Always derive current date on server side using user timezone; ignore client date_str
     return await GamificationService.record_streak_activity(
         user_id=current_user["user_id"],
         scope=request.scope,
         target_id=request.target_id,
-        date_str=request.date_str,
+        date_str=None,
     )
 
 

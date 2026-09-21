@@ -82,7 +82,25 @@ class UserResponse(BaseModel):
     email: EmailStr
     roles: list[str]
     tokens_remaining: int
+    timezone: str = "UTC"
     created_at: datetime
+
+
+class UpdateProfileRequest(BaseModel):
+    """Payload for updating user profile."""
+    name: str | None = Field(None, min_length=2, max_length=100)
+    timezone: str | None = Field(None, description="IANA timezone identifier e.g. America/New_York")
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(cls, v: str | None) -> str | None:
+        if v is not None:
+            import zoneinfo
+            try:
+                zoneinfo.ZoneInfo(v)
+            except Exception:
+                raise ValueError(f"Invalid IANA timezone '{v}'") from None
+        return v
 
 
 class AuthResponse(BaseModel):

@@ -12,6 +12,7 @@ from typing import Any
 
 from fastapi import HTTPException, status
 from pymongo import DESCENDING
+from pymongo.errors import DuplicateKeyError
 
 from backend.app.core.database import get_db
 from backend.app.core.redis import get_redis
@@ -196,28 +197,35 @@ class GamificationService:
         # 2. Determine base amount
         base_amount = amount if amount is not None else ACTION_XP_VALUES.get(action, 10)
 
-        # 3. Check anti-abuse daily caps
+        # 3. Check anti-abuse daily caps (race-safe via atomic counter document)
         cap = DAILY_ACTION_CAPS.get(action)
         awarded_amount = base_amount
+        counter_id = None
 
         if cap is not None and cap > 0:
             now_utc = datetime.now(timezone.utc)
-            start_of_day = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+            today_date_str = now_utc.strftime("%Y-%m-%d")
+            counter_id = f"{user_id}:{action.value}:{today_date_str}"
+            counter_col = db["daily_xp_caps"]
 
-            pipeline = [
-                {
-                    "$match": {
-                        "user_id": user_id,
-                        "action": action.value,
-                        "created_at": {"$gte": start_of_day},
-                    }
-                },
-                {"$group": {"_id": None, "total": {"$sum": "$amount"}}},
-            ]
-            agg = await ledger_col.aggregate(pipeline).to_list(1)
-            today_xp = agg[0]["total"] if agg else 0
+            try:
+                counter_doc = await counter_col.find_one_and_update(
+                    {"_id": counter_id, "total": {"$lt": cap}},
+                    {
+                        "$inc": {"total": base_amount},
+                        "$setOnInsert": {
+                            "user_id": user_id,
+                            "action": action.value,
+                            "date": today_date_str,
+                        },
+                    },
+                    upsert=True,
+                    return_document=True,
+                )
+            except DuplicateKeyError:
+                counter_doc = None
 
-            if today_xp >= cap:
+            if not counter_doc:
                 current_lvl = await cls.get_user_level(user_id)
                 return AwardXPResponse(
                     awarded=False,
@@ -229,9 +237,12 @@ class GamificationService:
                     message=f"Daily XP limit reached for {action.value} (cap: {cap} XP)",
                 )
 
-            # Cap the award if partial
-            if today_xp + base_amount > cap:
-                awarded_amount = cap - today_xp
+            new_total = counter_doc.get("total", base_amount)
+            if new_total > cap:
+                awarded_amount = cap - (new_total - base_amount)
+                await counter_col.update_one({"_id": counter_id}, {"$set": {"total": cap}})
+            else:
+                awarded_amount = base_amount
 
         if awarded_amount <= 0:
             current_lvl = await cls.get_user_level(user_id)
@@ -245,7 +256,7 @@ class GamificationService:
                 message="No XP eligible for award",
             )
 
-        # 4. Insert ledger entry
+        # 4. Insert ledger entry (with DuplicateKeyError catch)
         entry = XPLedgerEntry(
             entry_id=str(uuid.uuid4()),
             user_id=user_id,
@@ -254,7 +265,24 @@ class GamificationService:
             idempotency_key=idempotency_key,
             metadata=metadata or {},
         )
-        await ledger_col.insert_one(entry.model_dump())
+        try:
+            await ledger_col.insert_one(entry.model_dump())
+        except DuplicateKeyError:
+            if counter_id:
+                await db["daily_xp_caps"].update_one(
+                    {"_id": counter_id}, {"$inc": {"total": -awarded_amount}}
+                )
+            current_lvl = await cls.get_user_level(user_id)
+            existing = await ledger_col.find_one({"idempotency_key": idempotency_key})
+            return AwardXPResponse(
+                awarded=False,
+                amount=existing.get("amount", 0) if existing else 0,
+                action=action,
+                new_total_xp=current_lvl.current_xp,
+                current_level=current_lvl.level,
+                leveled_up=False,
+                message="Action already awarded (idempotent request)",
+            )
 
         # 5. Fetch previous level and update total XP atomically
         levels_col = db["user_levels"]
@@ -346,7 +374,19 @@ class GamificationService:
         db = get_db()
         streaks_col = db["user_streaks"]
 
-        today_str = date_str or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        # If date_str is not provided (e.g. from client API), derive server-side in user's timezone.
+        if date_str:
+            today_str = date_str
+        else:
+            user_doc = await db.users.find_one({"user_id": user_id})
+            tz_name = user_doc.get("timezone", "UTC") if user_doc else "UTC"
+            try:
+                import zoneinfo
+                user_tz = zoneinfo.ZoneInfo(tz_name)
+            except Exception:
+                user_tz = timezone.utc
+            today_str = datetime.now(user_tz).strftime("%Y-%m-%d")
+
         today_date = datetime.strptime(today_str, "%Y-%m-%d").date()
 
         filter_query = {
@@ -691,33 +731,33 @@ class GamificationService:
             )
 
         period_key = week_key if template.is_weekly else today_key
-        record = await challenges_col.find_one({
-            "user_id": user_id,
-            "challenge_id": challenge_id,
-            "period_key": period_key,
-        })
-
-        if not record or record.get("current_count", 0) < template.target_count:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Challenge target count not yet reached",
-            )
-
-        if record.get("is_claimed", False):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Reward already claimed for this period",
-            )
-
-        # Mark claimed
-        await challenges_col.update_one(
+        # Atomically check progress >= target_count and mark claimed to prevent race conditions
+        updated_record = await challenges_col.find_one_and_update(
             {
                 "user_id": user_id,
                 "challenge_id": challenge_id,
                 "period_key": period_key,
+                "current_count": {"$gte": template.target_count},
+                "is_claimed": {"$ne": True},
             },
             {"$set": {"is_claimed": True, "claimed_at": now_utc}},
+            return_document=True,
         )
+        if not updated_record:
+            existing = await challenges_col.find_one({
+                "user_id": user_id,
+                "challenge_id": challenge_id,
+                "period_key": period_key,
+            })
+            if not existing or existing.get("current_count", 0) < template.target_count:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Challenge target count not yet reached",
+                )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Reward already claimed for this period",
+            )
 
         # Award XP
         idempotency_key = f"quest:{user_id}:{challenge_id}:{period_key}"

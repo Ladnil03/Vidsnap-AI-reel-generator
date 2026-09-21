@@ -363,6 +363,27 @@ class RecSysService:
         if is_positive and user_id:
             await self._update_user_vector_online(user_id, req.item_id)
 
+        # 3. Award XP for meaningful watch events
+        if user_id and user_id != "anonymous":
+            meaningful_watch = False
+            if req.interaction_type == InteractionType.COMPLETE:
+                meaningful_watch = True
+            elif req.interaction_type == InteractionType.VIEW and req.watched_seconds >= 5.0:
+                meaningful_watch = True
+
+            if meaningful_watch:
+                try:
+                    from backend.app.gamification.models import XPAction
+                    from backend.app.gamification.service import GamificationService
+                    today_str = now.strftime("%Y-%m-%d")
+                    await GamificationService.award_xp(
+                        user_id=user_id,
+                        action=XPAction.WATCH_REEL,
+                        idempotency_key=f"watch_reel:{user_id}:{req.item_id}:{today_str}",
+                    )
+                except Exception as e:
+                    logger.debug("Gamification XP award on watch event skipped: %s", e)
+
         return True
 
     async def get_user_preferences(self, user_id: str) -> UserVectorResponse:

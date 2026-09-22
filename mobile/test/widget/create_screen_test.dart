@@ -11,7 +11,8 @@ class _FakeCreateRepository implements CreateRepository {
   bool uploadCalled = false;
 
   @override
-  List<CreateVideoDraft> getDrafts() => List<CreateVideoDraft>.from(savedDrafts);
+  List<CreateVideoDraft> getDrafts() =>
+      List<CreateVideoDraft>.from(savedDrafts);
 
   @override
   Future<void> saveDraft(CreateVideoDraft draft) async {
@@ -40,7 +41,9 @@ class _FakeCreateRepository implements CreateRepository {
 
 void main() {
   group('CreateScreen Widget Tests', () {
-    testWidgets('renders camera & gallery buttons when no video is selected', (tester) async {
+    testWidgets('renders camera & gallery buttons when no video is selected', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -52,12 +55,8 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            createRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
-          child: const MaterialApp(
-            home: CreateScreen(),
-          ),
+          overrides: [createRepositoryProvider.overrideWithValue(fakeRepo)],
+          child: const MaterialApp(home: CreateScreen()),
         ),
       );
 
@@ -69,65 +68,72 @@ void main() {
       expect(find.text('Gallery'), findsOneWidget);
     });
 
-    testWidgets('renders metadata form and generates AI tags when video is picked', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    testWidgets(
+      'renders metadata form and generates AI tags when video is picked',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      final fakeRepo = _FakeCreateRepository();
+        final fakeRepo = _FakeCreateRepository();
 
-      final container = ProviderContainer(
-        overrides: [
-          createRepositoryProvider.overrideWithValue(fakeRepo),
-        ],
-      );
-      addTearDown(container.dispose);
+        final container = ProviderContainer(
+          overrides: [createRepositoryProvider.overrideWithValue(fakeRepo)],
+        );
+        addTearDown(container.dispose);
 
-      // Pre-select a video
-      container.read(createProvider.notifier).setVideo('/storage/emulated/0/DCIM/my_reel.mp4', duration: 15.0);
+        // Pre-select a video
+        container
+            .read(createProvider.notifier)
+            .setVideo('/storage/emulated/0/DCIM/my_reel.mp4', duration: 15.0);
 
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: const MaterialApp(
-            home: CreateScreen(),
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: CreateScreen()),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      expect(find.text('Ready to publish'), findsOneWidget);
-      expect(find.text('my_reel.mp4'), findsOneWidget);
-      expect(find.text('Headline Title *'), findsOneWidget);
-      expect(find.text('AI Assistant'), findsOneWidget);
-      expect(find.text('Publish Reel'), findsOneWidget);
-      expect(find.text('Save Draft'), findsOneWidget);
+        expect(find.text('Ready to publish'), findsOneWidget);
+        expect(find.text('my_reel.mp4'), findsOneWidget);
+        expect(find.text('Headline Title *'), findsOneWidget);
+        expect(find.text('AI Assistant'), findsOneWidget);
+        expect(find.text('Publish Reel'), findsOneWidget);
+        expect(find.text('Save Draft'), findsOneWidget);
 
-      // Enter headline
-      final titleField = find.widgetWithText(TextField, 'Catchy headline (min 3 chars)');
-      await tester.enterText(titleField, 'My Super AI Video');
-      await tester.pumpAndSettle();
+        // Enter headline
+        final titleField = find.widgetWithText(
+          TextField,
+          'Catchy headline (min 3 chars)',
+        );
+        await tester.enterText(titleField, 'My Super AI Video');
+        await tester.pumpAndSettle();
 
-      // Tap AI Generate tags button
-      await tester.tap(find.text('Generate'));
-      await tester.pumpAndSettle();
+        // Tap AI Generate tags button
+        await tester.tap(find.text('Generate'));
+        await tester.pumpAndSettle();
 
-      // Verify AI suggestions populated
-      expect(find.text('#viral'), findsOneWidget);
-      expect(find.text('#ai'), findsOneWidget);
-      expect(find.text('#flutter'), findsOneWidget);
-      expect(find.textContaining('Wait till you see this...'), findsOneWidget);
+        // Verify AI suggestions populated
+        expect(find.text('#viral'), findsOneWidget);
+        expect(find.text('#ai'), findsOneWidget);
+        expect(find.text('#flutter'), findsOneWidget);
+        expect(
+          find.textContaining('Wait till you see this...'),
+          findsOneWidget,
+        );
 
-      // Tap Save Draft
-      await tester.tap(find.text('Save Draft'));
-      await tester.pumpAndSettle();
+        // Tap Save Draft
+        await tester.tap(find.text('Save Draft'));
+        await tester.pumpAndSettle();
 
-      expect(fakeRepo.savedDrafts.length, 1);
-      expect(fakeRepo.savedDrafts.first.title, 'My Super AI Video');
-    });
+        expect(fakeRepo.savedDrafts.length, 1);
+        expect(fakeRepo.savedDrafts.first.title, 'My Super AI Video');
+      },
+    );
   });
 }

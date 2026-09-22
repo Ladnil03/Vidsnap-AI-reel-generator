@@ -22,7 +22,10 @@ class SafeLoggingInterceptor extends Interceptor {
   }
 
   @override
-  void onResponse(Response<dynamic> response, ResponseInterceptorHandler handler) {
+  void onResponse(
+    Response<dynamic> response,
+    ResponseInterceptorHandler handler,
+  ) {
     if (kDebugMode) {
       debugPrint('<-- ${response.statusCode} ${response.requestOptions.uri}');
     }
@@ -32,7 +35,9 @@ class SafeLoggingInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     if (kDebugMode) {
-      debugPrint('<-- ERROR ${err.response?.statusCode} ${err.requestOptions.uri}: ${err.message}');
+      debugPrint(
+        '<-- ERROR ${err.response?.statusCode} ${err.requestOptions.uri}: ${err.message}',
+      );
     }
     handler.next(err);
   }
@@ -46,7 +51,8 @@ AppFailure mapDioExceptionToAppFailure(DioException err) {
     case DioExceptionType.transformTimeout:
     case DioExceptionType.connectionError:
       return AppFailure.network(
-        message: 'Unable to connect to VidSnap server. Please check your network.',
+        message:
+            'Unable to connect to VidSnap server. Please check your network.',
       );
 
     case DioExceptionType.badResponse:

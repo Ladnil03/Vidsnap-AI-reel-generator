@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vidsnap_ai/features/profile/data/profile_repository.dart';
@@ -105,7 +106,7 @@ void main() {
             'likes_count': 450,
             'comments_count': 22,
             'views_count': 3200,
-          }
+          },
         ];
 
         return ResponseBody.fromString(
@@ -139,8 +140,8 @@ void main() {
               'likes_count': 100,
               'comments_count': 5,
               'views_count': 1200,
-            }
-          ]
+            },
+          ],
         };
 
         return ResponseBody.fromString(

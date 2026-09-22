@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vidsnap_ai/core/storage/token_storage.dart';
 import 'package:vidsnap_ai/features/rooms/data/room_socket_service.dart';
@@ -63,7 +64,7 @@ void main() {
           'user_name': 'Bob',
           'text': 'Hi everyone!',
           'created_at': '2026-03-22T12:00:00Z',
-        }
+        },
       });
 
       final event = await eventFuture;
@@ -144,22 +145,25 @@ void main() {
 
       socketService.sendChatMessage('Hello room');
       expect(mockSocket.sentMessages.length, 1);
-      final chatData = jsonDecode(mockSocket.sentMessages.first as String) as Map<String, dynamic>;
+      final chatData = jsonDecode(
+        mockSocket.sentMessages.first as String,
+      ) as Map<String, dynamic>;
       expect(chatData['type'], 'chat');
       expect(chatData['text'], 'Hello room');
 
       socketService.sendReaction('🎉');
       expect(mockSocket.sentMessages.length, 2);
-      final reactionData = jsonDecode(mockSocket.sentMessages[1] as String) as Map<String, dynamic>;
+      final reactionData = jsonDecode(
+        mockSocket.sentMessages[1] as String,
+      ) as Map<String, dynamic>;
       expect(reactionData['type'], 'reaction');
       expect(reactionData['emoji'], '🎉');
 
-      socketService.sendSyncAction(
-        action: 'play',
-        positionSeconds: 15.0,
-      );
+      socketService.sendSyncAction(action: 'play', positionSeconds: 15.0);
       expect(mockSocket.sentMessages.length, 3);
-      final syncData = jsonDecode(mockSocket.sentMessages[2] as String) as Map<String, dynamic>;
+      final syncData = jsonDecode(
+        mockSocket.sentMessages[2] as String,
+      ) as Map<String, dynamic>;
       expect(syncData['type'], 'sync_action');
       expect(syncData['action'], 'play');
       expect(syncData['position_seconds'], 15.0);

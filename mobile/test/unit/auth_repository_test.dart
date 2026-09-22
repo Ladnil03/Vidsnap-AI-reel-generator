@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,23 +13,31 @@ class FakeSecureStoragePlatform extends FlutterSecureStoragePlatform {
   final Map<String, String> _storage = <String, String>{};
 
   @override
-  Future<bool> containsKey({required String key, required Map<String, String> options}) async =>
-      _storage.containsKey(key);
+  Future<bool> containsKey({
+    required String key,
+    required Map<String, String> options,
+  }) async => _storage.containsKey(key);
 
   @override
-  Future<void> delete({required String key, required Map<String, String> options}) async =>
-      _storage.remove(key);
+  Future<void> delete({
+    required String key,
+    required Map<String, String> options,
+  }) async => _storage.remove(key);
 
   @override
-  Future<void> deleteAll({required Map<String, String> options}) async => _storage.clear();
+  Future<void> deleteAll({required Map<String, String> options}) async =>
+      _storage.clear();
 
   @override
-  Future<String?> read({required String key, required Map<String, String> options}) async =>
-      _storage[key];
+  Future<String?> read({
+    required String key,
+    required Map<String, String> options,
+  }) async => _storage[key];
 
   @override
-  Future<Map<String, String>> readAll({required Map<String, String> options}) async =>
-      Map<String, String>.from(_storage);
+  Future<Map<String, String>> readAll({
+    required Map<String, String> options,
+  }) async => Map<String, String>.from(_storage);
 
   @override
   Future<void> write({
@@ -73,7 +82,8 @@ void main() {
   setUp(() {
     FlutterSecureStoragePlatform.instance = FakeSecureStoragePlatform();
     fakeAdapter = FakeHttpAdapter();
-    dio = Dio(BaseOptions(baseUrl: 'http://localhost:8000'))..httpClientAdapter = fakeAdapter;
+    dio = Dio(BaseOptions(baseUrl: 'http://localhost:8000'))
+      ..httpClientAdapter = fakeAdapter;
     tokenStorage = TokenStorage();
     repository = AuthRepository(dio: dio, tokenStorage: tokenStorage);
   });
@@ -157,22 +167,28 @@ void main() {
       );
     });
 
-    test('logout sends refresh token to /api/v1/auth/logout and clears tokens', () async {
-      await tokenStorage.setTokens(accessToken: 'at_1', refreshToken: 'rt_1');
+    test(
+      'logout sends refresh token to /api/v1/auth/logout and clears tokens',
+      () async {
+        await tokenStorage.setTokens(accessToken: 'at_1', refreshToken: 'rt_1');
 
-      fakeAdapter.nextResponse = ResponseBody.fromString(
-        jsonEncode(<String, dynamic>{'message': 'Logged out successfully.'}),
-        200,
-        headers: <String, List<String>>{
-          'content-type': <String>['application/json'],
-        },
-      );
+        fakeAdapter.nextResponse = ResponseBody.fromString(
+          jsonEncode(<String, dynamic>{'message': 'Logged out successfully.'}),
+          200,
+          headers: <String, List<String>>{
+            'content-type': <String>['application/json'],
+          },
+        );
 
-      await repository.logout();
+        await repository.logout();
 
-      expect(fakeAdapter.lastRequestOptions?.path, equals('/api/v1/auth/logout'));
-      expect(await tokenStorage.getAccessToken(), isNull);
-      expect(await tokenStorage.getRefreshToken(), isNull);
-    });
+        expect(
+          fakeAdapter.lastRequestOptions?.path,
+          equals('/api/v1/auth/logout'),
+        );
+        expect(await tokenStorage.getAccessToken(), isNull);
+        expect(await tokenStorage.getRefreshToken(), isNull);
+      },
+    );
   });
 }

@@ -18,7 +18,11 @@ class _FakeFeedRepository implements FeedRepository {
   ];
 
   @override
-  Future<List<CommentModel>> getComments(String videoId, {int skip = 0, int limit = 50}) async {
+  Future<List<CommentModel>> getComments(
+    String videoId, {
+    int skip = 0,
+    int limit = 50,
+  }) async {
     return List<CommentModel>.from(comments);
   }
 
@@ -47,9 +51,7 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            feedRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
+          overrides: [feedRepositoryProvider.overrideWithValue(fakeRepo)],
           child: const MaterialApp(
             home: Scaffold(
               body: CommentsSheet(videoId: 'v-test', initialCount: 1),

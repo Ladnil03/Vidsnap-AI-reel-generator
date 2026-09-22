@@ -1,15 +1,6 @@
-enum RoomType {
-  public,
-  private,
-}
+enum RoomType { public, private }
 
-enum PlaybackAction {
-  play,
-  pause,
-  seek,
-  changeMedia,
-  setRate,
-}
+enum PlaybackAction { play, pause, seek, changeMedia, setRate }
 
 class WatchStateModel {
   const WatchStateModel({
@@ -43,22 +34,23 @@ class WatchStateModel {
       positionSeconds: (json['position_seconds'] as num?)?.toDouble() ?? 0.0,
       playbackRate: (json['playback_rate'] as num?)?.toDouble() ?? 1.0,
       lastUpdatedAt: json['last_updated_at'] != null
-          ? DateTime.tryParse(json['last_updated_at'] as String) ?? DateTime.now()
+          ? DateTime.tryParse(json['last_updated_at'] as String) ??
+                DateTime.now()
           : DateTime.now(),
       updatedByUserId: json['updated_by_user_id'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'media_url': mediaUrl,
-        'media_title': mediaTitle,
-        'media_type': mediaType,
-        'state': state,
-        'position_seconds': positionSeconds,
-        'playback_rate': playbackRate,
-        'last_updated_at': lastUpdatedAt.toIso8601String(),
-        'updated_by_user_id': updatedByUserId,
-      };
+    'media_url': mediaUrl,
+    'media_title': mediaTitle,
+    'media_type': mediaType,
+    'state': state,
+    'position_seconds': positionSeconds,
+    'playback_rate': playbackRate,
+    'last_updated_at': lastUpdatedAt.toIso8601String(),
+    'updated_by_user_id': updatedByUserId,
+  };
 
   WatchStateModel copyWith({
     String? mediaUrl,
@@ -116,13 +108,13 @@ class RoomParticipantModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'user_id': userId,
-        'name': name,
-        'avatar_url': avatarUrl,
-        'is_host': isHost,
-        'joined_at': joinedAt.toIso8601String(),
-        'last_seen_at': lastSeenAt.toIso8601String(),
-      };
+    'user_id': userId,
+    'name': name,
+    'avatar_url': avatarUrl,
+    'is_host': isHost,
+    'joined_at': joinedAt.toIso8601String(),
+    'last_seen_at': lastSeenAt.toIso8601String(),
+  };
 }
 
 class RoomModel {
@@ -166,7 +158,9 @@ class RoomModel {
       hostId: (json['host_id'] as String?) ?? '',
       hostName: (json['host_name'] as String?) ?? 'Host',
       watchState: json['watch_state'] != null
-          ? WatchStateModel.fromJson(json['watch_state'] as Map<String, dynamic>)
+          ? WatchStateModel.fromJson(
+              json['watch_state'] as Map<String, dynamic>,
+            )
           : WatchStateModel(
               mediaUrl: '',
               mediaTitle: '',
@@ -188,18 +182,18 @@ class RoomModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'room_id': roomId,
-        'name': name,
-        'description': description,
-        'room_type': roomType,
-        'control_mode': controlMode,
-        'host_id': hostId,
-        'host_name': hostName,
-        'watch_state': watchState.toJson(),
-        'participant_count': participantCount,
-        'participants': participants.map((p) => p.toJson()).toList(),
-        'created_at': createdAt.toIso8601String(),
-      };
+    'room_id': roomId,
+    'name': name,
+    'description': description,
+    'room_type': roomType,
+    'control_mode': controlMode,
+    'host_id': hostId,
+    'host_name': hostName,
+    'watch_state': watchState.toJson(),
+    'participant_count': participantCount,
+    'participants': participants.map((p) => p.toJson()).toList(),
+    'created_at': createdAt.toIso8601String(),
+  };
 
   RoomModel copyWith({
     String? roomId,
@@ -270,16 +264,16 @@ class RoomChatMessageModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'message_id': messageId,
-        'room_id': roomId,
-        'user_id': userId,
-        'user_name': userName,
-        'avatar_url': avatarUrl,
-        'text': text,
-        'created_at': createdAt.toIso8601String(),
-        'is_system': isSystem,
-        'is_assistant': isAssistant,
-      };
+    'message_id': messageId,
+    'room_id': roomId,
+    'user_id': userId,
+    'user_name': userName,
+    'avatar_url': avatarUrl,
+    'text': text,
+    'created_at': createdAt.toIso8601String(),
+    'is_system': isSystem,
+    'is_assistant': isAssistant,
+  };
 }
 
 class LiveKitCredentialsModel {
@@ -302,10 +296,10 @@ class LiveKitCredentialsModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'token': token,
-        'server_url': serverUrl,
-        'room_name': roomName,
-      };
+    'token': token,
+    'server_url': serverUrl,
+    'room_name': roomName,
+  };
 }
 
 class RoomSummaryModel {
@@ -334,11 +328,11 @@ class RoomSummaryModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'room_id': roomId,
-        'summary': summary,
-        'highlights': highlights,
-        'generated_at': generatedAt.toIso8601String(),
-      };
+    'room_id': roomId,
+    'summary': summary,
+    'highlights': highlights,
+    'generated_at': generatedAt.toIso8601String(),
+  };
 }
 
 class CommunityModel {
@@ -390,19 +384,19 @@ class CommunityModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'community_id': communityId,
-        'name': name,
-        'slug': slug,
-        'description': description,
-        'category': category,
-        'avatar_url': avatarUrl,
-        'banner_url': bannerUrl,
-        'creator_id': creatorId,
-        'members_count': membersCount,
-        'is_member': isMember,
-        'role': role,
-        'created_at': createdAt.toIso8601String(),
-      };
+    'community_id': communityId,
+    'name': name,
+    'slug': slug,
+    'description': description,
+    'category': category,
+    'avatar_url': avatarUrl,
+    'banner_url': bannerUrl,
+    'creator_id': creatorId,
+    'members_count': membersCount,
+    'is_member': isMember,
+    'role': role,
+    'created_at': createdAt.toIso8601String(),
+  };
 
   CommunityModel copyWith({
     String? communityId,
@@ -461,10 +455,10 @@ class FollowStatusModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'target_user_id': targetUserId,
-        'is_following': isFollowing,
-        'is_friend': isFriend,
-        'followers_count': followersCount,
-        'following_count': followingCount,
-      };
+    'target_user_id': targetUserId,
+    'is_following': isFollowing,
+    'is_friend': isFriend,
+    'followers_count': followersCount,
+    'following_count': followingCount,
+  };
 }

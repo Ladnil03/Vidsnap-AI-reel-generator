@@ -15,7 +15,8 @@ void main() {
                 onPressed: () async {
                   enteredCode = await showDialog<String>(
                     context: context,
-                    builder: (_) => const PasscodeDialog(roomTitle: 'Secret Watch Party'),
+                    builder: (_) =>
+                        const PasscodeDialog(roomTitle: 'Secret Watch Party'),
                   );
                 },
                 child: const Text('Open Dialog'),
@@ -44,7 +45,10 @@ void main() {
       await tester.enterText(find.byType(TextField), '1234');
       await tester.tap(find.text('Join Party'));
       await tester.pumpAndSettle();
-      expect(find.text('Passcode must be at least 8 characters'), findsOneWidget);
+      expect(
+        find.text('Passcode must be at least 8 characters'),
+        findsOneWidget,
+      );
 
       // Enter valid passcode (>= 8 chars)
       await tester.enterText(find.byType(TextField), 'passcode123');
@@ -66,7 +70,8 @@ void main() {
                 onPressed: () async {
                   enteredCode = await showDialog<String>(
                     context: context,
-                    builder: (_) => const PasscodeDialog(roomTitle: 'VIP Lounge'),
+                    builder: (_) =>
+                        const PasscodeDialog(roomTitle: 'VIP Lounge'),
                   );
                 },
                 child: const Text('Open Dialog'),

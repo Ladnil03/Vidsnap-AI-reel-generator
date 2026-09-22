@@ -43,7 +43,10 @@ class _CreateRoomSheetState extends ConsumerState<CreateRoomSheet> {
     final isPrivate = _roomType == 'private';
     final passcode = _passcodeController.text.trim();
     if (isPrivate && passcode.length < 8) {
-      setState(() => _passcodeError = 'Private rooms require a passcode of at least 8 characters');
+      setState(
+        () => _passcodeError =
+            'Private rooms require a passcode of at least 8 characters',
+      );
       return;
     }
 
@@ -75,7 +78,9 @@ class _CreateRoomSheetState extends ConsumerState<CreateRoomSheet> {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.forest950 : AppColors.cream50,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadii.xl),
+        ),
       ),
       padding: EdgeInsets.only(
         left: AppSpacing.s5,
@@ -102,11 +107,16 @@ class _CreateRoomSheetState extends ConsumerState<CreateRoomSheet> {
             const SizedBox(height: AppSpacing.s4),
             Row(
               children: <Widget>[
-                const Icon(Icons.video_library_outlined, color: AppColors.moss500),
+                const Icon(
+                  Icons.video_library_outlined,
+                  color: AppColors.moss500,
+                ),
                 const SizedBox(width: AppSpacing.s2),
                 Text(
                   'Host Watch Party',
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -138,7 +148,9 @@ class _CreateRoomSheetState extends ConsumerState<CreateRoomSheet> {
             const SizedBox(height: AppSpacing.s4),
             Text(
               'Room Privacy',
-              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: AppSpacing.s2),
             Row(
@@ -155,7 +167,9 @@ class _CreateRoomSheetState extends ConsumerState<CreateRoomSheet> {
                           ? AppColors.moss500.withValues(alpha: 0.15)
                           : Colors.transparent,
                       side: BorderSide(
-                        color: _roomType == 'public' ? AppColors.moss500 : AppColors.borderLightSubtle,
+                        color: _roomType == 'public'
+                            ? AppColors.moss500
+                            : AppColors.borderLightSubtle,
                       ),
                     ),
                     onPressed: () => setState(() => _roomType = 'public'),
@@ -174,7 +188,9 @@ class _CreateRoomSheetState extends ConsumerState<CreateRoomSheet> {
                           ? AppColors.moss500.withValues(alpha: 0.15)
                           : Colors.transparent,
                       side: BorderSide(
-                        color: _roomType == 'private' ? AppColors.moss500 : AppColors.borderLightSubtle,
+                        color: _roomType == 'private'
+                            ? AppColors.moss500
+                            : AppColors.borderLightSubtle,
                       ),
                     ),
                     onPressed: () => setState(() => _roomType = 'private'),
@@ -192,7 +208,8 @@ class _CreateRoomSheetState extends ConsumerState<CreateRoomSheet> {
                 errorText: _passcodeError,
                 prefixIcon: const Icon(Icons.password, size: 20),
                 onChanged: (_) {
-                  if (_passcodeError != null) setState(() => _passcodeError = null);
+                  if (_passcodeError != null)
+                    setState(() => _passcodeError = null);
                 },
               ),
             ],

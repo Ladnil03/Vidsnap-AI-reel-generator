@@ -18,7 +18,7 @@ class _FakeTokenStorage extends TokenStorage {
 class _FakeAuthRepository extends AuthRepository {
   final User user;
   _FakeAuthRepository(this.user)
-      : super(dio: Dio(), tokenStorage: _FakeTokenStorage());
+    : super(dio: Dio(), tokenStorage: _FakeTokenStorage());
 
   @override
   Future<User> getMe() async => user;
@@ -46,7 +46,7 @@ class _FakeCreatorRepository implements CreatorRepository {
     avgCompletionRatePct: 72.0,
     engagementRatePct: 9.5,
     audienceMoodAffinity: [
-      {'mood': 'energized', 'count': 800}
+      {'mood': 'energized', 'count': 800},
     ],
   );
 
@@ -58,8 +58,7 @@ class _FakeCreatorRepository implements CreatorRepository {
     String? bio,
     String? niche,
     Map<String, String>? socialLinks,
-  }) async =>
-      mockProfile;
+  }) async => mockProfile;
 
   @override
   Future<CreatorAnalyticsModel> getAnalytics({int days = 30}) async =>
@@ -107,7 +106,9 @@ void main() {
       fakeCreatorRepo = _FakeCreatorRepository();
     });
 
-    testWidgets('non-creator user sees Unlock Creator Studio CTA screen', (tester) async {
+    testWidgets('non-creator user sees Unlock Creator Studio CTA screen', (
+      tester,
+    ) async {
       final viewerAuth = AuthStateNotifier(
         tokenStorage: _FakeTokenStorage(),
         authRepository: _FakeAuthRepository(
@@ -130,9 +131,7 @@ void main() {
             creatorRepositoryProvider.overrideWithValue(fakeCreatorRepo),
             authStateProvider.overrideWith((ref) => viewerAuth),
           ],
-          child: const MaterialApp(
-            home: CreatorDashboardScreen(),
-          ),
+          child: const MaterialApp(home: CreatorDashboardScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -141,57 +140,60 @@ void main() {
       expect(find.text('Activate Creator Account'), findsOneWidget);
     });
 
-    testWidgets('creator user sees KPI tiles, handle, and generates AI Copilot strategy', (tester) async {
-      final creatorAuth = AuthStateNotifier(
-        tokenStorage: _FakeTokenStorage(),
-        authRepository: _FakeAuthRepository(
-          User(
-            userId: 'c-user-1',
-            name: 'Top Creator',
-            email: 'creator@vidsnap.ai',
-            roles: const ['user', 'creator'],
-            tokensRemaining: 200,
-            emailVerified: true,
-            timezone: 'UTC',
-            createdAt: DateTime.now(),
+    testWidgets(
+      'creator user sees KPI tiles, handle, and generates AI Copilot strategy',
+      (tester) async {
+        final creatorAuth = AuthStateNotifier(
+          tokenStorage: _FakeTokenStorage(),
+          authRepository: _FakeAuthRepository(
+            User(
+              userId: 'c-user-1',
+              name: 'Top Creator',
+              email: 'creator@vidsnap.ai',
+              roles: const ['user', 'creator'],
+              tokensRemaining: 200,
+              emailVerified: true,
+              timezone: 'UTC',
+              createdAt: DateTime.now(),
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            creatorRepositoryProvider.overrideWithValue(fakeCreatorRepo),
-            authStateProvider.overrideWith((ref) => creatorAuth),
-          ],
-          child: const MaterialApp(
-            home: CreatorDashboardScreen(),
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              creatorRepositoryProvider.overrideWithValue(fakeCreatorRepo),
+              authStateProvider.overrideWith((ref) => creatorAuth),
+            ],
+            child: const MaterialApp(home: CreatorDashboardScreen()),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Creator Studio'), findsOneWidget);
-      expect(find.text('@top_creator'), findsOneWidget);
-      expect(find.text('50000'), findsOneWidget); // Total Views
-      expect(find.text('10.0 hrs'), findsOneWidget); // Watch Time
-      expect(find.text('Creator Copilot AI'), findsOneWidget);
+        expect(find.text('Creator Studio'), findsOneWidget);
+        expect(find.text('@top_creator'), findsOneWidget);
+        expect(find.text('50000'), findsOneWidget); // Total Views
+        expect(find.text('10.0 hrs'), findsOneWidget); // Watch Time
+        expect(find.text('Creator Copilot AI'), findsOneWidget);
 
-      // Generate AI Copilot strategy
-      final topicField = find.byType(TextField);
-      await tester.enterText(topicField, 'Flutter 3.47');
-      await tester.tap(find.text('Generate'));
-      await tester.pumpAndSettle();
+        // Generate AI Copilot strategy
+        final topicField = find.byType(TextField);
+        await tester.enterText(topicField, 'Flutter 3.47');
+        await tester.tap(find.text('Generate'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Viral Potential: 92/100'), findsOneWidget);
-      expect(
-        find.byWidgetPredicate(
-          (w) =>
-              w is RichText &&
-              w.text.toPlainText().contains('You won\'t believe this Flutter update!'),
-        ),
-        findsOneWidget,
-      );
-    });
+        expect(find.text('Viral Potential: 92/100'), findsOneWidget);
+        expect(
+          find.byWidgetPredicate(
+            (w) =>
+                w is RichText &&
+                w.text.toPlainText().contains(
+                  'You won\'t believe this Flutter update!',
+                ),
+          ),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

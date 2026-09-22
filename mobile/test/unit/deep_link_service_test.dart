@@ -56,11 +56,14 @@ void main() {
         expect(route, '/reel/reel_xyz');
       });
 
-      test('resolves https://app.vidsnap.ai/room/room_test to /rooms/room_test', () {
-        final uri = Uri.parse('https://app.vidsnap.ai/room/room_test');
-        final route = service.resolveDeepLink(uri);
-        expect(route, '/rooms/room_test');
-      });
+      test(
+        'resolves https://app.vidsnap.ai/room/room_test to /rooms/room_test',
+        () {
+          final uri = Uri.parse('https://app.vidsnap.ai/room/room_test');
+          final route = service.resolveDeepLink(uri);
+          expect(route, '/rooms/room_test');
+        },
+      );
 
       test('resolves https://vidsnap.ai/collabs to /business/campaigns', () {
         final uri = Uri.parse('https://vidsnap.ai/collabs');

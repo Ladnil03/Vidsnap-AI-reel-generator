@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -57,7 +58,9 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
   Future<void> _handleVerify() async {
     final otp = _otpController.text.trim();
     if (otp.length != 6) {
-      setState(() => _errorMessage = 'Please enter the 6-digit verification code.');
+      setState(
+        () => _errorMessage = 'Please enter the 6-digit verification code.',
+      );
       return;
     }
 
@@ -71,7 +74,9 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Email verified! 5 creation credits have been unlocked.'),
+            content: Text(
+              'Email verified! 5 creation credits have been unlocked.',
+            ),
             backgroundColor: AppColors.successLight,
           ),
         );
@@ -80,7 +85,9 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     } on AppFailure catch (e) {
       setState(() => _errorMessage = e.message);
     } catch (_) {
-      setState(() => _errorMessage = 'Verification failed. Please check the code.');
+      setState(
+        () => _errorMessage = 'Verification failed. Please check the code.',
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -92,11 +99,12 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     if (_cooldownSeconds > 0) return;
 
     try {
-      final msg = await ref.read(authRepositoryProvider).resendVerification(_effectiveEmail);
+      final msg = await ref
+          .read(authRepositoryProvider)
+          .resendVerification(_effectiveEmail);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
         _startCooldown();
       }
     } on AppFailure catch (e) {
@@ -167,15 +175,20 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
                           Container(
                             padding: const EdgeInsets.all(AppSpacing.s3),
                             decoration: BoxDecoration(
-                              color: (isDark ? AppColors.dangerDark : AppColors.dangerLight)
-                                  .withValues(alpha: 0.12),
+                              color:
+                                  (isDark
+                                          ? AppColors.dangerDark
+                                          : AppColors.dangerLight)
+                                      .withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(AppRadii.sm),
                             ),
                             child: Row(
                               children: <Widget>[
                                 Icon(
                                   Icons.error_outline_rounded,
-                                  color: isDark ? AppColors.dangerDark : AppColors.dangerLight,
+                                  color: isDark
+                                      ? AppColors.dangerDark
+                                      : AppColors.dangerLight,
                                   size: 18.0,
                                 ),
                                 const SizedBox(width: AppSpacing.s2),
@@ -201,7 +214,10 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
                           controller: _otpController,
                           hintText: '123456',
                           keyboardType: TextInputType.number,
-                          prefixIcon: const Icon(Icons.pin_outlined, size: 20.0),
+                          prefixIcon: const Icon(
+                            Icons.pin_outlined,
+                            size: 20.0,
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.s5),
                         AppButton(
@@ -213,15 +229,21 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
                         const SizedBox(height: AppSpacing.s3),
                         Center(
                           child: TextButton(
-                            onPressed: _cooldownSeconds == 0 ? _handleResendCode : null,
+                            onPressed: _cooldownSeconds == 0
+                                ? _handleResendCode
+                                : null,
                             child: Text(
                               _cooldownSeconds > 0
                                   ? 'Resend code in ${_cooldownSeconds}s'
                                   : 'Resend code',
                               style: TextStyle(
                                 color: _cooldownSeconds > 0
-                                    ? (isDark ? AppColors.forest300 : AppColors.cream400)
-                                    : (isDark ? AppColors.sage300 : AppColors.forest700),
+                                    ? (isDark
+                                          ? AppColors.forest300
+                                          : AppColors.cream400)
+                                    : (isDark
+                                          ? AppColors.sage300
+                                          : AppColors.forest700),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

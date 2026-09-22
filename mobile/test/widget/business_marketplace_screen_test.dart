@@ -12,7 +12,8 @@ class _FakeBusinessRepository implements BusinessRepository {
       businessId: 'biz-1',
       companyName: 'TechCorp',
       title: 'Tech Gadget Launch',
-      description: 'Create an engaging 30s unboxing reel of our latest smart device.',
+      description:
+          'Create an engaging 30s unboxing reel of our latest smart device.',
       budgetPerk: '\$500 + Free Product',
       category: 'tech',
       status: CampaignStatus.active,
@@ -46,7 +47,9 @@ class _FakeBusinessRepository implements BusinessRepository {
   }
 
   @override
-  Future<BusinessProfileModel> updateProfile(CreateBusinessProfileInput input) async {
+  Future<BusinessProfileModel> updateProfile(
+    CreateBusinessProfileInput input,
+  ) async {
     return BusinessProfileModel(
       businessId: 'biz-1',
       userId: 'user-b1',
@@ -62,7 +65,9 @@ class _FakeBusinessRepository implements BusinessRepository {
     String status = 'active',
   }) async {
     if (category != null && category.isNotEmpty) {
-      return _campaigns.where((c) => c.category.toLowerCase() == category.toLowerCase()).toList();
+      return _campaigns
+          .where((c) => c.category.toLowerCase() == category.toLowerCase())
+          .toList();
     }
     return List<CampaignModel>.from(_campaigns);
   }
@@ -109,7 +114,9 @@ class _FakeBusinessRepository implements BusinessRepository {
   }
 
   @override
-  Future<List<CollabApplicationModel>> getCampaignApplications(String campaignId) async {
+  Future<List<CollabApplicationModel>> getCampaignApplications(
+    String campaignId,
+  ) async {
     return const <CollabApplicationModel>[];
   }
 }
@@ -122,36 +129,33 @@ void main() {
       fakeRepo = _FakeBusinessRepository();
     });
 
-    testWidgets('renders campaign list with title, brand name, and budget perk badge', (tester) async {
+    testWidgets(
+      'renders campaign list with title, brand name, and budget perk badge',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [businessRepositoryProvider.overrideWithValue(fakeRepo)],
+            child: const MaterialApp(home: BusinessMarketplaceScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Collab Marketplace'), findsOneWidget);
+        expect(find.text('Tech Gadget Launch'), findsOneWidget);
+        expect(find.text('by TechCorp • TECH'), findsOneWidget);
+        expect(find.text('\$500 + Free Product'), findsOneWidget);
+        expect(find.text('Summer Glow Up'), findsOneWidget);
+        expect(find.text('by GlowCosmetics • LIFESTYLE'), findsOneWidget);
+      },
+    );
+
+    testWidgets('filters campaigns when category chip is tapped', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            businessRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
-          child: const MaterialApp(
-            home: BusinessMarketplaceScreen(),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Collab Marketplace'), findsOneWidget);
-      expect(find.text('Tech Gadget Launch'), findsOneWidget);
-      expect(find.text('by TechCorp • TECH'), findsOneWidget);
-      expect(find.text('\$500 + Free Product'), findsOneWidget);
-      expect(find.text('Summer Glow Up'), findsOneWidget);
-      expect(find.text('by GlowCosmetics • LIFESTYLE'), findsOneWidget);
-    });
-
-    testWidgets('filters campaigns when category chip is tapped', (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            businessRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
-          child: const MaterialApp(
-            home: BusinessMarketplaceScreen(),
-          ),
+          overrides: [businessRepositoryProvider.overrideWithValue(fakeRepo)],
+          child: const MaterialApp(home: BusinessMarketplaceScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -175,7 +179,9 @@ void main() {
       expect(find.text('Summer Glow Up'), findsOneWidget);
     });
 
-    testWidgets('opens pitch proposal modal and submits a pitch', (tester) async {
+    testWidgets('opens pitch proposal modal and submits a pitch', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2200);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -185,12 +191,8 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            businessRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
-          child: const MaterialApp(
-            home: BusinessMarketplaceScreen(),
-          ),
+          overrides: [businessRepositoryProvider.overrideWithValue(fakeRepo)],
+          child: const MaterialApp(home: BusinessMarketplaceScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -206,8 +208,14 @@ void main() {
       expect(find.text('Offered Perk: \$500 + Free Product'), findsOneWidget);
 
       // Fill in proposal
-      final proposalField = find.widgetWithText(TextField, 'Describe your creative video concept for this brand...');
-      await tester.enterText(proposalField, 'I will craft a cinematic macro-lens unboxing with ASMR audio.');
+      final proposalField = find.widgetWithText(
+        TextField,
+        'Describe your creative video concept for this brand...',
+      );
+      await tester.enterText(
+        proposalField,
+        'I will craft a cinematic macro-lens unboxing with ASMR audio.',
+      );
 
       // Fill in portfolio reel ID
       final reelField = find.widgetWithText(TextField, 'e.g. reel_123');
@@ -224,7 +232,9 @@ void main() {
       expect(find.textContaining('Pitch submitted!'), findsOneWidget);
     });
 
-    testWidgets('opens post sponsorship brief dialog and creates campaign', (tester) async {
+    testWidgets('opens post sponsorship brief dialog and creates campaign', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2200);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -234,12 +244,8 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            businessRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
-          child: const MaterialApp(
-            home: BusinessMarketplaceScreen(),
-          ),
+          overrides: [businessRepositoryProvider.overrideWithValue(fakeRepo)],
+          child: const MaterialApp(home: BusinessMarketplaceScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -253,13 +259,25 @@ void main() {
       expect(find.text('Post Sponsorship Brief'), findsOneWidget);
 
       // Enter form values
-      final titleField = find.widgetWithText(TextField, 'e.g. Summer Tech Showcase');
+      final titleField = find.widgetWithText(
+        TextField,
+        'e.g. Summer Tech Showcase',
+      );
       await tester.enterText(titleField, 'Winter Gaming Marathon');
 
-      final descField = find.widgetWithText(TextField, 'Requirements for creators...');
-      await tester.enterText(descField, 'Livestream 2 hours highlighting gameplay performance.');
+      final descField = find.widgetWithText(
+        TextField,
+        'Requirements for creators...',
+      );
+      await tester.enterText(
+        descField,
+        'Livestream 2 hours highlighting gameplay performance.',
+      );
 
-      final budgetField = find.widgetWithText(TextField, 'e.g. \$750 + Free Headphones');
+      final budgetField = find.widgetWithText(
+        TextField,
+        'e.g. \$750 + Free Headphones',
+      );
       await tester.enterText(budgetField, '\$1,200 + Pro Controller');
 
       await tester.pumpAndSettle();

@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vidsnap_ai/features/companion/data/companion_repository.dart';
@@ -28,14 +29,14 @@ void main() {
             'role': 'assistant',
             'content': 'Here are some relaxing lo-fi reels for you!',
             'reels': [
-              {
-                'reel_id': 'reel-101',
-                'title': 'Rainy Evening Lo-Fi Beats',
-              }
+              {'reel_id': 'reel-101', 'title': 'Rainy Evening Lo-Fi Beats'},
             ],
             'timestamp': '2026-09-22T12:00:00Z',
           },
-          'suggested_actions': ['Show more like this', 'Switch to energetic vibe'],
+          'suggested_actions': [
+            'Show more like this',
+            'Switch to energetic vibe',
+          ],
           'active_mood': 'chill',
         };
 
@@ -61,40 +62,43 @@ void main() {
       expect(response.activeMood, MoodType.chill);
     });
 
-    test('getHistory returns parsed messages with timestamps and reels', () async {
-      dio.httpClientAdapter = _MockAdapter((options) {
-        expect(options.path, '/api/v1/companion/history');
-        expect(options.queryParameters['limit'], 20);
+    test(
+      'getHistory returns parsed messages with timestamps and reels',
+      () async {
+        dio.httpClientAdapter = _MockAdapter((options) {
+          expect(options.path, '/api/v1/companion/history');
+          expect(options.queryParameters['limit'], 20);
 
-        final data = [
-          {
-            'message_id': 'msg-u1',
-            'role': 'user',
-            'content': 'Hello companion!',
-            'timestamp': '2026-09-22T11:55:00Z',
-          },
-          {
-            'message_id': 'msg-a1',
-            'role': 'assistant',
-            'content': 'Hello! How can I assist you today?',
-            'timestamp': '2026-09-22T11:55:02Z',
-          }
-        ];
+          final data = [
+            {
+              'message_id': 'msg-u1',
+              'role': 'user',
+              'content': 'Hello companion!',
+              'timestamp': '2026-09-22T11:55:00Z',
+            },
+            {
+              'message_id': 'msg-a1',
+              'role': 'assistant',
+              'content': 'Hello! How can I assist you today?',
+              'timestamp': '2026-09-22T11:55:02Z',
+            },
+          ];
 
-        return ResponseBody.fromString(
-          jsonEncode(data),
-          200,
-          headers: {
-            Headers.contentTypeHeader: [Headers.jsonContentType],
-          },
-        );
-      });
+          return ResponseBody.fromString(
+            jsonEncode(data),
+            200,
+            headers: {
+              Headers.contentTypeHeader: [Headers.jsonContentType],
+            },
+          );
+        });
 
-      final history = await repository.getHistory(limit: 20);
-      expect(history.length, 2);
-      expect(history.first.isUser, isTrue);
-      expect(history.last.isAssistant, isTrue);
-    });
+        final history = await repository.getHistory(limit: 20);
+        expect(history.length, 2);
+        expect(history.first.isUser, isTrue);
+        expect(history.last.isAssistant, isTrue);
+      },
+    );
 
     test('clearHistory purges companion chat history', () async {
       dio.httpClientAdapter = _MockAdapter((options) {

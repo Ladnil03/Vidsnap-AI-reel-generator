@@ -54,11 +54,12 @@ class CreatorProfileModel {
     return CreatorProfileModel(
       userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
       handle: (json['handle'] ?? '').toString(),
-      displayName:
-          (json['display_name'] ?? json['displayName'] ?? '').toString(),
+      displayName: (json['display_name'] ?? json['displayName'] ?? '')
+          .toString(),
       bio: (json['bio'] ?? '').toString(),
       niche: (json['niche'] ?? 'general').toString(),
-      socialLinks: (json['social_links'] as Map<String, dynamic>?)?.map(
+      socialLinks:
+          (json['social_links'] as Map<String, dynamic>?)?.map(
             (k, v) => MapEntry(k, v.toString()),
           ) ??
           const <String, String>{},
@@ -127,23 +128,28 @@ class CreatorAnalyticsModel {
       totalWatchSeconds:
           (json['total_watch_seconds'] ?? json['totalWatchSeconds'] ?? 0)
               as int,
-      avgCompletionRatePct: ((json['avg_completion_rate_pct'] ??
-                  json['avgCompletionRatePct'] ??
-                  0.0) as num)
-          .toDouble(),
-      engagementRatePct: ((json['engagement_rate_pct'] ??
-                  json['engagementRatePct'] ??
-                  0.0) as num)
-          .toDouble(),
-      topTags: (json['top_tags'] as List<dynamic>?)
+      avgCompletionRatePct:
+          ((json['avg_completion_rate_pct'] ??
+                      json['avgCompletionRatePct'] ??
+                      0.0)
+                  as num)
+              .toDouble(),
+      engagementRatePct:
+          ((json['engagement_rate_pct'] ?? json['engagementRatePct'] ?? 0.0)
+                  as num)
+              .toDouble(),
+      topTags:
+          (json['top_tags'] as List<dynamic>?)
               ?.map((e) => Map<String, dynamic>.from(e as Map))
               .toList() ??
           const <Map<String, dynamic>>[],
-      audienceMoodAffinity: (json['audience_mood_affinity'] as List<dynamic>?)
+      audienceMoodAffinity:
+          (json['audience_mood_affinity'] as List<dynamic>?)
               ?.map((e) => Map<String, dynamic>.from(e as Map))
               .toList() ??
           const <Map<String, dynamic>>[],
-      dailyViewsTrend: (json['daily_views_trend'] as List<dynamic>?)
+      dailyViewsTrend:
+          (json['daily_views_trend'] as List<dynamic>?)
               ?.map((e) => Map<String, dynamic>.from(e as Map))
               .toList() ??
           const <Map<String, dynamic>>[],
@@ -154,10 +160,7 @@ class CreatorAnalyticsModel {
 /// Single high-retention video hook proposal from Creator Copilot.
 @immutable
 class CreatorCopilotHook {
-  const CreatorCopilotHook({
-    required this.hookText,
-    required this.hookStyle,
-  });
+  const CreatorCopilotHook({required this.hookText, required this.hookStyle});
 
   final String hookText;
   final String hookStyle;
@@ -194,30 +197,34 @@ class CreatorCopilotResponseModel {
   factory CreatorCopilotResponseModel.fromJson(Map<String, dynamic> json) {
     return CreatorCopilotResponseModel(
       topic: (json['topic'] ?? '').toString(),
-      hooks: (json['hooks'] as List<dynamic>?)
-              ?.map((e) =>
-                  CreatorCopilotHook.fromJson(e as Map<String, dynamic>))
+      hooks:
+          (json['hooks'] as List<dynamic>?)
+              ?.map(
+                (e) => CreatorCopilotHook.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           const <CreatorCopilotHook>[],
-      viralPotentialScore: (json['viral_potential_score'] ??
-          json['viralPotentialScore'] ??
-          75) as int,
-      viralScoreBreakdown: (json['viral_score_breakdown'] ??
-              json['viralScoreBreakdown'] ??
-              '')
-          .toString(),
-      optimalPostingWindow: (json['optimal_posting_window'] ??
-              json['optimalPostingWindow'] ??
-              '18:00 - 21:00 UTC')
-          .toString(),
-      recommendedHashtags: (json['recommended_hashtags'] as List<dynamic>?)
+      viralPotentialScore:
+          (json['viral_potential_score'] ?? json['viralPotentialScore'] ?? 75)
+              as int,
+      viralScoreBreakdown:
+          (json['viral_score_breakdown'] ?? json['viralScoreBreakdown'] ?? '')
+              .toString(),
+      optimalPostingWindow:
+          (json['optimal_posting_window'] ??
+                  json['optimalPostingWindow'] ??
+                  '18:00 - 21:00 UTC')
+              .toString(),
+      recommendedHashtags:
+          (json['recommended_hashtags'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const <String>[],
-      suggestedCallToAction: (json['suggested_call_to_action'] ??
-              json['suggestedCallToAction'] ??
-              'Comment below!')
-          .toString(),
+      suggestedCallToAction:
+          (json['suggested_call_to_action'] ??
+                  json['suggestedCallToAction'] ??
+                  'Comment below!')
+              .toString(),
     );
   }
 }
@@ -245,11 +252,12 @@ class VerificationApplicationModel {
 
   factory VerificationApplicationModel.fromJson(Map<String, dynamic> json) {
     return VerificationApplicationModel(
-      applicationId:
-          (json['application_id'] ?? json['applicationId'] ?? '').toString(),
+      applicationId: (json['application_id'] ?? json['applicationId'] ?? '')
+          .toString(),
       userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
       niche: (json['niche'] ?? '').toString(),
-      portfolioLinks: (json['portfolio_links'] as List<dynamic>?)
+      portfolioLinks:
+          (json['portfolio_links'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const <String>[],

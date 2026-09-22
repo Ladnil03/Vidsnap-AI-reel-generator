@@ -46,8 +46,9 @@ class ProfileState {
   }
 }
 
-final profileNotifierProvider =
-    NotifierProvider<ProfileNotifier, ProfileState>(ProfileNotifier.new);
+final profileNotifierProvider = NotifierProvider<ProfileNotifier, ProfileState>(
+  ProfileNotifier.new,
+);
 
 class ProfileNotifier extends Notifier<ProfileState> {
   ProfileRepository get _repo => ref.read(profileRepositoryProvider);
@@ -64,11 +65,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
       final profile = await _repo.getMyProfile();
       final reels = await _repo.getUserReels(profile.userId);
 
-      state = state.copyWith(
-        profile: profile,
-        reels: reels,
-        isLoading: false,
-      );
+      state = state.copyWith(profile: profile, reels: reels, isLoading: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

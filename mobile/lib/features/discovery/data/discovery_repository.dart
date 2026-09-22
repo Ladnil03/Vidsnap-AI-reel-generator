@@ -17,10 +17,7 @@ class DiscoveryRepository {
     int limit = 20,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'page': page,
-        'limit': limit,
-      };
+      final queryParams = <String, dynamic>{'page': page, 'limit': limit};
       if (query != null && query.trim().isNotEmpty) {
         queryParams['q'] = query.trim();
       }

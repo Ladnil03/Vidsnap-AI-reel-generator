@@ -67,9 +67,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/creator/:handle',
-        builder: (context, state) => ProfileScreen(
-          userId: state.pathParameters['handle'],
-        ),
+        builder: (context, state) =>
+            ProfileScreen(userId: state.pathParameters['handle']),
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(

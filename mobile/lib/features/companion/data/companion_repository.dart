@@ -22,10 +22,7 @@ class CompanionRepository {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         '/api/v1/companion/chat',
-        data: <String, dynamic>{
-          'message': message,
-          'mood': ?mood?.value,
-        },
+        data: <String, dynamic>{'message': message, 'mood': ?mood?.value},
       );
 
       return CompanionChatResponseModel.fromJson(
@@ -64,7 +61,9 @@ class CompanionRepository {
   /// Purge companion conversation history.
   Future<bool> clearHistory() async {
     try {
-      final response = await _dio.delete<Map<String, dynamic>>('/api/v1/companion/history');
+      final response = await _dio.delete<Map<String, dynamic>>(
+        '/api/v1/companion/history',
+      );
       final data = response.data;
       return (data?['cleared'] ?? true) as bool;
     } on DioException catch (e) {
@@ -77,7 +76,9 @@ class CompanionRepository {
   /// Get active user mood preference.
   Future<MoodStateModel?> getActiveMood() async {
     try {
-      final response = await _dio.get<Map<String, dynamic>?>('/api/v1/companion/mood');
+      final response = await _dio.get<Map<String, dynamic>?>(
+        '/api/v1/companion/mood',
+      );
       if (response.data == null) return null;
       return MoodStateModel.fromJson(response.data!);
     } on DioException catch (e) {

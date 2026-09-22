@@ -102,13 +102,17 @@ class _FakeSocialRepository implements SocialRepository {
 
   @override
   Future<CommunityModel> joinCommunity(String communityId) async {
-    final comm = mockCommunities.firstWhere((c) => c.communityId == communityId);
+    final comm = mockCommunities.firstWhere(
+      (c) => c.communityId == communityId,
+    );
     return comm.copyWith(isMember: true, membersCount: comm.membersCount + 1);
   }
 
   @override
   Future<CommunityModel> leaveCommunity(String communityId) async {
-    final comm = mockCommunities.firstWhere((c) => c.communityId == communityId);
+    final comm = mockCommunities.firstWhere(
+      (c) => c.communityId == communityId,
+    );
     return comm.copyWith(isMember: false, membersCount: comm.membersCount - 1);
   }
 
@@ -118,7 +122,9 @@ class _FakeSocialRepository implements SocialRepository {
 
 void main() {
   group('RoomsLobbyScreen Widget Tests', () {
-    testWidgets('renders Watch Together tab with room cards and filters', (tester) async {
+    testWidgets('renders Watch Together tab with room cards and filters', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -135,9 +141,7 @@ void main() {
             roomsRepositoryProvider.overrideWithValue(fakeRoomsRepo),
             socialRepositoryProvider.overrideWithValue(fakeSocialRepo),
           ],
-          child: const MaterialApp(
-            home: RoomsLobbyScreen(),
-          ),
+          child: const MaterialApp(home: RoomsLobbyScreen()),
         ),
       );
 
@@ -164,7 +168,9 @@ void main() {
       expect(find.text('Host Room'), findsOneWidget);
     });
 
-    testWidgets('switches to Communities tab and renders community cards', (tester) async {
+    testWidgets('switches to Communities tab and renders community cards', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -181,9 +187,7 @@ void main() {
             roomsRepositoryProvider.overrideWithValue(fakeRoomsRepo),
             socialRepositoryProvider.overrideWithValue(fakeSocialRepo),
           ],
-          child: const MaterialApp(
-            home: RoomsLobbyScreen(),
-          ),
+          child: const MaterialApp(home: RoomsLobbyScreen()),
         ),
       );
 
@@ -226,9 +230,7 @@ void main() {
             roomsRepositoryProvider.overrideWithValue(fakeRoomsRepo),
             socialRepositoryProvider.overrideWithValue(fakeSocialRepo),
           ],
-          child: const MaterialApp(
-            home: RoomsLobbyScreen(),
-          ),
+          child: const MaterialApp(home: RoomsLobbyScreen()),
         ),
       );
 

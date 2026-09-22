@@ -97,7 +97,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             decoration: InputDecoration(
               hintText: 'Search reels, creators, hashtags...',
               hintStyle: TextStyle(color: subtleTextColor, fontSize: 13.5),
-              prefixIcon: Icon(Icons.search, color: subtleTextColor, size: 20.0),
+              prefixIcon: Icon(
+                Icons.search,
+                color: subtleTextColor,
+                size: 20.0,
+              ),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.clear, size: 16.0),
@@ -122,9 +126,13 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             height: 44.0,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: 4.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.s4,
+                vertical: 4.0,
+              ),
               itemCount: _sources.length,
-              separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.s2),
+              separatorBuilder: (context, index) =>
+                  const SizedBox(width: AppSpacing.s2),
               itemBuilder: (context, index) {
                 final source = _sources[index];
                 final isSelected = state.selectedSource == source['id'];
@@ -136,7 +144,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                           ? AppColors.cream50
                           : (isDark ? AppColors.sage200 : AppColors.forest700),
                       fontSize: 12.0,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                     ),
                   ),
                   selected: isSelected,
@@ -151,7 +161,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                     borderRadius: BorderRadius.circular(AppRadii.pill),
                   ),
                   onSelected: (_) {
-                    ref.read(discoveryProvider.notifier).setSource(source['id']!);
+                    ref
+                        .read(discoveryProvider.notifier)
+                        .setSource(source['id']!);
                   },
                 );
               },
@@ -163,9 +175,13 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             height: 38.0,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: 2.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.s4,
+                vertical: 2.0,
+              ),
               itemCount: _trendingTags.length,
-              separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.s2),
+              separatorBuilder: (context, index) =>
+                  const SizedBox(width: AppSpacing.s2),
               itemBuilder: (context, index) {
                 final tag = _trendingTags[index];
                 final isSelected = state.selectedTag == tag.replaceAll('#', '');
@@ -180,16 +196,22 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  backgroundColor: isSelected ? AppColors.forest600 : Colors.transparent,
+                  backgroundColor: isSelected
+                      ? AppColors.forest600
+                      : Colors.transparent,
                   side: BorderSide(
-                    color: isSelected ? AppColors.forest600 : (isDark ? AppColors.forest800 : AppColors.cream300),
+                    color: isSelected
+                        ? AppColors.forest600
+                        : (isDark ? AppColors.forest800 : AppColors.cream300),
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadii.pill),
                   ),
                   onPressed: () {
                     final clean = tag.replaceAll('#', '');
-                    ref.read(discoveryProvider.notifier).setTag(isSelected ? null : clean);
+                    ref
+                        .read(discoveryProvider.notifier)
+                        .setTag(isSelected ? null : clean);
                   },
                 );
               },
@@ -200,7 +222,13 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
 
           // Main Grid of Discovery Items
           Expanded(
-            child: _buildGridContent(state, isDark, cardBg, textColor, subtleTextColor),
+            child: _buildGridContent(
+              state,
+              isDark,
+              cardBg,
+              textColor,
+              subtleTextColor,
+            ),
           ),
         ],
       ),
@@ -221,7 +249,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     if (state.errorMessage != null && state.items.isEmpty) {
       return AppErrorView(
         failure: AppFailure.network(message: state.errorMessage!),
-        onRetry: () => ref.read(discoveryProvider.notifier).loadDiscovery(refresh: true),
+        onRetry: () =>
+            ref.read(discoveryProvider.notifier).loadDiscovery(refresh: true),
       );
     }
 
@@ -229,7 +258,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       return AppEmptyState(
         title: 'No discovery reels found',
         description: 'Try adjusting your search query or source filter',
-        icon: const Icon(Icons.search_off_rounded, size: 48.0, color: AppColors.sage400),
+        icon: const Icon(
+          Icons.search_off_rounded,
+          size: 48.0,
+          color: AppColors.sage400,
+        ),
         actionLabel: 'Reset filters',
         onAction: () {
           _searchController.clear();
@@ -241,10 +274,14 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: () => ref.read(discoveryProvider.notifier).loadDiscovery(refresh: true),
+      onRefresh: () =>
+          ref.read(discoveryProvider.notifier).loadDiscovery(refresh: true),
       child: GridView.builder(
         controller: _scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s2),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.s4,
+          vertical: AppSpacing.s2,
+        ),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.65,
@@ -339,7 +376,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               top: 8.0,
               left: 8.0,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 3.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6.0,
+                  vertical: 3.0,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(AppRadii.pill),
@@ -347,7 +387,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 14.0),
+                    const Icon(
+                      Icons.play_arrow_rounded,
+                      color: Colors.white,
+                      size: 14.0,
+                    ),
                     const SizedBox(width: 2.0),
                     Text(
                       _formatCount(item.viewsCount),
@@ -397,11 +441,18 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         ),
                       ),
                       if (item.likesCount > 0) ...<Widget>[
-                        const Icon(Icons.favorite, color: Color(0xFFFF4D67), size: 11.0),
+                        const Icon(
+                          Icons.favorite,
+                          color: Color(0xFFFF4D67),
+                          size: 11.0,
+                        ),
                         const SizedBox(width: 2.0),
                         Text(
                           _formatCount(item.likesCount),
-                          style: const TextStyle(color: Colors.white70, fontSize: 10.0),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 10.0,
+                          ),
                         ),
                       ],
                     ],

@@ -8,23 +8,31 @@ class FakeSecureStoragePlatform extends FlutterSecureStoragePlatform {
   final Map<String, String> _storage = <String, String>{};
 
   @override
-  Future<bool> containsKey({required String key, required Map<String, String> options}) async =>
-      _storage.containsKey(key);
+  Future<bool> containsKey({
+    required String key,
+    required Map<String, String> options,
+  }) async => _storage.containsKey(key);
 
   @override
-  Future<void> delete({required String key, required Map<String, String> options}) async =>
-      _storage.remove(key);
+  Future<void> delete({
+    required String key,
+    required Map<String, String> options,
+  }) async => _storage.remove(key);
 
   @override
-  Future<void> deleteAll({required Map<String, String> options}) async => _storage.clear();
+  Future<void> deleteAll({required Map<String, String> options}) async =>
+      _storage.clear();
 
   @override
-  Future<String?> read({required String key, required Map<String, String> options}) async =>
-      _storage[key];
+  Future<String?> read({
+    required String key,
+    required Map<String, String> options,
+  }) async => _storage[key];
 
   @override
-  Future<Map<String, String>> readAll({required Map<String, String> options}) async =>
-      Map<String, String>.from(_storage);
+  Future<Map<String, String>> readAll({
+    required Map<String, String> options,
+  }) async => Map<String, String>.from(_storage);
 
   @override
   Future<void> write({
@@ -44,11 +52,7 @@ void main() {
   });
 
   Widget createTestWidget() {
-    return const ProviderScope(
-      child: MaterialApp(
-        home: LoginScreen(),
-      ),
-    );
+    return const ProviderScope(child: MaterialApp(home: LoginScreen()));
   }
 
   void configureViewport(WidgetTester tester) {
@@ -71,7 +75,9 @@ void main() {
       expect(find.text('Create one'), findsOneWidget);
     });
 
-    testWidgets('displays validation error when submitting with empty email', (tester) async {
+    testWidgets('displays validation error when submitting with empty email', (
+      tester,
+    ) async {
       configureViewport(tester);
       await tester.pumpWidget(createTestWidget());
 
@@ -81,15 +87,18 @@ void main() {
       expect(find.text('Please enter a valid email address.'), findsOneWidget);
     });
 
-    testWidgets('displays validation error when submitting with empty password', (tester) async {
-      configureViewport(tester);
-      await tester.pumpWidget(createTestWidget());
+    testWidgets(
+      'displays validation error when submitting with empty password',
+      (tester) async {
+        configureViewport(tester);
+        await tester.pumpWidget(createTestWidget());
 
-      await tester.enterText(find.byType(TextField).first, 'test@vidsnap.ai');
-      await tester.tap(find.text('Log In'));
-      await tester.pump();
+        await tester.enterText(find.byType(TextField).first, 'test@vidsnap.ai');
+        await tester.tap(find.text('Log In'));
+        await tester.pump();
 
-      expect(find.text('Please enter your password.'), findsOneWidget);
-    });
+        expect(find.text('Please enter your password.'), findsOneWidget);
+      },
+    );
   });
 }

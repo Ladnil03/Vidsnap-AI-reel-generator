@@ -54,8 +54,9 @@ class CreatorState {
   }
 }
 
-final creatorNotifierProvider =
-    NotifierProvider<CreatorNotifier, CreatorState>(CreatorNotifier.new);
+final creatorNotifierProvider = NotifierProvider<CreatorNotifier, CreatorState>(
+  CreatorNotifier.new,
+);
 
 class CreatorNotifier extends Notifier<CreatorState> {
   CreatorRepository get _repo => ref.read(creatorRepositoryProvider);
@@ -107,10 +108,7 @@ class CreatorNotifier extends Notifier<CreatorState> {
     state = state.copyWith(isGeneratingCopilot: true, clearError: true);
     try {
       final response = await _repo.getCopilotInsights(topic: trimmed);
-      state = state.copyWith(
-        copilot: response,
-        isGeneratingCopilot: false,
-      );
+      state = state.copyWith(copilot: response, isGeneratingCopilot: false);
     } catch (e) {
       state = state.copyWith(
         isGeneratingCopilot: false,

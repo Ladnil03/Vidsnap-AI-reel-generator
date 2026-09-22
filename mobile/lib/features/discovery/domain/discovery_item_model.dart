@@ -48,9 +48,8 @@ class DiscoveryItemModel {
       embedUrl: (json['embed_url'] ?? '').toString(),
       thumbnailUrl: json['thumbnail_url']?.toString(),
       duration: ((json['duration'] ?? 0.0) as num).toDouble(),
-      tags: (json['tags'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
+      tags:
+          (json['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
           const <String>[],
       attributionText: (json['attribution_text'] ?? '').toString(),
       viewsCount: (json['views_count'] as num?)?.toInt() ?? 0,

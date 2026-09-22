@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vidsnap_ai/features/discovery/data/discovery_repository.dart';
@@ -13,66 +14,69 @@ void main() {
       repository = DiscoveryRepository(dio: dio);
     });
 
-    test('search passes query parameters and returns DiscoverySearchResponseModel', () async {
-      dio.httpClientAdapter = _MockAdapter((options) {
-        expect(options.path, '/api/v1/discovery/search');
-        expect(options.queryParameters['q'], 'flutter');
-        expect(options.queryParameters['source'], 'youtube_shorts');
-        expect(options.queryParameters['tag'], 'mobile');
-        expect(options.queryParameters['page'], 1);
-        expect(options.queryParameters['limit'], 20);
+    test(
+      'search passes query parameters and returns DiscoverySearchResponseModel',
+      () async {
+        dio.httpClientAdapter = _MockAdapter((options) {
+          expect(options.path, '/api/v1/discovery/search');
+          expect(options.queryParameters['q'], 'flutter');
+          expect(options.queryParameters['source'], 'youtube_shorts');
+          expect(options.queryParameters['tag'], 'mobile');
+          expect(options.queryParameters['page'], 1);
+          expect(options.queryParameters['limit'], 20);
 
-        final data = <String, dynamic>{
-          'total': 1,
-          'page': 1,
-          'limit': 20,
-          'has_more': false,
-          'items': <Map<String, dynamic>>[
-            <String, dynamic>{
-              'item_id': 'disc-1',
-              'source': 'youtube_shorts',
-              'external_id': 'ext-yt-1',
-              'title': 'Flutter Fast Hacks',
-              'description': 'Top 5 Flutter animation tricks',
-              'author_name': 'CodeDaily',
-              'source_url': 'https://youtube.com/shorts/123',
-              'embed_url': 'https://youtube.com/embed/123',
-              'thumbnail_url': 'https://img.youtube.com/vi/123/hqdefault.jpg',
-              'duration': 45.0,
-              'tags': <String>['flutter', 'mobile'],
-              'attribution_text': 'From YouTube Shorts',
-              'views_count': 45000,
-              'likes_count': 3200,
-              'created_at': '2026-03-10T10:00:00Z',
+          final data = <String, dynamic>{
+            'total': 1,
+            'page': 1,
+            'limit': 20,
+            'has_more': false,
+            'items': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'item_id': 'disc-1',
+                'source': 'youtube_shorts',
+                'external_id': 'ext-yt-1',
+                'title': 'Flutter Fast Hacks',
+                'description': 'Top 5 Flutter animation tricks',
+                'author_name': 'CodeDaily',
+                'source_url': 'https://youtube.com/shorts/123',
+                'embed_url': 'https://youtube.com/embed/123',
+                'thumbnail_url': 'https://img.youtube.com/vi/123/hqdefault.jpg',
+                'duration': 45.0,
+                'tags': <String>['flutter', 'mobile'],
+                'attribution_text': 'From YouTube Shorts',
+                'views_count': 45000,
+                'likes_count': 3200,
+                'created_at': '2026-03-10T10:00:00Z',
+              },
+            ],
+          };
+
+          return ResponseBody.fromString(
+            jsonEncode(data),
+            200,
+            headers: <String, List<String>>{
+              Headers.contentTypeHeader: <String>[Headers.jsonContentType],
             },
-          ],
-        };
+          );
+        });
 
-        return ResponseBody.fromString(
-          jsonEncode(data),
-          200,
-          headers: <String, List<String>>{
-            Headers.contentTypeHeader: <String>[Headers.jsonContentType],
-          },
+        final result = await repository.search(
+          query: 'flutter',
+          source: 'youtube_shorts',
+          tag: '#mobile',
+          page: 1,
+          limit: 20,
         );
-      });
 
-      final result = await repository.search(
-        query: 'flutter',
-        source: 'youtube_shorts',
-        tag: '#mobile',
-        page: 1,
-        limit: 20,
-      );
-
-      expect(result.items.length, 1);
-      final item = result.items.first;
-      expect(item.itemId, 'disc-1');
-      expect(item.title, 'Flutter Fast Hacks');
-      expect(item.authorName, 'CodeDaily');
-      expect(item.viewsCount, 45000);
-      expect(item.tags, <String>['flutter', 'mobile']);
-    });
+        expect(result.items.length, 1);
+        final item = result.items.first;
+        expect(item.itemId, 'disc-1');
+        expect(item.title, 'Flutter Fast Hacks');
+        expect(item.authorName, 'CodeDaily');
+        expect(item.viewsCount, 45000);
+        expect(item.tags, <String>['flutter', 'mobile']);
+      },
+    );
 
     test('getItem fetches a single discovery item by ID', () async {
       dio.httpClientAdapter = _MockAdapter((options) {

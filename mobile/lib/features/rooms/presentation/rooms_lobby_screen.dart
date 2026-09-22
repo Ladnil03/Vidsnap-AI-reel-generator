@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -75,7 +76,11 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
         builder: (_) => PasscodeDialog(roomTitle: room.name),
       );
       if (passcode != null && mounted) {
-        unawaited(context.push('/rooms/${room.roomId}?passcode=${Uri.encodeComponent(passcode)}'));
+        unawaited(
+          context.push(
+            '/rooms/${room.roomId}?passcode=${Uri.encodeComponent(passcode)}',
+          ),
+        );
       }
     } else {
       unawaited(context.push('/rooms/${room.roomId}'));
@@ -94,7 +99,9 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
           controller: _tabController,
           indicatorColor: AppColors.moss500,
           labelColor: AppColors.moss500,
-          unselectedLabelColor: isDark ? AppColors.cream400 : AppColors.forest600,
+          unselectedLabelColor: isDark
+              ? AppColors.cream400
+              : AppColors.forest600,
           tabs: const [
             Tab(
               icon: Icon(Icons.group_outlined, size: 20),
@@ -217,9 +224,14 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
             SliverFillRemaining(
               hasScrollBody: false,
               child: AppEmptyState(
-                icon: const Icon(Icons.meeting_room_outlined, size: 48, color: AppColors.moss500),
+                icon: const Icon(
+                  Icons.meeting_room_outlined,
+                  size: 48,
+                  color: AppColors.moss500,
+                ),
                 title: 'No Active Watch Parties',
-                description: 'Be the first creator to host a Watch Together party!',
+                description:
+                    'Be the first creator to host a Watch Together party!',
                 actionLabel: 'Host Party Now',
                 onAction: _openCreateRoomSheet,
               ),
@@ -233,13 +245,10 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
                 AppSpacing.s16, // Extra space for FAB
               ),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final room = lobbyState.rooms[index];
-                    return _buildRoomCard(room, isDark, theme);
-                  },
-                  childCount: lobbyState.rooms.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final room = lobbyState.rooms[index];
+                  return _buildRoomCard(room, isDark, theme);
+                }, childCount: lobbyState.rooms.length),
               ),
             ),
         ],
@@ -249,7 +258,9 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
 
   Widget _buildRoomCard(RoomModel room, bool isDark, ThemeData theme) {
     final dangerColor = isDark ? AppColors.dangerDark : AppColors.dangerLight;
-    final warningColor = isDark ? AppColors.warningDark : AppColors.warningLight;
+    final warningColor = isDark
+        ? AppColors.warningDark
+        : AppColors.warningLight;
 
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.s3),
@@ -271,7 +282,11 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.fiber_manual_record, color: dangerColor, size: 10),
+                    Icon(
+                      Icons.fiber_manual_record,
+                      color: dangerColor,
+                      size: 10,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'LIVE',
@@ -321,14 +336,18 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
               const SizedBox(width: 4),
               Text(
                 '${room.participantCount}',
-                style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.s2),
           Text(
             room.name,
-            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -352,7 +371,11 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
             ),
             child: Row(
               children: [
-                const Icon(Icons.movie_creation_outlined, size: 16, color: AppColors.moss500),
+                const Icon(
+                  Icons.movie_creation_outlined,
+                  size: 16,
+                  color: AppColors.moss500,
+                ),
                 const SizedBox(width: AppSpacing.s2),
                 Expanded(
                   child: Text(
@@ -469,7 +492,8 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
                 ),
               ),
             )
-          else if (commState.errorMessage != null && commState.communities.isEmpty)
+          else if (commState.errorMessage != null &&
+              commState.communities.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
               child: AppErrorView(
@@ -484,7 +508,11 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
             const SliverFillRemaining(
               hasScrollBody: false,
               child: AppEmptyState(
-                icon: Icon(Icons.diversity_3, size: 48, color: AppColors.moss500),
+                icon: Icon(
+                  Icons.diversity_3,
+                  size: 48,
+                  color: AppColors.moss500,
+                ),
                 title: 'No Communities Found',
                 description: 'Try searching with different terms or selecting another category.',
               ),
@@ -498,13 +526,10 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
                 AppSpacing.s16,
               ),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final item = commState.communities[index];
-                    return _buildCommunityCard(item, isDark, theme);
-                  },
-                  childCount: commState.communities.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final item = commState.communities[index];
+                  return _buildCommunityCard(item, isDark, theme);
+                }, childCount: commState.communities.length),
               ),
             ),
         ],
@@ -512,7 +537,11 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
     );
   }
 
-  Widget _buildCommunityCard(CommunityModel community, bool isDark, ThemeData theme) {
+  Widget _buildCommunityCard(
+    CommunityModel community,
+    bool isDark,
+    ThemeData theme,
+  ) {
     final commNotifier = ref.read(communitiesProvider.notifier);
 
     return AppCard(
@@ -526,7 +555,11 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
               CircleAvatar(
                 radius: 20,
                 backgroundColor: AppColors.moss500.withValues(alpha: 0.15),
-                child: const Icon(Icons.groups, color: AppColors.moss500, size: 22),
+                child: const Icon(
+                  Icons.groups,
+                  color: AppColors.moss500,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: AppSpacing.s3),
               Expanded(
@@ -553,13 +586,16 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
               ),
               AppButton(
                 label: community.isMember ? 'Joined' : 'Join',
-                variant: community.isMember ? AppButtonVariant.ghost : AppButtonVariant.primary,
+                variant: community.isMember
+                    ? AppButtonVariant.ghost
+                    : AppButtonVariant.primary,
                 size: AppButtonSize.sm,
                 leftIcon: Icon(
                   community.isMember ? Icons.check : Icons.add,
                   size: 16,
                 ),
-                onPressed: () => unawaited(commNotifier.toggleJoin(community.communityId)),
+                onPressed: () =>
+                    unawaited(commNotifier.toggleJoin(community.communityId)),
               ),
             ],
           ),
@@ -617,7 +653,9 @@ class _RoomsLobbyScreenState extends ConsumerState<RoomsLobbyScreen>
           border: Border.all(
             color: isSelected
                 ? AppColors.moss500
-                : (isDark ? AppColors.borderDarkSubtle : AppColors.borderLightSubtle),
+                : (isDark
+                      ? AppColors.borderDarkSubtle
+                      : AppColors.borderLightSubtle),
           ),
         ),
         child: Text(

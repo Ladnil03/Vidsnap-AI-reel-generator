@@ -49,9 +49,9 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not access media: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not access media: $e')));
       }
     }
   }
@@ -79,9 +79,8 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
     await ref.read(createProvider.notifier).saveDraft();
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Draft saved locally!')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Draft saved locally!')));
     }
   }
 
@@ -217,7 +216,8 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: state.drafts.length,
-            separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.s2),
+            separatorBuilder: (context, index) =>
+                const SizedBox(height: AppSpacing.s2),
             itemBuilder: (context, index) {
               final draft = state.drafts[index];
               return AppCard(
@@ -230,7 +230,10 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                       color: AppColors.forest800,
                       borderRadius: BorderRadius.circular(AppRadii.sm),
                     ),
-                    child: const Icon(Icons.movie_outlined, color: AppColors.sage300),
+                    child: const Icon(
+                      Icons.movie_outlined,
+                      color: AppColors.sage300,
+                    ),
                   ),
                   title: Text(
                     draft.title,
@@ -260,7 +263,9 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                         icon: const Icon(Icons.delete_outline, size: 20.0),
                         color: AppColors.dangerLight,
                         onPressed: () {
-                          ref.read(createProvider.notifier).deleteDraft(draft.draftId);
+                          ref
+                              .read(createProvider.notifier)
+                              .deleteDraft(draft.draftId);
                         },
                       ),
                     ],
@@ -390,7 +395,11 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        const Icon(Icons.auto_awesome, color: AppColors.moss500, size: 18.0),
+                        const Icon(
+                          Icons.auto_awesome,
+                          color: AppColors.moss500,
+                          size: 18.0,
+                        ),
                         const SizedBox(width: AppSpacing.s2),
                         Flexible(
                           child: Text(
@@ -410,8 +419,12 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     onPressed: state.isGeneratingTags
                         ? null
                         : () {
-                            ref.read(createProvider.notifier).setTitle(_titleController.text);
-                            ref.read(createProvider.notifier).setDescription(_descController.text);
+                            ref
+                                .read(createProvider.notifier)
+                                .setTitle(_titleController.text);
+                            ref
+                                .read(createProvider.notifier)
+                                .setDescription(_descController.text);
                             ref.read(createProvider.notifier).generateAiTags();
                           },
                     icon: state.isGeneratingTags
@@ -421,11 +434,15 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2.0),
                           )
                         : const Icon(Icons.bolt, size: 16.0),
-                    label: const Text('Generate', style: TextStyle(fontSize: 12.0)),
+                    label: const Text(
+                      'Generate',
+                      style: TextStyle(fontSize: 12.0),
+                    ),
                   ),
                 ],
               ),
-              if (state.suggestedHook != null && state.suggestedHook!.isNotEmpty) ...<Widget>[
+              if (state.suggestedHook != null &&
+                  state.suggestedHook!.isNotEmpty) ...<Widget>[
                 const SizedBox(height: AppSpacing.s2),
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.s2),
@@ -451,10 +468,16 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                 runSpacing: 4.0,
                 children: state.hashtags.map((tag) {
                   return Chip(
-                    label: Text('#$tag', style: const TextStyle(fontSize: 11.5)),
+                    label: Text(
+                      '#$tag',
+                      style: const TextStyle(fontSize: 11.5),
+                    ),
                     deleteIcon: const Icon(Icons.close, size: 14.0),
-                    onDeleted: () => ref.read(createProvider.notifier).removeHashtag(tag),
-                    backgroundColor: isDark ? AppColors.forest700 : AppColors.cream200,
+                    onDeleted: () =>
+                        ref.read(createProvider.notifier).removeHashtag(tag),
+                    backgroundColor: isDark
+                        ? AppColors.forest700
+                        : AppColors.cream200,
                     labelStyle: TextStyle(color: textColor),
                     side: BorderSide.none,
                     shape: RoundedRectangleBorder(
@@ -474,7 +497,10 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                       style: TextStyle(color: textColor, fontSize: 13.0),
                       decoration: InputDecoration(
                         hintText: 'Add custom #tag',
-                        hintStyle: TextStyle(color: subtleTextColor, fontSize: 13.0),
+                        hintStyle: TextStyle(
+                          color: subtleTextColor,
+                          fontSize: 13.0,
+                        ),
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.s3,
@@ -492,9 +518,14 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                   ),
                   const SizedBox(width: AppSpacing.s2),
                   IconButton(
-                    icon: const Icon(Icons.add_circle, color: AppColors.moss500),
+                    icon: const Icon(
+                      Icons.add_circle,
+                      color: AppColors.moss500,
+                    ),
                     onPressed: () {
-                      ref.read(createProvider.notifier).addHashtag(_tagInputController.text);
+                      ref
+                          .read(createProvider.notifier)
+                          .addHashtag(_tagInputController.text);
                       _tagInputController.clear();
                     },
                   ),
@@ -519,9 +550,18 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
           ),
           items: const <DropdownMenuItem<String>>[
             DropdownMenuItem(value: 'public', child: Text('Public (Everyone)')),
-            DropdownMenuItem(value: 'followers_only', child: Text('Followers Only')),
-            DropdownMenuItem(value: 'unlisted', child: Text('Unlisted (Link only)')),
-            DropdownMenuItem(value: 'private', child: Text('Private (Only me)')),
+            DropdownMenuItem(
+              value: 'followers_only',
+              child: Text('Followers Only'),
+            ),
+            DropdownMenuItem(
+              value: 'unlisted',
+              child: Text('Unlisted (Link only)'),
+            ),
+            DropdownMenuItem(
+              value: 'private',
+              child: Text('Private (Only me)'),
+            ),
           ],
           onChanged: (val) {
             if (val != null) {
@@ -543,7 +583,10 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
             ),
             child: Text(
               state.errorMessage!,
-              style: const TextStyle(color: AppColors.dangerLight, fontSize: 13.0),
+              style: const TextStyle(
+                color: AppColors.dangerLight,
+                fontSize: 13.0,
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.s4),

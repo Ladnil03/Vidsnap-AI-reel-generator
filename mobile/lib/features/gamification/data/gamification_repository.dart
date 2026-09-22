@@ -17,8 +17,9 @@ class GamificationRepository {
   /// Fetch the aggregated gamification profile.
   Future<GamificationProfileModel> getProfile() async {
     try {
-      final response =
-          await _dio.get<Map<String, dynamic>>('/api/v1/gamification/profile');
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/gamification/profile',
+      );
       return GamificationProfileModel.fromJson(
         response.data ?? <String, dynamic>{},
       );
@@ -32,8 +33,9 @@ class GamificationRepository {
   /// Fetch user level and progress status.
   Future<UserLevelModel> getUserLevel() async {
     try {
-      final response =
-          await _dio.get<Map<String, dynamic>>('/api/v1/gamification/level');
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/gamification/level',
+      );
       return UserLevelModel.fromJson(response.data ?? <String, dynamic>{});
     } on DioException catch (e) {
       throw mapDioExceptionToAppFailure(e);
@@ -50,10 +52,7 @@ class GamificationRepository {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         '/api/v1/gamification/streaks/record',
-        data: <String, dynamic>{
-          'scope': scope,
-          'target_id': ?targetId,
-        },
+        data: <String, dynamic>{'scope': scope, 'target_id': ?targetId},
       );
       return StreakStateModel.fromJson(response.data ?? <String, dynamic>{});
     } on DioException catch (e) {
@@ -71,10 +70,7 @@ class GamificationRepository {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         '/api/v1/gamification/streaks/freeze',
-        data: <String, dynamic>{
-          'scope': scope,
-          'target_id': ?targetId,
-        },
+        data: <String, dynamic>{'scope': scope, 'target_id': ?targetId},
       );
       return StreakStateModel.fromJson(response.data ?? <String, dynamic>{});
     } on DioException catch (e) {
@@ -87,8 +83,9 @@ class GamificationRepository {
   /// Get active daily and weekly quest challenges with progress.
   Future<List<UserChallengeModel>> getChallenges() async {
     try {
-      final response =
-          await _dio.get<dynamic>('/api/v1/gamification/challenges');
+      final response = await _dio.get<dynamic>(
+        '/api/v1/gamification/challenges',
+      );
       final data = response.data;
       if (data is List) {
         return data
@@ -147,10 +144,7 @@ class GamificationRepository {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/v1/gamification/leaderboard',
-        queryParameters: <String, dynamic>{
-          'scope': scope,
-          'limit': limit,
-        },
+        queryParameters: <String, dynamic>{'scope': scope, 'limit': limit},
       );
       return LeaderboardResponseModel.fromJson(
         response.data ?? <String, dynamic>{},

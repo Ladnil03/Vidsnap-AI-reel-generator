@@ -16,11 +16,11 @@ class TelemetryBreadcrumb {
   final DateTime timestamp;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'message': message,
-        'category': category,
-        if (data != null) 'data': data,
-        'timestamp': timestamp.toIso8601String(),
-      };
+    'message': message,
+    'category': category,
+    if (data != null) 'data': data,
+    'timestamp': timestamp.toIso8601String(),
+  };
 }
 
 /// Recorded crash or error event.
@@ -45,14 +45,14 @@ class TelemetryErrorEvent {
   final List<TelemetryBreadcrumb> breadcrumbs;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'error': error,
-        if (stackTrace != null) 'stack_trace': stackTrace,
-        if (reason != null) 'reason': reason,
-        'is_fatal': isFatal,
-        if (userId != null) 'user_id': userId,
-        'timestamp': timestamp.toIso8601String(),
-        'breadcrumbs_count': breadcrumbs.length,
-      };
+    'error': error,
+    if (stackTrace != null) 'stack_trace': stackTrace,
+    if (reason != null) 'reason': reason,
+    'is_fatal': isFatal,
+    if (userId != null) 'user_id': userId,
+    'timestamp': timestamp.toIso8601String(),
+    'breadcrumbs_count': breadcrumbs.length,
+  };
 }
 
 /// Unified telemetry and crash reporting pipeline (Crashlytics/Sentry ready).
@@ -73,8 +73,10 @@ class TelemetryService {
 
   void setUserId(String? userId) {
     _currentUserId = userId;
-    addBreadcrumb('User identity set: ${userId ?? "anonymous"}',
-        category: 'auth');
+    addBreadcrumb(
+      'User identity set: ${userId ?? "anonymous"}',
+      category: 'auth',
+    );
   }
 
   void addBreadcrumb(
@@ -118,9 +120,7 @@ class TelemetryService {
     _recordedErrors.add(event);
 
     if (kDebugMode) {
-      debugPrint(
-        '[Telemetry ERROR] reason: $reason | error: $error\n$stack',
-      );
+      debugPrint('[Telemetry ERROR] reason: $reason | error: $error\n$stack');
     }
   }
 

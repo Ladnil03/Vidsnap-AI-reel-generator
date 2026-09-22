@@ -14,11 +14,7 @@ void main() {
   group('AppCard Widget Tests', () {
     testWidgets('renders child widget inside card', (tester) async {
       await tester.pumpWidget(
-        createTestWidget(
-          const AppCard(
-            child: Text('Card Content'),
-          ),
-        ),
+        createTestWidget(const AppCard(child: Text('Card Content'))),
       );
 
       expect(find.text('Card Content'), findsOneWidget);

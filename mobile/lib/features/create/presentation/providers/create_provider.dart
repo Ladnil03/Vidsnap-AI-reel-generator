@@ -51,7 +51,9 @@ class CreateState {
     List<CreateVideoDraft>? drafts,
   }) {
     return CreateState(
-      pickedVideoPath: clearVideo ? null : (pickedVideoPath ?? this.pickedVideoPath),
+      pickedVideoPath: clearVideo
+          ? null
+          : (pickedVideoPath ?? this.pickedVideoPath),
       duration: duration ?? this.duration,
       title: title ?? this.title,
       description: description ?? this.description,
@@ -118,7 +120,9 @@ class CreateNotifier extends Notifier<CreateState> {
   Future<void> generateAiTags() async {
     final title = state.title.trim();
     if (title.isEmpty) {
-      state = state.copyWith(errorMessage: 'Please enter a title first to generate tags.');
+      state = state.copyWith(
+        errorMessage: 'Please enter a title first to generate tags.',
+      );
       return;
     }
 
@@ -130,7 +134,8 @@ class CreateNotifier extends Notifier<CreateState> {
         transcript: state.description.isNotEmpty ? state.description : null,
       );
 
-      final combined = Set<String>.from(state.hashtags)..addAll(result.hashtags);
+      final combined = Set<String>.from(state.hashtags)
+        ..addAll(result.hashtags);
       state = state.copyWith(
         hashtags: combined.toList(),
         suggestedHook: result.suggestedHook,
@@ -182,12 +187,16 @@ class CreateNotifier extends Notifier<CreateState> {
 
   Future<bool> uploadVideo() async {
     if (state.pickedVideoPath == null || state.pickedVideoPath!.isEmpty) {
-      state = state.copyWith(errorMessage: 'Please select or record a video first.');
+      state = state.copyWith(
+        errorMessage: 'Please select or record a video first.',
+      );
       return false;
     }
 
     if (state.title.trim().isEmpty) {
-      state = state.copyWith(errorMessage: 'Please enter a title for your reel.');
+      state = state.copyWith(
+        errorMessage: 'Please enter a title for your reel.',
+      );
       return false;
     }
 
@@ -245,4 +254,6 @@ class CreateNotifier extends Notifier<CreateState> {
   }
 }
 
-final createProvider = NotifierProvider<CreateNotifier, CreateState>(CreateNotifier.new);
+final createProvider = NotifierProvider<CreateNotifier, CreateState>(
+  CreateNotifier.new,
+);

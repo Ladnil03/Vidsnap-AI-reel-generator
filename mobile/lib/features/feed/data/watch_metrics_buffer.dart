@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vidsnap_ai/features/feed/data/feed_repository.dart';
@@ -8,7 +9,8 @@ class WatchMetricsBuffer {
   WatchMetricsBuffer({required this.repository});
 
   final FeedRepository repository;
-  final Map<String, WatchProgressRequestModel> _pendingQueue = <String, WatchProgressRequestModel>{};
+  final Map<String, WatchProgressRequestModel> _pendingQueue =
+      <String, WatchProgressRequestModel>{};
   Timer? _flushTimer;
   bool _isFlushing = false;
 
@@ -42,7 +44,9 @@ class WatchMetricsBuffer {
     if (_isFlushing || _pendingQueue.isEmpty) return;
     _isFlushing = true;
 
-    final itemsToFlush = Map<String, WatchProgressRequestModel>.from(_pendingQueue);
+    final itemsToFlush = Map<String, WatchProgressRequestModel>.from(
+      _pendingQueue,
+    );
     _pendingQueue.clear();
 
     for (final entry in itemsToFlush.entries) {
@@ -50,7 +54,9 @@ class WatchMetricsBuffer {
         await repository.recordWatchProgress(entry.value);
       } catch (e) {
         // In case of network failure, keep latest if not overwritten
-        debugPrint('[WatchMetricsBuffer] Failed to flush progress for ${entry.key}: $e');
+        debugPrint(
+          '[WatchMetricsBuffer] Failed to flush progress for ${entry.key}: $e',
+        );
         if (!_pendingQueue.containsKey(entry.key)) {
           _pendingQueue[entry.key] = entry.value;
         }

@@ -25,7 +25,8 @@ class CreateVideoDraft {
       videoPath: (json['video_path'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
-      hashtags: (json['hashtags'] as List<dynamic>?)
+      hashtags:
+          (json['hashtags'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const <String>[],

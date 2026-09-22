@@ -49,7 +49,9 @@ class _FakeDiscoveryRepository implements DiscoveryRepository {
 
 void main() {
   group('ExploreScreen Widget Tests', () {
-    testWidgets('renders search field, filter chips, and video grid items', (tester) async {
+    testWidgets('renders search field, filter chips, and video grid items', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -61,12 +63,8 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            discoveryRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
-          child: const MaterialApp(
-            home: ExploreScreen(),
-          ),
+          overrides: [discoveryRepositoryProvider.overrideWithValue(fakeRepo)],
+          child: const MaterialApp(home: ExploreScreen()),
         ),
       );
 
@@ -92,7 +90,9 @@ void main() {
       expect(find.text('23.4K'), findsOneWidget);
     });
 
-    testWidgets('submitting search updates query and fetches results', (tester) async {
+    testWidgets('submitting search updates query and fetches results', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -104,12 +104,8 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            discoveryRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
-          child: const MaterialApp(
-            home: ExploreScreen(),
-          ),
+          overrides: [discoveryRepositoryProvider.overrideWithValue(fakeRepo)],
+          child: const MaterialApp(home: ExploreScreen()),
         ),
       );
 

@@ -17,8 +17,9 @@ class BusinessRepository {
   /// Fetch advertiser profile for authenticated user.
   Future<BusinessProfileModel> getProfile() async {
     try {
-      final response =
-          await _dio.get<Map<String, dynamic>>('/api/v1/business/profile');
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/business/profile',
+      );
       return BusinessProfileModel.fromJson(
         response.data ?? <String, dynamic>{},
       );
@@ -82,9 +83,7 @@ class BusinessRepository {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/v1/business/campaigns/$campaignId',
       );
-      return CampaignModel.fromJson(
-        response.data ?? <String, dynamic>{},
-      );
+      return CampaignModel.fromJson(response.data ?? <String, dynamic>{});
     } on DioException catch (e) {
       throw mapDioExceptionToAppFailure(e);
     } catch (e) {
@@ -99,9 +98,7 @@ class BusinessRepository {
         '/api/v1/business/campaigns',
         data: input.toJson(),
       );
-      return CampaignModel.fromJson(
-        response.data ?? <String, dynamic>{},
-      );
+      return CampaignModel.fromJson(response.data ?? <String, dynamic>{});
     } on DioException catch (e) {
       throw mapDioExceptionToAppFailure(e);
     } catch (e) {

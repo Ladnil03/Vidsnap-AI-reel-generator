@@ -17,11 +17,10 @@ class CreatorRepository {
   /// Fetch current user's creator studio profile.
   Future<CreatorProfileModel> getProfile() async {
     try {
-      final response =
-          await _dio.get<Map<String, dynamic>>('/api/v1/creator/profile');
-      return CreatorProfileModel.fromJson(
-        response.data ?? <String, dynamic>{},
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/creator/profile',
       );
+      return CreatorProfileModel.fromJson(response.data ?? <String, dynamic>{});
     } on DioException catch (e) {
       throw mapDioExceptionToAppFailure(e);
     } catch (e) {
@@ -44,9 +43,7 @@ class CreatorRepository {
           'social_links': ?socialLinks,
         },
       );
-      return CreatorProfileModel.fromJson(
-        response.data ?? <String, dynamic>{},
-      );
+      return CreatorProfileModel.fromJson(response.data ?? <String, dynamic>{});
     } on DioException catch (e) {
       throw mapDioExceptionToAppFailure(e);
     } catch (e) {

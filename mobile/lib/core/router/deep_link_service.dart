@@ -17,7 +17,11 @@ class DeepLinkService {
     TelemetryService.instance.addBreadcrumb(
       'Resolving deep link: $uri',
       category: 'deep_link',
-      data: <String, dynamic>{'scheme': uri.scheme, 'host': uri.host, 'path': uri.path},
+      data: <String, dynamic>{
+        'scheme': uri.scheme,
+        'host': uri.host,
+        'path': uri.path,
+      },
     );
 
     // 1. Custom Scheme: vidsnap://...

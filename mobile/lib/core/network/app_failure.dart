@@ -1,10 +1,4 @@
-enum FailureType {
-  network,
-  auth,
-  validation,
-  server,
-  unknown,
-}
+enum FailureType { network, auth, validation, server, unknown }
 
 class AppFailure implements Exception {
   const AppFailure({
@@ -24,7 +18,8 @@ class AppFailure implements Exception {
   final bool isRetryable;
 
   factory AppFailure.network({
-    String message = 'Network connection error. Please check your internet connection.',
+    String message =
+        'Network connection error. Please check your internet connection.',
   }) {
     return AppFailure(
       type: FailureType.network,
@@ -34,7 +29,8 @@ class AppFailure implements Exception {
   }
 
   factory AppFailure.auth({
-    String message = 'Authentication required or session expired. Please log in again.',
+    String message =
+        'Authentication required or session expired. Please log in again.',
     int? statusCode = 401,
   }) {
     return AppFailure(
@@ -84,5 +80,6 @@ class AppFailure implements Exception {
   }
 
   @override
-  String toString() => 'AppFailure(type: $type, message: "$message", statusCode: $statusCode)';
+  String toString() =>
+      'AppFailure(type: $type, message: "$message", statusCode: $statusCode)';
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:vidsnap_ai/core/theme/app_colors.dart';
@@ -28,7 +29,8 @@ class FeedPlayerItem extends StatefulWidget {
   final VoidCallback onToggleSave;
   final VoidCallback onOpenComments;
   final VoidCallback onShare;
-  final void Function(double watchedSeconds, double totalSeconds)? onProgressUpdate;
+  final void Function(double watchedSeconds, double totalSeconds)?
+  onProgressUpdate;
 
   @override
   State<FeedPlayerItem> createState() => _FeedPlayerItemState();
@@ -200,15 +202,15 @@ class _FeedPlayerItemState extends State<FeedPlayerItem>
                       child: VideoPlayer(_controller!),
                     )
                   : item.thumbnailUrl != null && item.thumbnailUrl!.isNotEmpty
-                      ? Image.network(
-                          item.thumbnailUrl!,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: double.infinity,
-                          errorBuilder: (context, error, stackTrace) =>
-                              _buildPlaceholder(),
-                        )
-                      : _buildPlaceholder(),
+                  ? Image.network(
+                      item.thumbnailUrl!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorBuilder: (context, error, stackTrace) =>
+                          _buildPlaceholder(),
+                    )
+                  : _buildPlaceholder(),
             ),
           ),
         ),
@@ -285,7 +287,11 @@ class _FeedPlayerItemState extends State<FeedPlayerItem>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      const Icon(Icons.auto_awesome, size: 12.0, color: AppColors.sage300),
+                      const Icon(
+                        Icons.auto_awesome,
+                        size: 12.0,
+                        color: AppColors.sage300,
+                      ),
                       const SizedBox(width: 4.0),
                       Text(
                         item.explainabilityTag!,
@@ -306,7 +312,9 @@ class _FeedPlayerItemState extends State<FeedPlayerItem>
                   padding: const EdgeInsets.all(8.0),
                 ),
                 icon: Icon(
-                  widget.isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                  widget.isMuted
+                      ? Icons.volume_off_rounded
+                      : Icons.volume_up_rounded,
                   color: AppColors.cream50,
                   size: 20.0,
                 ),
@@ -329,8 +337,12 @@ class _FeedPlayerItemState extends State<FeedPlayerItem>
 
               // Like Button
               _buildActionButton(
-                icon: item.hasLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                iconColor: item.hasLiked ? const Color(0xFFFF4D67) : AppColors.cream50,
+                icon: item.hasLiked
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
+                iconColor: item.hasLiked
+                    ? const Color(0xFFFF4D67)
+                    : AppColors.cream50,
                 label: _formatCount(item.likesCount),
                 onTap: widget.onToggleLike,
               ),
@@ -347,8 +359,12 @@ class _FeedPlayerItemState extends State<FeedPlayerItem>
 
               // Save / Bookmark Button
               _buildActionButton(
-                icon: item.hasSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                iconColor: item.hasSaved ? AppColors.sage300 : AppColors.cream50,
+                icon: item.hasSaved
+                    ? Icons.bookmark_rounded
+                    : Icons.bookmark_border_rounded,
+                iconColor: item.hasSaved
+                    ? AppColors.sage300
+                    : AppColors.cream50,
                 label: _formatCount(item.savesCount),
                 onTap: widget.onToggleSave,
               ),
@@ -405,7 +421,9 @@ class _FeedPlayerItemState extends State<FeedPlayerItem>
               // Title / Description with expand toggle
               GestureDetector(
                 onTap: () {
-                  setState(() => _isDescriptionExpanded = !_isDescriptionExpanded);
+                  setState(
+                    () => _isDescriptionExpanded = !_isDescriptionExpanded,
+                  );
                 },
                 child: Text(
                   item.title.isNotEmpty ? item.title : item.description,
@@ -447,7 +465,10 @@ class _FeedPlayerItemState extends State<FeedPlayerItem>
                   item.attributionText!.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 6.0),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6.0,
+                    vertical: 2.0,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black45,
                     borderRadius: BorderRadius.circular(AppRadii.xs),
@@ -455,7 +476,11 @@ class _FeedPlayerItemState extends State<FeedPlayerItem>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      const Icon(Icons.link, size: 12.0, color: AppColors.sage300),
+                      const Icon(
+                        Icons.link,
+                        size: 12.0,
+                        color: AppColors.sage300,
+                      ),
                       const SizedBox(width: 4.0),
                       Text(
                         item.attributionText!,
@@ -550,11 +575,7 @@ class _FeedPlayerItemState extends State<FeedPlayerItem>
               color: AppColors.moss500,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.add,
-              color: Colors.white,
-              size: 14.0,
-            ),
+            child: const Icon(Icons.add, color: Colors.white, size: 14.0),
           ),
         ),
       ],
@@ -588,9 +609,7 @@ class _FeedPlayerItemState extends State<FeedPlayerItem>
               color: AppColors.cream50,
               fontSize: 12.0,
               fontWeight: FontWeight.w600,
-              shadows: <Shadow>[
-                Shadow(color: Colors.black54, blurRadius: 4.0),
-              ],
+              shadows: <Shadow>[Shadow(color: Colors.black54, blurRadius: 4.0)],
             ),
           ),
         ],
@@ -619,14 +638,13 @@ class _FeedPlayerItemState extends State<FeedPlayerItem>
               Color(0xFF08140B),
             ],
           ),
-          border: Border.all(color: AppColors.cream300.withValues(alpha: 0.4), width: 1.5),
+          border: Border.all(
+            color: AppColors.cream300.withValues(alpha: 0.4),
+            width: 1.5,
+          ),
         ),
         child: const Center(
-          child: Icon(
-            Icons.music_note,
-            color: AppColors.cream50,
-            size: 18.0,
-          ),
+          child: Icon(Icons.music_note, color: AppColors.cream50, size: 18.0),
         ),
       ),
     );

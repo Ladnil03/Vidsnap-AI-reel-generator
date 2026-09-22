@@ -8,23 +8,31 @@ class FakeSecureStoragePlatform extends FlutterSecureStoragePlatform {
   final Map<String, String> _storage = <String, String>{};
 
   @override
-  Future<bool> containsKey({required String key, required Map<String, String> options}) async =>
-      _storage.containsKey(key);
+  Future<bool> containsKey({
+    required String key,
+    required Map<String, String> options,
+  }) async => _storage.containsKey(key);
 
   @override
-  Future<void> delete({required String key, required Map<String, String> options}) async =>
-      _storage.remove(key);
+  Future<void> delete({
+    required String key,
+    required Map<String, String> options,
+  }) async => _storage.remove(key);
 
   @override
-  Future<void> deleteAll({required Map<String, String> options}) async => _storage.clear();
+  Future<void> deleteAll({required Map<String, String> options}) async =>
+      _storage.clear();
 
   @override
-  Future<String?> read({required String key, required Map<String, String> options}) async =>
-      _storage[key];
+  Future<String?> read({
+    required String key,
+    required Map<String, String> options,
+  }) async => _storage[key];
 
   @override
-  Future<Map<String, String>> readAll({required Map<String, String> options}) async =>
-      Map<String, String>.from(_storage);
+  Future<Map<String, String>> readAll({
+    required Map<String, String> options,
+  }) async => Map<String, String>.from(_storage);
 
   @override
   Future<void> write({
@@ -44,11 +52,7 @@ void main() {
   });
 
   Widget createTestWidget() {
-    return const ProviderScope(
-      child: MaterialApp(
-        home: RegisterScreen(),
-      ),
-    );
+    return const ProviderScope(child: MaterialApp(home: RegisterScreen()));
   }
 
   void configureViewport(WidgetTester tester) {
@@ -59,12 +63,17 @@ void main() {
   }
 
   group('RegisterScreen Widget Tests', () {
-    testWidgets('renders register screen fields and bonus credits banner', (tester) async {
+    testWidgets('renders register screen fields and bonus credits banner', (
+      tester,
+    ) async {
       configureViewport(tester);
       await tester.pumpWidget(createTestWidget());
 
       expect(find.text('Create Your Account'), findsOneWidget);
-      expect(find.text('Special Welcome: 5 Free AI Video Credits'), findsOneWidget);
+      expect(
+        find.text('Special Welcome: 5 Free AI Video Credits'),
+        findsOneWidget,
+      );
       expect(find.text('Full Name'), findsOneWidget);
       expect(find.text('Email'), findsOneWidget);
       expect(find.text('Password'), findsOneWidget);

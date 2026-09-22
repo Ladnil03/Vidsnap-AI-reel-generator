@@ -28,7 +28,8 @@ class UserLevelModel {
       level: (json['level'] ?? 1) as int,
       title: (json['title'] ?? 'Novice Explorer 🧭').toString(),
       xpForCurrentLevel:
-          (json['xp_for_current_level'] ?? json['xpForCurrentLevel'] ?? 0) as int,
+          (json['xp_for_current_level'] ?? json['xpForCurrentLevel'] ?? 0)
+              as int,
       xpForNextLevel:
           (json['xp_for_next_level'] ?? json['xpForNextLevel'] ?? 100) as int,
       progressPct: ((json['progress_pct'] ?? json['progressPct'] ?? 0.0) as num)
@@ -76,8 +77,10 @@ class StreakStateModel {
     return StreakStateModel(
       scope: (json['scope'] ?? 'daily').toString(),
       targetId: json['target_id']?.toString(),
-      currentStreak: (json['current_streak'] ?? json['currentStreak'] ?? 0) as int,
-      longestStreak: (json['longest_streak'] ?? json['longestStreak'] ?? 0) as int,
+      currentStreak:
+          (json['current_streak'] ?? json['currentStreak'] ?? 0) as int,
+      longestStreak:
+          (json['longest_streak'] ?? json['longestStreak'] ?? 0) as int,
       lastActiveDate: json['last_active_date']?.toString(),
       freezeTokens: (json['freeze_tokens'] ?? json['freezeTokens'] ?? 2) as int,
       isFrozenToday:
@@ -140,15 +143,13 @@ class UserChallengeModel {
 
   factory UserChallengeModel.fromJson(Map<String, dynamic> json) {
     return UserChallengeModel(
-      challengeId:
-          (json['challenge_id'] ?? json['challengeId'] ?? '').toString(),
+      challengeId: (json['challenge_id'] ?? json['challengeId'] ?? '')
+          .toString(),
       title: (json['title'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
       action: (json['action'] ?? '').toString(),
-      targetCount:
-          (json['target_count'] ?? json['targetCount'] ?? 1) as int,
-      currentCount:
-          (json['current_count'] ?? json['currentCount'] ?? 0) as int,
+      targetCount: (json['target_count'] ?? json['targetCount'] ?? 1) as int,
+      currentCount: (json['current_count'] ?? json['currentCount'] ?? 0) as int,
       rewardXp: (json['reward_xp'] ?? json['rewardXp'] ?? 50) as int,
       isCompleted:
           (json['is_completed'] ?? json['isCompleted'] ?? false) as bool,
@@ -209,8 +210,7 @@ class UserBadgeModel {
       description: (json['description'] ?? '').toString(),
       icon: (json['icon'] ?? '🏆').toString(),
       category: (json['category'] ?? 'special').toString(),
-      isUnlocked:
-          (json['is_unlocked'] ?? json['isUnlocked'] ?? false) as bool,
+      isUnlocked: (json['is_unlocked'] ?? json['isUnlocked'] ?? false) as bool,
       unlockedAt: json['unlocked_at'] != null
           ? DateTime.tryParse(json['unlocked_at'].toString())
           : null,
@@ -260,8 +260,8 @@ class LeaderboardEntryModel {
       rank: (json['rank'] ?? 0) as int,
       userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
       username: (json['username'] ?? '').toString(),
-      displayName:
-          (json['display_name'] ?? json['displayName'] ?? '').toString(),
+      displayName: (json['display_name'] ?? json['displayName'] ?? '')
+          .toString(),
       avatarUrl: json['avatar_url']?.toString(),
       score: (json['score'] ?? 0) as int,
       level: (json['level'] ?? 1) as int,
@@ -301,14 +301,18 @@ class LeaderboardResponseModel {
   factory LeaderboardResponseModel.fromJson(Map<String, dynamic> json) {
     return LeaderboardResponseModel(
       scope: (json['scope'] ?? 'all_time').toString(),
-      entries: (json['entries'] as List<dynamic>?)
-              ?.map((e) =>
-                  LeaderboardEntryModel.fromJson(e as Map<String, dynamic>))
+      entries:
+          (json['entries'] as List<dynamic>?)
+              ?.map(
+                (e) =>
+                    LeaderboardEntryModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           const <LeaderboardEntryModel>[],
       userEntry: json['user_entry'] != null
           ? LeaderboardEntryModel.fromJson(
-              json['user_entry'] as Map<String, dynamic>)
+              json['user_entry'] as Map<String, dynamic>,
+            )
           : null,
       totalParticipants: (json['total_participants'] ?? 0) as int,
     );
@@ -342,8 +346,7 @@ class AwardXPResponseModel {
       amount: (json['amount'] ?? 0) as int,
       action: (json['action'] ?? '').toString(),
       newTotalXp: (json['new_total_xp'] ?? json['newTotalXp'] ?? 0) as int,
-      currentLevel:
-          (json['current_level'] ?? json['currentLevel'] ?? 1) as int,
+      currentLevel: (json['current_level'] ?? json['currentLevel'] ?? 1) as int,
       leveledUp: (json['leveled_up'] ?? json['leveledUp'] ?? false) as bool,
       message: (json['message'] ?? '').toString(),
     );
@@ -395,24 +398,29 @@ class GamificationProfileModel {
               xpForNextLevel: 100,
               progressPct: 0.0,
             ),
-      streaks: (json['streaks'] as List<dynamic>?)
-              ?.map((e) =>
-                  StreakStateModel.fromJson(e as Map<String, dynamic>))
+      streaks:
+          (json['streaks'] as List<dynamic>?)
+              ?.map((e) => StreakStateModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const <StreakStateModel>[],
-      activeChallenges: (json['active_challenges'] as List<dynamic>?)
-              ?.map((e) =>
-                  UserChallengeModel.fromJson(e as Map<String, dynamic>))
+      activeChallenges:
+          (json['active_challenges'] as List<dynamic>?)
+              ?.map(
+                (e) => UserChallengeModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           const <UserChallengeModel>[],
-      badgesUnlocked: (json['badges_unlocked'] as List<dynamic>?)
+      badgesUnlocked:
+          (json['badges_unlocked'] as List<dynamic>?)
               ?.map((e) => UserBadgeModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const <UserBadgeModel>[],
       badgesUnlockedCount: (json['badges_unlocked_count'] ?? 0) as int,
       badgesTotalCount: (json['badges_total_count'] ?? 0) as int,
       freezeTokensAvailable:
-          (json['freeze_tokens_available'] ?? json['freezeTokensAvailable'] ?? 2)
+          (json['freeze_tokens_available'] ??
+                  json['freezeTokensAvailable'] ??
+                  2)
               as int,
     );
   }

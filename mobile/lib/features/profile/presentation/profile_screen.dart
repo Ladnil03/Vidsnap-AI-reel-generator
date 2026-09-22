@@ -23,7 +23,8 @@ class ProfileScreen extends ConsumerWidget {
     final state = ref.watch(profileNotifierProvider);
     final authUser = ref.watch(authStateProvider).currentUser;
 
-    final profile = state.profile ??
+    final profile =
+        state.profile ??
         UserProfileModel(
           userId: authUser?.userId ?? '',
           name: authUser?.name ?? 'Creator',
@@ -86,7 +87,9 @@ class ProfileScreen extends ConsumerWidget {
                       child: _buildVideoGrid(
                         context,
                         state.activeTab == 0 ? state.reels : state.savedReels,
-                        state.activeTab == 0 ? 'No Reels Published' : 'No Saved Reels',
+                        state.activeTab == 0
+                            ? 'No Reels Published'
+                            : 'No Saved Reels',
                         state.activeTab == 0
                             ? 'Create and share your first reel with the world!'
                             : 'Bookmark reels from your feed to view them anytime.',
@@ -107,8 +110,9 @@ class ProfileScreen extends ConsumerWidget {
     bool isDark,
   ) {
     final theme = Theme.of(context);
-    final initial =
-        profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'C';
+    final initial = profile.name.isNotEmpty
+        ? profile.name[0].toUpperCase()
+        : 'C';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,10 +158,7 @@ class ProfileScreen extends ConsumerWidget {
               ),
               if (profile.bio.isNotEmpty) ...<Widget>[
                 const SizedBox(height: AppSpacing.s2),
-                Text(
-                  profile.bio,
-                  style: theme.textTheme.bodyMedium,
-                ),
+                Text(profile.bio, style: theme.textTheme.bodyMedium),
               ],
             ],
           ),
@@ -222,10 +223,7 @@ class ProfileScreen extends ConsumerWidget {
       children: <Widget>[
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 2),
         Text(
@@ -321,8 +319,9 @@ class ProfileScreen extends ConsumerWidget {
                   'My Reels',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontWeight:
-                        activeTab == 0 ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: activeTab == 0
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                     color: activeTab == 0
                         ? (isDark ? AppColors.cream50 : AppColors.forest900)
                         : (isDark ? AppColors.forest200 : AppColors.forest700),
@@ -351,8 +350,9 @@ class ProfileScreen extends ConsumerWidget {
                   'Saved',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontWeight:
-                        activeTab == 1 ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: activeTab == 1
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                     color: activeTab == 1
                         ? (isDark ? AppColors.cream50 : AppColors.forest900)
                         : (isDark ? AppColors.forest200 : AppColors.forest700),

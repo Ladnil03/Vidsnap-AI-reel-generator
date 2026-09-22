@@ -47,11 +47,10 @@ class BusinessProfileModel {
 
   factory BusinessProfileModel.fromJson(Map<String, dynamic> json) {
     return BusinessProfileModel(
-      businessId:
-          (json['business_id'] ?? json['businessId'] ?? '').toString(),
+      businessId: (json['business_id'] ?? json['businessId'] ?? '').toString(),
       userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
-      companyName:
-          (json['company_name'] ?? json['companyName'] ?? '').toString(),
+      companyName: (json['company_name'] ?? json['companyName'] ?? '')
+          .toString(),
       website: (json['website'] ?? '').toString(),
       industry: (json['industry'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
@@ -113,22 +112,20 @@ class CampaignModel {
 
   factory CampaignModel.fromJson(Map<String, dynamic> json) {
     return CampaignModel(
-      campaignId:
-          (json['campaign_id'] ?? json['campaignId'] ?? '').toString(),
-      businessId:
-          (json['business_id'] ?? json['businessId'] ?? '').toString(),
+      campaignId: (json['campaign_id'] ?? json['campaignId'] ?? '').toString(),
+      businessId: (json['business_id'] ?? json['businessId'] ?? '').toString(),
       companyName:
           (json['company_name'] ?? json['companyName'] ?? 'Brand Sponsor')
               .toString(),
       title: (json['title'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
       category: (json['category'] ?? 'lifestyle').toString(),
-      budgetPerk:
-          (json['budget_perk'] ?? json['budgetPerk'] ?? '').toString(),
-      targetCreatorsCount: (json['target_creators_count'] ??
-          json['targetCreatorsCount'] ??
-          5) as int,
-      requirements: (json['requirements'] as List<dynamic>?)
+      budgetPerk: (json['budget_perk'] ?? json['budgetPerk'] ?? '').toString(),
+      targetCreatorsCount:
+          (json['target_creators_count'] ?? json['targetCreatorsCount'] ?? 5)
+              as int,
+      requirements:
+          (json['requirements'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const <String>[],
@@ -136,9 +133,8 @@ class CampaignModel {
           ? DateTime.tryParse(json['deadline'].toString())
           : null,
       status: CampaignStatus.fromString(json['status']?.toString()),
-      applicationsCount: (json['applications_count'] ??
-          json['applicationsCount'] ??
-          0) as int,
+      applicationsCount:
+          (json['applications_count'] ?? json['applicationsCount'] ?? 0) as int,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
@@ -197,15 +193,13 @@ class CollabApplicationModel {
         : <String, dynamic>{};
 
     return CollabApplicationModel(
-      applicationId:
-          (json['application_id'] ?? json['applicationId'] ?? '').toString(),
-      campaignId:
-          (json['campaign_id'] ?? json['campaignId'] ?? '').toString(),
-      creatorName:
-          (json['creator_name'] ?? json['creatorName'] ?? 'Creator')
-              .toString(),
-      creatorHandle:
-          (json['creator_handle'] ?? json['creatorHandle'] ?? '').toString(),
+      applicationId: (json['application_id'] ?? json['applicationId'] ?? '')
+          .toString(),
+      campaignId: (json['campaign_id'] ?? json['campaignId'] ?? '').toString(),
+      creatorName: (json['creator_name'] ?? json['creatorName'] ?? 'Creator')
+          .toString(),
+      creatorHandle: (json['creator_handle'] ?? json['creatorHandle'] ?? '')
+          .toString(),
       pitch: (json['pitch'] ?? '').toString(),
       portfolioReelId: json['portfolio_reel_id']?.toString(),
       brandSafetyScore:

@@ -161,11 +161,7 @@ class MainScaffold extends StatelessWidget {
           ],
         ),
         child: const Center(
-          child: Icon(
-            Icons.add,
-            color: AppColors.cream50,
-            size: 24.0,
-          ),
+          child: Icon(Icons.add, color: AppColors.cream50, size: 24.0),
         ),
       ),
     );

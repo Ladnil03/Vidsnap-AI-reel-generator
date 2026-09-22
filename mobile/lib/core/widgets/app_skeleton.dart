@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vidsnap_ai/core/theme/app_colors.dart';
 
 class AppSkeleton extends StatefulWidget {
-  const AppSkeleton({
-    super.key,
-    this.width,
-    this.height,
-    this.borderRadius,
-  });
+  const AppSkeleton({super.key, this.width, this.height, this.borderRadius});
 
   final double? width;
   final double? height;
@@ -59,7 +54,8 @@ class _AppSkeletonState extends State<AppSkeleton>
             height: widget.height,
             decoration: BoxDecoration(
               color: effectiveColor,
-              borderRadius: widget.borderRadius ?? BorderRadius.circular(AppRadii.sm),
+              borderRadius:
+                  widget.borderRadius ?? BorderRadius.circular(AppRadii.sm),
             ),
           );
         },

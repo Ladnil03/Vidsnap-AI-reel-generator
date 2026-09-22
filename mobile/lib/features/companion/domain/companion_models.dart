@@ -47,7 +47,8 @@ class MoodStateModel {
       userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
       mood: MoodType.fromString(json['mood']?.toString()),
       intensity: (json['intensity'] as num?)?.toDouble() ?? 1.0,
-      consentGiven: (json['consent_given'] ?? json['consentGiven'] ?? true) as bool,
+      consentGiven:
+          (json['consent_given'] ?? json['consentGiven'] ?? true) as bool,
       note: json['note'] as String?,
       updatedAt: json['updated_at'] != null
           ? DateTime.tryParse(json['updated_at'].toString())
@@ -160,7 +161,8 @@ class CompanionChatResponseModel {
 
     return CompanionChatResponseModel(
       message: CompanionMessageModel.fromJson(msgJson),
-      suggestedActions: (json['suggested_actions'] as List<dynamic>?)
+      suggestedActions:
+          (json['suggested_actions'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const <String>[],

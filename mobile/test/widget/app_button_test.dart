@@ -12,15 +12,14 @@ void main() {
   }
 
   group('AppButton Widget Tests', () {
-    testWidgets('renders button label and fires onPressed on tap', (tester) async {
+    testWidgets('renders button label and fires onPressed on tap', (
+      tester,
+    ) async {
       var tapped = false;
 
       await tester.pumpWidget(
         createTestWidget(
-          AppButton(
-            label: 'Submit',
-            onPressed: () => tapped = true,
-          ),
+          AppButton(label: 'Submit', onPressed: () => tapped = true),
         ),
       );
 
@@ -50,24 +49,27 @@ void main() {
       expect(tapped, isFalse);
     });
 
-    testWidgets('loading state shows CircularProgressIndicator and disables tap', (tester) async {
-      var tapped = false;
+    testWidgets(
+      'loading state shows CircularProgressIndicator and disables tap',
+      (tester) async {
+        var tapped = false;
 
-      await tester.pumpWidget(
-        createTestWidget(
-          AppButton(
-            label: 'Saving',
-            isLoading: true,
-            onPressed: () => tapped = true,
+        await tester.pumpWidget(
+          createTestWidget(
+            AppButton(
+              label: 'Saving',
+              isLoading: true,
+              onPressed: () => tapped = true,
+            ),
           ),
-        ),
-      );
+        );
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      await tester.tap(find.text('Saving'));
-      await tester.pump();
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        await tester.tap(find.text('Saving'));
+        await tester.pump();
 
-      expect(tapped, isFalse);
-    });
+        expect(tapped, isFalse);
+      },
+    );
   });
 }

@@ -5,11 +5,7 @@ import 'package:vidsnap_ai/features/auth/data/auth_repository.dart';
 import 'package:vidsnap_ai/features/auth/domain/auth_requests.dart';
 import 'package:vidsnap_ai/features/auth/domain/user_model.dart';
 
-enum AuthStatus {
-  unknown,
-  authenticated,
-  unauthenticated,
-}
+enum AuthStatus { unknown, authenticated, unauthenticated }
 
 class AuthStateNotifier extends ChangeNotifier {
   AuthStateNotifier({

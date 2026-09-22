@@ -20,7 +20,8 @@ class CommentModel {
       commentId: (json['comment_id'] ?? json['id'] ?? '').toString(),
       videoId: (json['video_id'] ?? '').toString(),
       userId: (json['user_id'] ?? '').toString(),
-      userName: (json['user_name'] ?? json['author_name'] ?? 'Viewer').toString(),
+      userName: (json['user_name'] ?? json['author_name'] ?? 'Viewer')
+          .toString(),
       text: (json['text'] ?? '').toString(),
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()

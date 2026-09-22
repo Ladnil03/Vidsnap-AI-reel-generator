@@ -67,12 +67,11 @@ class FeedItemModel {
       authorName: (json['author_name'] ?? 'Creator').toString(),
       title: (json['title'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
-      hashtags: (json['hashtags'] as List<dynamic>?)
+      hashtags:
+          (json['hashtags'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
-          (json['tags'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
+          (json['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
           const <String>[],
       videoUrl: (json['video_url'] ?? json['embed_url'] ?? '').toString(),
       thumbnailUrl: json['thumbnail_url']?.toString(),
@@ -85,7 +84,9 @@ class FeedItemModel {
       hasSaved: json['has_saved'] == true,
       explainabilityTag: json['explainability_tag']?.toString(),
       attributionText: json['attribution_text']?.toString(),
-      externalSourceUrl: json['source_url']?.toString() ?? json['external_source_url']?.toString(),
+      externalSourceUrl:
+          json['source_url']?.toString() ??
+          json['external_source_url']?.toString(),
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),

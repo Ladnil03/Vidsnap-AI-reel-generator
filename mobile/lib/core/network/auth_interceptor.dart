@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:vidsnap_ai/core/config/env_config.dart';
@@ -7,10 +8,7 @@ import 'package:vidsnap_ai/core/storage/token_storage.dart';
 typedef OnSessionExpired = void Function();
 
 class AuthInterceptor extends QueuedInterceptor {
-  AuthInterceptor({
-    required this.tokenStorage,
-    this.onSessionExpired,
-  });
+  AuthInterceptor({required this.tokenStorage, this.onSessionExpired});
 
   final TokenStorage tokenStorage;
   final OnSessionExpired? onSessionExpired;
@@ -92,7 +90,8 @@ class AuthInterceptor extends QueuedInterceptor {
         if (refreshResponse.statusCode == 200 && refreshResponse.data != null) {
           final data = refreshResponse.data!;
           final newAccessToken = data['access_token'] as String;
-          final newRefreshToken = (data['refresh_token'] as String?) ?? currentRefreshToken;
+          final newRefreshToken =
+              (data['refresh_token'] as String?) ?? currentRefreshToken;
 
           await tokenStorage.setTokens(
             accessToken: newAccessToken,

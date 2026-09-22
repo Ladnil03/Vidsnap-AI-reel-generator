@@ -66,9 +66,7 @@ class SocialRepository {
     int limit = 30,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'limit': limit,
-      };
+      final queryParams = <String, dynamic>{'limit': limit};
       if (category != null && category.isNotEmpty && category != 'all') {
         queryParams['category'] = category;
       }

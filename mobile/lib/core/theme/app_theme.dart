@@ -52,7 +52,10 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.md),
-          side: const BorderSide(color: AppColors.borderLightSubtle, width: 1.0),
+          side: const BorderSide(
+            color: AppColors.borderLightSubtle,
+            width: 1.0,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -64,11 +67,17 @@ class AppTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.sm),
-          borderSide: const BorderSide(color: AppColors.borderLightMedium, width: 1.0),
+          borderSide: const BorderSide(
+            color: AppColors.borderLightMedium,
+            width: 1.0,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.sm),
-          borderSide: const BorderSide(color: AppColors.borderLightSubtle, width: 1.0),
+          borderSide: const BorderSide(
+            color: AppColors.borderLightSubtle,
+            width: 1.0,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.sm),
@@ -76,11 +85,17 @@ class AppTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.sm),
-          borderSide: const BorderSide(color: AppColors.dangerLight, width: 1.0),
+          borderSide: const BorderSide(
+            color: AppColors.dangerLight,
+            width: 1.0,
+          ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.sm),
-          borderSide: const BorderSide(color: AppColors.dangerLight, width: 2.0),
+          borderSide: const BorderSide(
+            color: AppColors.dangerLight,
+            width: 2.0,
+          ),
         ),
         hintStyle: const TextStyle(color: AppColors.forest300, fontSize: 14.0),
         labelStyle: const TextStyle(color: AppColors.forest700, fontSize: 14.0),
@@ -90,7 +105,10 @@ class AppTheme {
           backgroundColor: AppColors.forest500,
           foregroundColor: AppColors.cream50,
           minimumSize: const Size(48.0, 48.0),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s3),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s5,
+            vertical: AppSpacing.s3,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadii.sm),
           ),
@@ -164,11 +182,17 @@ class AppTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.sm),
-          borderSide: const BorderSide(color: AppColors.borderDarkMedium, width: 1.0),
+          borderSide: const BorderSide(
+            color: AppColors.borderDarkMedium,
+            width: 1.0,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.sm),
-          borderSide: const BorderSide(color: AppColors.borderDarkSubtle, width: 1.0),
+          borderSide: const BorderSide(
+            color: AppColors.borderDarkSubtle,
+            width: 1.0,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.sm),
@@ -190,7 +214,10 @@ class AppTheme {
           backgroundColor: AppColors.forest500,
           foregroundColor: AppColors.cream50,
           minimumSize: const Size(48.0, 48.0),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s3),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s5,
+            vertical: AppSpacing.s3,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadii.sm),
           ),

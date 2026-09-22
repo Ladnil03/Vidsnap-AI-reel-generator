@@ -101,10 +101,16 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       return Center(
         child: AppEmptyState(
           title: 'No reels yet',
-          description: 'Be the first creator to post in ${state.activeTab.label}!',
-          icon: const Icon(Icons.video_collection_outlined, size: 48.0, color: AppColors.sage400),
+          description:
+              'Be the first creator to post in ${state.activeTab.label}!',
+          icon: const Icon(
+            Icons.video_collection_outlined,
+            size: 48.0,
+            color: AppColors.sage400,
+          ),
           actionLabel: 'Refresh',
-          onAction: () => ref.read(feedProvider.notifier).loadFeed(refresh: true),
+          onAction: () =>
+              ref.read(feedProvider.notifier).loadFeed(refresh: true),
         ),
       );
     }
@@ -125,8 +131,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           isActive: isActive,
           isMuted: state.isMuted,
           onToggleMute: () => ref.read(feedProvider.notifier).toggleMute(),
-          onToggleLike: () => ref.read(feedProvider.notifier).toggleLike(item.videoId),
-          onToggleSave: () => ref.read(feedProvider.notifier).toggleSave(item.videoId),
+          onToggleLike: () =>
+              ref.read(feedProvider.notifier).toggleLike(item.videoId),
+          onToggleSave: () =>
+              ref.read(feedProvider.notifier).toggleSave(item.videoId),
           onOpenComments: () => CommentsSheet.show(
             context,
             videoId: item.videoId,
@@ -142,7 +150,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           },
           onProgressUpdate: (watchedSeconds, totalSeconds) {
             if (isActive) {
-              ref.read(watchMetricsBufferProvider).recordProgress(
+              ref
+                  .read(watchMetricsBufferProvider)
+                  .recordProgress(
                     videoId: item.videoId,
                     watchedSeconds: watchedSeconds,
                     totalSeconds: totalSeconds,
@@ -190,7 +200,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               child: Text(
                 tab.label,
                 style: TextStyle(
-                  color: isSelected ? AppColors.cream50 : AppColors.cream200.withValues(alpha: 0.7),
+                  color: isSelected
+                      ? AppColors.cream50
+                      : AppColors.cream200.withValues(alpha: 0.7),
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   fontSize: 13.0,
                 ),

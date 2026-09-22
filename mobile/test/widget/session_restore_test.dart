@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
@@ -13,23 +14,31 @@ class FakeSecureStoragePlatform extends FlutterSecureStoragePlatform {
   final Map<String, String> _storage = <String, String>{};
 
   @override
-  Future<bool> containsKey({required String key, required Map<String, String> options}) async =>
-      _storage.containsKey(key);
+  Future<bool> containsKey({
+    required String key,
+    required Map<String, String> options,
+  }) async => _storage.containsKey(key);
 
   @override
-  Future<void> delete({required String key, required Map<String, String> options}) async =>
-      _storage.remove(key);
+  Future<void> delete({
+    required String key,
+    required Map<String, String> options,
+  }) async => _storage.remove(key);
 
   @override
-  Future<void> deleteAll({required Map<String, String> options}) async => _storage.clear();
+  Future<void> deleteAll({required Map<String, String> options}) async =>
+      _storage.clear();
 
   @override
-  Future<String?> read({required String key, required Map<String, String> options}) async =>
-      _storage[key];
+  Future<String?> read({
+    required String key,
+    required Map<String, String> options,
+  }) async => _storage[key];
 
   @override
-  Future<Map<String, String>> readAll({required Map<String, String> options}) async =>
-      Map<String, String>.from(_storage);
+  Future<Map<String, String>> readAll({
+    required Map<String, String> options,
+  }) async => Map<String, String>.from(_storage);
 
   @override
   Future<void> write({
@@ -87,14 +96,14 @@ void main() {
   });
 
   group('Session Restore Integration Tests', () {
-    testWidgets('unauthenticated user is redirected to LoginScreen', (tester) async {
+    testWidgets('unauthenticated user is redirected to LoginScreen', (
+      tester,
+    ) async {
       final prefs = await SharedPreferences.getInstance();
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-          ],
+          overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
           child: const VidSnapApp(),
         ),
       );
@@ -105,46 +114,49 @@ void main() {
       expect(find.text('Log In'), findsOneWidget);
     });
 
-    testWidgets('session persists across restart: authenticated user redirects to Feed', (tester) async {
-      // Simulate stored tokens from previous session
-      await fakeSecureStorage.write(
-        key: 'vidsnap_access_token',
-        value: 'valid_access_jwt',
-        options: <String, String>{},
-      );
-      await fakeSecureStorage.write(
-        key: 'vidsnap_refresh_token',
-        value: 'valid_refresh_jwt',
-        options: <String, String>{},
-      );
+    testWidgets(
+      'session persists across restart: authenticated user redirects to Feed',
+      (tester) async {
+        // Simulate stored tokens from previous session
+        await fakeSecureStorage.write(
+          key: 'vidsnap_access_token',
+          value: 'valid_access_jwt',
+          options: <String, String>{},
+        );
+        await fakeSecureStorage.write(
+          key: 'vidsnap_refresh_token',
+          value: 'valid_refresh_jwt',
+          options: <String, String>{},
+        );
 
-      final prefs = await SharedPreferences.getInstance();
-      final testDio = Dio(BaseOptions(baseUrl: 'http://localhost:8000'))
-        ..httpClientAdapter = fakeHttpAdapter;
+        final prefs = await SharedPreferences.getInstance();
+        final testDio = Dio(BaseOptions(baseUrl: 'http://localhost:8000'))
+          ..httpClientAdapter = fakeHttpAdapter;
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-            dioProvider.overrideWithValue(testDio),
-          ],
-          child: const VidSnapApp(),
-        ),
-      );
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              sharedPreferencesProvider.overrideWithValue(prefs),
+              dioProvider.overrideWithValue(testDio),
+            ],
+            child: const VidSnapApp(),
+          ),
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      expect(find.text('Trending'), findsOneWidget);
-      expect(find.text('Feed'), findsOneWidget);
-      expect(find.text('Explore'), findsOneWidget);
+        expect(find.text('Trending'), findsOneWidget);
+        expect(find.text('Feed'), findsOneWidget);
+        expect(find.text('Explore'), findsOneWidget);
 
-      // Tap Profile in bottom navigation to view user profile details
-      await tester.tap(find.text('Profile'));
-      await tester.pumpAndSettle();
+        // Tap Profile in bottom navigation to view user profile details
+        await tester.tap(find.text('Profile'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Restored User'), findsWidgets);
-      expect(find.text('restored@vidsnap.ai'), findsOneWidget);
-      expect(find.text('Creator 🎨'), findsOneWidget);
-    });
+        expect(find.text('Restored User'), findsWidgets);
+        expect(find.text('restored@vidsnap.ai'), findsOneWidget);
+        expect(find.text('Creator 🎨'), findsOneWidget);
+      },
+    );
   });
 }

@@ -41,13 +41,15 @@ class BusinessState {
     return BusinessState(
       profile: profile ?? this.profile,
       campaigns: campaigns ?? this.campaigns,
-      selectedCategory:
-          clearCategory ? null : (selectedCategory ?? this.selectedCategory),
+      selectedCategory: clearCategory
+          ? null
+          : (selectedCategory ?? this.selectedCategory),
       activeTab: activeTab ?? this.activeTab,
       isLoading: isLoading ?? this.isLoading,
       isSubmitting: isSubmitting ?? this.isSubmitting,
-      feedbackMessage:
-          clearFeedback ? null : (feedbackMessage ?? this.feedbackMessage),
+      feedbackMessage: clearFeedback
+          ? null
+          : (feedbackMessage ?? this.feedbackMessage),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -68,8 +70,9 @@ class BusinessNotifier extends Notifier<BusinessState> {
   Future<void> loadData() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final campaignsFuture =
-          _repo.listCampaigns(category: state.selectedCategory);
+      final campaignsFuture = _repo.listCampaigns(
+        category: state.selectedCategory,
+      );
       final profileFuture = _repo.getProfile().catchError((_) {
         return const BusinessProfileModel(
           businessId: '',
@@ -102,7 +105,9 @@ class BusinessNotifier extends Notifier<BusinessState> {
     }
 
     try {
-      final campaigns = await _repo.listCampaigns(category: state.selectedCategory);
+      final campaigns = await _repo.listCampaigns(
+        category: state.selectedCategory,
+      );
       state = state.copyWith(campaigns: campaigns);
     } catch (_) {}
   }
@@ -147,7 +152,8 @@ class BusinessNotifier extends Notifier<BusinessState> {
       final safeText = app.isBrandSafe ? 'Brand-Safe Verified ✅' : 'Flagged';
       state = state.copyWith(
         isSubmitting: false,
-        feedbackMessage: 'Pitch submitted! Safety score: ${app.brandSafetyScore}/100 ($safeText)',
+        feedbackMessage:
+            'Pitch submitted! Safety score: ${app.brandSafetyScore}/100 ($safeText)',
       );
       return true;
     } catch (e) {

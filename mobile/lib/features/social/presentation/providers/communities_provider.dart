@@ -48,15 +48,14 @@ class CommunitiesNotifier extends Notifier<CommunitiesState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final items = await _repository.listCommunities(
-        category: state.selectedCategory == 'all' ? null : state.selectedCategory,
+        category: state.selectedCategory == 'all'
+            ? null
+            : state.selectedCategory,
         query: state.searchQuery.isEmpty ? null : state.searchQuery,
       );
       state = state.copyWith(communities: items, isLoading: false);
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
@@ -71,12 +70,16 @@ class CommunitiesNotifier extends Notifier<CommunitiesState> {
   }
 
   Future<void> toggleJoin(String communityId) async {
-    final index = state.communities.indexWhere((c) => c.communityId == communityId);
+    final index = state.communities.indexWhere(
+      (c) => c.communityId == communityId,
+    );
     if (index == -1) return;
 
     final target = state.communities[index];
     final wasMember = target.isMember;
-    final optimisticCount = wasMember ? (target.membersCount - 1).clamp(0, 999999) : target.membersCount + 1;
+    final optimisticCount = wasMember
+        ? (target.membersCount - 1).clamp(0, 999999)
+        : target.membersCount + 1;
 
     // Optimistic update
     final updatedList = [...state.communities];
@@ -105,4 +108,6 @@ class CommunitiesNotifier extends Notifier<CommunitiesState> {
 }
 
 final communitiesProvider =
-    NotifierProvider<CommunitiesNotifier, CommunitiesState>(CommunitiesNotifier.new);
+    NotifierProvider<CommunitiesNotifier, CommunitiesState>(
+      CommunitiesNotifier.new,
+    );

@@ -18,8 +18,9 @@ class ProfileRepository {
   /// Fetch full profile metrics for current authenticated user.
   Future<UserProfileModel> getMyProfile() async {
     try {
-      final meResponse =
-          await _dio.get<Map<String, dynamic>>('/api/v1/users/me');
+      final meResponse = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/users/me',
+      );
       final meData = meResponse.data ?? <String, dynamic>{};
       final userId = meData['user_id']?.toString() ?? '';
 
@@ -32,8 +33,9 @@ class ProfileRepository {
 
       if (userId.isNotEmpty) {
         try {
-          final socialResponse = await _dio
-              .get<Map<String, dynamic>>('/api/v1/social/profile/$userId');
+          final socialResponse = await _dio.get<Map<String, dynamic>>(
+            '/api/v1/social/profile/$userId',
+          );
           final socialData = socialResponse.data ?? <String, dynamic>{};
           followers = (socialData['followers_count'] ?? 0) as int;
           following = (socialData['following_count'] ?? 0) as int;
@@ -55,7 +57,8 @@ class ProfileRepository {
         followingCount: following,
         reelsCount: reels,
         tokensRemaining: (meData['tokens_remaining'] ?? 0) as int,
-        roles: (meData['roles'] as List<dynamic>?)
+        roles:
+            (meData['roles'] as List<dynamic>?)
                 ?.map((e) => e.toString())
                 .toList() ??
             const <String>['user'],
@@ -74,8 +77,9 @@ class ProfileRepository {
   /// Fetch public profile for a specific user ID.
   Future<UserProfileModel> getUserProfile(String userId) async {
     try {
-      final response = await _dio
-          .get<Map<String, dynamic>>('/api/v1/social/profile/$userId');
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/social/profile/$userId',
+      );
       return UserProfileModel.fromJson(response.data ?? <String, dynamic>{});
     } on DioException catch (e) {
       throw mapDioExceptionToAppFailure(e);
@@ -96,7 +100,8 @@ class ProfileRepository {
         userId: (data['user_id'] ?? '').toString(),
         name: (data['name'] ?? '').toString(),
         email: (data['email'] ?? '').toString(),
-        roles: (data['roles'] as List<dynamic>?)
+        roles:
+            (data['roles'] as List<dynamic>?)
                 ?.map((e) => e.toString())
                 .toList() ??
             const <String>['user'],

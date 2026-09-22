@@ -1,8 +1,5 @@
 class LoginRequest {
-  const LoginRequest({
-    required this.email,
-    required this.password,
-  });
+  const LoginRequest({required this.email, required this.password});
 
   final String email;
   final String password;
@@ -39,10 +36,7 @@ class SignupRequest {
 }
 
 class VerifyEmailRequest {
-  const VerifyEmailRequest({
-    required this.email,
-    required this.otp,
-  });
+  const VerifyEmailRequest({required this.email, required this.otp});
 
   final String email;
   final String otp;
@@ -61,9 +55,7 @@ class ResendVerificationRequest {
   final String email;
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'email': email.trim().toLowerCase(),
-    };
+    return <String, dynamic>{'email': email.trim().toLowerCase()};
   }
 }
 
@@ -73,9 +65,7 @@ class ForgotPasswordRequest {
   final String email;
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'email': email.trim().toLowerCase(),
-    };
+    return <String, dynamic>{'email': email.trim().toLowerCase()};
   }
 }
 
@@ -105,8 +95,6 @@ class TokenRefreshRequest {
   final String refreshToken;
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'refresh_token': refreshToken,
-    };
+    return <String, dynamic>{'refresh_token': refreshToken};
   }
 }

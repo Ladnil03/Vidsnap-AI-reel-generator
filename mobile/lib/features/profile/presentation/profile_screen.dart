@@ -12,7 +12,9 @@ import 'package:vidsnap_ai/features/profile/presentation/providers/profile_provi
 import 'package:vidsnap_ai/features/profile/presentation/widgets/edit_profile_sheet.dart';
 
 class ProfileScreen extends ConsumerWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key, this.userId});
+
+  final String? userId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

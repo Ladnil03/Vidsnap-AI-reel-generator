@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vidsnap_ai/core/router/auth_state_provider.dart';
 import 'package:vidsnap_ai/core/widgets/main_scaffold.dart';
+import 'package:vidsnap_ai/core/widgets/splash_screen.dart';
 import 'package:vidsnap_ai/features/auth/presentation/login_screen.dart';
 import 'package:vidsnap_ai/features/auth/presentation/register_screen.dart';
 import 'package:vidsnap_ai/features/auth/presentation/verify_email_screen.dart';
@@ -50,8 +51,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: <RouteBase>[
       GoRoute(
         path: '/splash',
-        builder: (context, state) =>
-            const Scaffold(body: Center(child: CircularProgressIndicator())),
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/reel/:id',
+        builder: (context, state) => const FeedScreen(),
+      ),
+      GoRoute(
+        path: '/room/:id',
+        redirect: (context, state) {
+          final id = state.pathParameters['id']!;
+          final q = state.uri.hasQuery ? '?${state.uri.query}' : '';
+          return '/rooms/$id$q';
+        },
+      ),
+      GoRoute(
+        path: '/creator/:handle',
+        builder: (context, state) => ProfileScreen(
+          userId: state.pathParameters['handle'],
+        ),
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(

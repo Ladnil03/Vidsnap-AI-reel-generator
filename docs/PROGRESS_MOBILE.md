@@ -1,6 +1,6 @@
 # VidSnap.AI Mobile Progress (Flutter)
 
-## Status: M7 Completed -> Awaiting M8 Go
+## Status: ALL SLICES COMPLETED (M0 - M8) 🚀
 
 | Slice | Name | Status | Notes |
 |---|---|---|---|
@@ -12,29 +12,28 @@
 | M5 | Social & Realtime | DONE | Watch Together party rooms lobby, passcode modal, LiveKit WebRTC credentials, WebSocket playback sync, live chat, AI Room Assistant recap, and Communities discovery. 83 tests passing. |
 | M6 | AI & Engagement | DONE | AI Companion streaming chat with mood selector & embedded reels, gamification dashboard with levels, streaks, daily quests, badge showcase & leaderboard. 102 tests passing. |
 | M7 | Profile & Dashboards | DONE | User & creator profile, creator studio analytics/copilot, business sponsorship briefs & collab pitches. 125 tests passing. |
-| M8 | Polish & Store Readiness | NEXT | Icons/splash, deep links, permissions, Crashlytics, release configs. |
+| M8 | Polish & Store Readiness | DONE | Branded splash screen, deep linking (custom scheme & universal links), permissions rationale framework, telemetry/crash reporting, offline banners & error boundary, release configurations. 150 tests passing. |
 
-## Slice M7 Handoff
+## Slice M8 Handoff
 - **Done**:
-  - Domain models:
-    - `UserProfileModel`, `UpdateProfileInput` in `mobile/lib/features/profile/domain/profile_models.dart`.
-    - `VerificationStatus`, `CreatorProfileModel`, `CreatorAnalyticsModel`, `CreatorCopilotHook`, `CreatorCopilotResponseModel`, `VerificationApplicationModel` in `mobile/lib/features/creator/domain/creator_models.dart`.
-    - `CampaignStatus`, `BusinessProfileModel`, `CampaignModel`, `CollabApplicationModel`, `CreateCampaignInput`, `CreateBusinessProfileInput` in `mobile/lib/features/business/domain/business_models.dart`.
-  - Data & Repositories:
-    - `ProfileRepository`: get user/my profile with aggregated reels, update profile (display name and bio), list published reels and saved reels.
-    - `CreatorRepository`: get creator profile, update bio/niche/socials, fetch 30-day KPI analytics (impressions, views, watch time, completion rate, mood affinity), Creator Copilot AI strategy generator (viral score, hooks, optimal posting time), and submit verification badge application.
-    - `BusinessRepository`: get/create verified brand profile, list campaign briefs with category filtering, create sponsorship brief, submit creator collab pitch with automated brand-safety screening, and fetch candidate applications.
-  - State Management:
-    - `ProfileNotifier` (Riverpod `Notifier`) managing profile view, edit profile bottom sheet, tab switching between My Reels and Saved.
-    - `CreatorNotifier` (Riverpod `Notifier`) managing creator profile, analytics retrieval, AI Copilot hook generation, and verification application submission.
-    - `BusinessNotifier` (Riverpod `Notifier`) managing collab marketplace feed, category filtering, campaign creation, and proposal pitches.
-  - UI Presentation:
-    - `ProfileScreen`: user header, avatar with initials, role badges (`Creator 🎨`, `Brand 💼`, `Member ✨`), stats strip (reels, followers, following, tokens remaining), action hub buttons (Edit Profile, Creator Studio, Collab Marketplace), tabs for "My Reels" and "Saved", and responsive 9:16 video grid.
-    - `EditProfileSheet`: bottom modal sheet for editing display name and bio.
-    - `CreatorDashboardScreen`: RBAC-gated dashboard (non-creators see unlock CTA with one-tap activation; creators see full analytics KPI grid, audience mood affinity distribution, Creator Copilot AI prompt & viral hook generator, and verification badge modal).
-    - `BusinessMarketplaceScreen`: category filter chips, sponsorship brief cards with budget & perk badges, collaboration pitch proposal modal with brand-safety disclaimer, and post campaign brief dialog.
-    - Routes added in `app_router.dart`: `/creator/dashboard` and `/business/campaigns`. Connected `/profile` to `ProfileScreen`.
-  - Test suite: **125/125 tests passing** (23 new unit and widget tests covering profile repository, creator repository, business repository, profile screen, creator dashboard screen, and business marketplace screen).
-- **Quality**: `flutter analyze` clean (0 issues), `flutter test` green (125/125 tests passing).
-- **Next**: Slice M8: Polish & Store Readiness (App launcher icons, splash screen, universal deep linking, system permissions handler, offline error boundaries, release build configurations).
+  - Splash & Aesthetics:
+    - `SplashScreen` in `mobile/lib/core/widgets/splash_screen.dart` featuring the animated gradient VidSnap logo badge, Paper & Forest typography, custom animated pulse curve, and release version tag.
+  - Deep Linking Framework:
+    - `DeepLinkService` in `mobile/lib/core/router/deep_link_service.dart` supporting custom scheme (`vidsnap://reel/{id}`, `vidsnap://room/{id}`, `vidsnap://creator/{handle}`, `vidsnap://campaigns`, `vidsnap://companion`, `vidsnap://quests`) and universal HTTPS links (`https://vidsnap.ai/...`).
+    - Added routes in `app_router.dart`: `/reel/:id`, `/room/:id` (redirect to `/rooms/:id`), and `/creator/:handle`.
+  - Permissions Framework:
+    - `PermissionService` in `mobile/lib/core/permissions/permission_service.dart` providing educational rationale dialogs for camera, microphone, photo library, and storage with user-friendly permission prompts.
+  - Resilience, Offline & Crash Telemetry:
+    - `TelemetryService` in `mobile/lib/core/telemetry/telemetry_service.dart` providing breadcrumbs ring buffer, unhandled error logging, and Crashlytics/Sentry ready pipeline.
+    - Global uncaught error hooks: `FlutterError.onError` and `PlatformDispatcher.instance.onError` wired in `main.dart`.
+    - `GlobalErrorBoundary` in `mobile/lib/core/widgets/global_error_boundary.dart` preventing uncaught red/gray error screens and offering one-tap error recovery and telemetry logging.
+    - `ConnectivityBanner` in `mobile/lib/core/widgets/connectivity_banner.dart` providing non-intrusive offline alerts and auto-dismissing "Back Online" sync notifications.
+  - Store Readiness & Release Configs:
+    - `AndroidManifest.xml`: configured app label ("VidSnap.AI"), permissions (Camera, Audio, Storage, Media, Internet), and deep linking intent filters (`vidsnap://` and `https://vidsnap.ai/`).
+    - `proguard-rules.pro`: optimized R8/ProGuard configuration for Flutter engine, media player, and serialization.
+    - `Info.plist`: added Apple App Store privacy descriptions (`NSCameraUsageDescription`, `NSMicrophoneUsageDescription`, `NSPhotoLibraryUsageDescription`) and `CFBundleURLTypes` for custom scheme `vidsnap`.
+  - Test suite: **150/150 tests passing** (25 new unit and widget tests covering deep linking, permissions, telemetry, splash screen, connectivity banner, and global error boundary).
+- **Quality**: `flutter analyze` clean (0 issues), `flutter test` green (150/150 tests passing).
+- **Status**: Complete production-ready Flutter mobile app for VidSnap.AI.
 - **Blockers / Backend Dependencies**: None.
+

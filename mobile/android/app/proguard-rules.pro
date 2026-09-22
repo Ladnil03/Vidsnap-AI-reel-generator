@@ -30,3 +30,9 @@
 # Video player & media codecs
 -keep class androidx.media3.** { *; }
 -dontwarn androidx.media3.**
+
+# Play Core (referenced by Flutter deferred component manager)
+-keep class com.google.android.play.core.splitcompat.** { *; }
+-keep class com.google.android.play.core.splitinstall.** { *; }
+-keep class com.google.android.play.core.tasks.** { *; }
+-dontwarn com.google.android.play.core.**

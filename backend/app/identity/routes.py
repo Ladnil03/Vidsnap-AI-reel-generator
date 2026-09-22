@@ -140,9 +140,13 @@ async def refresh_token(
 
 
 @router.post("/api/v1/auth/logout", response_model=dict[str, str])
-async def logout(request: Request, response: Response) -> dict[str, str]:
+async def logout(
+    request: Request,
+    response: Response,
+    body: TokenRefreshRequest | None = None,
+) -> dict[str, str]:
     """Revoke session and clear refresh token cookie."""
-    raw_token = request.cookies.get("refresh_token")
+    raw_token = request.cookies.get("refresh_token") or (body.refresh_token if body else None)
     if raw_token:
         await IdentityService.revoke_session(raw_token)
 

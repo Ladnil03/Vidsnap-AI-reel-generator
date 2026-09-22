@@ -10,6 +10,8 @@ import 'package:vidsnap_ai/features/auth/presentation/verify_email_screen.dart';
 import 'package:vidsnap_ai/features/create/presentation/create_screen.dart';
 import 'package:vidsnap_ai/features/discovery/presentation/explore_screen.dart';
 import 'package:vidsnap_ai/features/feed/presentation/feed_screen.dart';
+import 'package:vidsnap_ai/features/rooms/presentation/active_room_screen.dart';
+import 'package:vidsnap_ai/features/rooms/presentation/rooms_lobby_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authNotifier = ref.watch(authStateProvider);
@@ -20,7 +22,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (BuildContext context, GoRouterState state) {
       final status = authNotifier.status;
       final location = state.matchedLocation;
-      final isAuthRoute = location == '/login' ||
+      final isAuthRoute =
+          location == '/login' ||
           location == '/register' ||
           location == '/verify-email';
       final isSplash = location == '/splash';
@@ -43,16 +46,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: <RouteBase>[
       GoRoute(
         path: '/splash',
-        builder: (context, state) => const Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        ),
+        builder: (context, state) =>
+            const Scaffold(body: Center(child: CircularProgressIndicator())),
       ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterScreen(),
@@ -62,6 +59,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final email = state.uri.queryParameters['email'];
           return VerifyEmailScreen(email: email);
+        },
+      ),
+      GoRoute(
+        path: '/rooms/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          final passcode = state.uri.queryParameters['passcode'];
+          return ActiveRoomScreen(roomId: id, passcode: passcode);
         },
       ),
       ShellRoute(
@@ -79,10 +84,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           } else {
             index = 0;
           }
-          return MainScaffold(
-            currentIndex: index,
-            child: child,
-          );
+          return MainScaffold(currentIndex: index, child: child);
         },
         routes: <RouteBase>[
           GoRoute(
@@ -99,9 +101,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/rooms',
-            builder: (context, state) => const Scaffold(
-              body: Center(child: Text('Watch Together Rooms (M5 Slice)')),
-            ),
+            builder: (context, state) => const RoomsLobbyScreen(),
           ),
           GoRoute(
             path: '/profile',
@@ -125,7 +125,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       children: <Widget>[
                         Text(
                           'Welcome, ${user?.name.isNotEmpty == true ? user!.name : 'Creator'}!',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text('Credits: ${user?.tokensRemaining ?? 0} tokens'),

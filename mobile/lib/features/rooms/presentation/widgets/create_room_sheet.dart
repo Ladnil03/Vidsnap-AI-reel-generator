@@ -208,8 +208,9 @@ class _CreateRoomSheetState extends ConsumerState<CreateRoomSheet> {
                 errorText: _passcodeError,
                 prefixIcon: const Icon(Icons.password, size: 20),
                 onChanged: (_) {
-                  if (_passcodeError != null)
+                  if (_passcodeError != null) {
                     setState(() => _passcodeError = null);
+                  }
                 },
               ),
             ],

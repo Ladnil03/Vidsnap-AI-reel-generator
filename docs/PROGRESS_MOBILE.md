@@ -1,6 +1,6 @@
 # VidSnap.AI Mobile Progress (Flutter)
 
-## Status: M5 Completed -> Awaiting M6 Go
+## Status: M6 Completed -> Awaiting M7 Go
 
 | Slice | Name | Status | Notes |
 |---|---|---|---|
@@ -10,29 +10,26 @@
 | M3 | Feed & Discovery | DONE | Snap-scroll 9:16 vertical video feed, top tabs (Trending, Following, Saved, For You), engagement rail (likes, comments sheet, bookmarks, share), watch progress telemetry buffer, Explore search grid, and MainScaffold navigation. 52 tests passing. |
 | M4 | Create | DONE | Camera & gallery video picker, headline & description metadata, AI viral hook & hashtag generator, visibility selector, offline drafts persistence, multipart upload with progress bar. 56 tests passing. |
 | M5 | Social & Realtime | DONE | Watch Together party rooms lobby, passcode modal, LiveKit WebRTC credentials, WebSocket playback sync, live chat, AI Room Assistant recap, and Communities discovery. 83 tests passing. |
-| M6 | AI & Engagement | NEXT | AI Companion streaming chat, gamification XP/streak/badges display. |
-| M7 | Profile & Dashboards | PENDING | User & creator profile, creator dashboard, business campaigns (RBAC gated). |
+| M6 | AI & Engagement | DONE | AI Companion streaming chat with mood selector & embedded reels, gamification dashboard with levels, streaks, daily quests, badge showcase & leaderboard. 102 tests passing. |
+| M7 | Profile & Dashboards | NEXT | User & creator profile, creator studio dashboard, business campaigns (RBAC gated). |
 | M8 | Polish & Store Readiness | PENDING | Icons/splash, deep links, permissions, Crashlytics, release configs. |
 
-## Slice M5 Handoff
+## Slice M6 Handoff
 - **Done**:
   - Domain models:
-    - `RoomModel`, `WatchStateModel`, `RoomParticipantModel`, `RoomChatMessageModel`, `LiveKitCredentialsModel`, `RoomSummaryModel`, `CommunityModel`, `FollowStatusModel`.
-  - Data & Services:
-    - `RoomsRepository` supporting room listing, details, creation, join with passcode, leave, sync playback, chat history, LiveKit RTC token generation, and AI Room Assistant catch-up summary.
-    - `SocialRepository` supporting follow, unfollow, follow status check, community discovery with category & search filters, and join/leave community.
-    - `RoomSocketService` for real-time WebSocket connection to `/api/v1/rooms/{room_id}/ws?token=...`, streaming chat, reaction bursts, server-authoritative playback synchronization (`play`, `pause`, `seek`), and participant presence.
+    - `MoodType`, `MoodStateModel`, `CompanionMessageModel`, `CompanionChatResponseModel` in `mobile/lib/features/companion/domain/companion_models.dart`.
+    - `UserLevelModel`, `StreakStateModel`, `UserChallengeModel`, `UserBadgeModel`, `LeaderboardEntryModel`, `LeaderboardResponseModel`, `AwardXPResponseModel`, `GamificationProfileModel` in `mobile/lib/features/gamification/domain/gamification_models.dart`.
+  - Data & Repositories:
+    - `CompanionRepository`: chat with personal AI companion, get/clear conversation history, read & update active user mood preferences.
+    - `GamificationRepository`: get aggregated gamification profile, dynamic level calculation, daily check-in streak record (`+25 XP`), freeze token safeguard shield, daily & weekly quest challenges with claim reward, badge achievement catalog, and Redis ZSET global leaderboard.
   - State Management:
-    - `RoomsLobbyNotifier` (Riverpod `Notifier`) managing room discovery, search, filter chips, and room creation bottom sheet.
-    - `ActiveRoomNotifier` (Riverpod `Notifier`) managing synchronized playback state, real-time message stream, participant avatars rail, LiveKit credentials, and AI room assistant recap.
-    - `CommunitiesNotifier` (Riverpod `Notifier`) managing community discovery, search, category chips, and optimistic join/leave updates.
+    - `CompanionNotifier` (Riverpod `Notifier`) managing mood state, conversation stream, optimistic message addition, quick suggested action chips, and error recovery.
+    - `GamificationNotifier` (Riverpod `Notifier`) managing user level progress, streak status, daily check-in execution, quest reward claiming, freeze shield consumption, and achievement badges.
   - UI Presentation:
-    - `RoomsLobbyScreen`: top segmented tabs (`Watch Together` vs `Communities`), search bar, filter chips (`All`, `Public`, `Passcode Protected`), active room cards with LIVE badge and host details, "Host Room" FAB.
-    - `CreateRoomSheet`: bottom modal for hosting party rooms with privacy toggles and passcode protection.
-    - `PasscodeDialog`: modal prompt validating 8+ character passcodes for private rooms.
-    - `ActiveRoomScreen`: synchronized video banner with host-synced badge, participant avatars rail with host star badge, real-time chat stream with auto-scroll, reaction emoji bursts, LiveKit audio lounge dialog, and AI Room Assistant catch-up recap modal.
-    - Router integration: connected `/rooms` to `RoomsLobbyScreen` and added `/rooms/:id` route for full-screen `ActiveRoomScreen`.
-  - Test suite: **83/83 tests passing** (27 new unit and widget tests covering rooms repository, social repository, socket service, passcode dialog, lobby screen, and active room screen).
-- **Quality**: `flutter analyze` clean (0 issues), `flutter test` green (83/83 tests passing).
-- **Next**: Slice M6: AI & Engagement (AI Companion streaming chat with persona selection, gamification XP/streak/badges display).
+    - `CompanionChatScreen`: top mood selector filter chips (`⚡ Energized`, `🌿 Chill`, `🎯 Focused`, `🔍 Curious`, `🌧️ Melancholic`, `✨ Inspired`, `😂 Humorous`), message bubbles with AI provenance labels, embedded recommendation reel cards with tap-to-play, quick prompt suggestions carousel, thinking indicator, and clear history dialog.
+    - `GamificationDashboardScreen`: user level progression card with gradient level badge and percentage progress bar, daily streak counter with freeze shields count and daily check-in button, active daily & weekly quests with progress bars and claim buttons, achievement badges showcase grid with unlock modal, and global XP leaderboard ranking.
+    - Navigation: added `/companion` and `/gamification` routes to `app_router.dart`, linked from Profile screen, and added floating AI companion launcher in `FeedScreen`.
+  - Test suite: **102/102 tests passing** (19 new unit and widget tests covering companion repository, gamification repository, companion chat screen, and gamification dashboard screen).
+- **Quality**: `flutter analyze` clean (0 issues), `flutter test` green (102/102 tests passing).
+- **Next**: Slice M7: Profile & Dashboards (User & creator profile, creator studio analytics/dashboard, business campaigns with RBAC gating).
 - **Blockers / Backend Dependencies**: None.

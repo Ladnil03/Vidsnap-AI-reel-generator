@@ -7,9 +7,11 @@ import 'package:vidsnap_ai/core/widgets/main_scaffold.dart';
 import 'package:vidsnap_ai/features/auth/presentation/login_screen.dart';
 import 'package:vidsnap_ai/features/auth/presentation/register_screen.dart';
 import 'package:vidsnap_ai/features/auth/presentation/verify_email_screen.dart';
+import 'package:vidsnap_ai/features/companion/presentation/companion_chat_screen.dart';
 import 'package:vidsnap_ai/features/create/presentation/create_screen.dart';
 import 'package:vidsnap_ai/features/discovery/presentation/explore_screen.dart';
 import 'package:vidsnap_ai/features/feed/presentation/feed_screen.dart';
+import 'package:vidsnap_ai/features/gamification/presentation/gamification_dashboard_screen.dart';
 import 'package:vidsnap_ai/features/rooms/presentation/active_room_screen.dart';
 import 'package:vidsnap_ai/features/rooms/presentation/rooms_lobby_screen.dart';
 
@@ -69,6 +71,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return ActiveRoomScreen(roomId: id, passcode: passcode);
         },
       ),
+      GoRoute(
+        path: '/companion',
+        builder: (context, state) => const CompanionChatScreen(),
+      ),
+      GoRoute(
+        path: '/gamification',
+        builder: (context, state) => const GamificationDashboardScreen(),
+      ),
       ShellRoute(
         builder: (context, state, child) {
           final location = state.matchedLocation;
@@ -120,25 +130,40 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     ],
                   ),
                   body: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          'Welcome, ${user?.name.isNotEmpty == true ? user!.name : 'Creator'}!',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(
+                            'Welcome, ${user?.name.isNotEmpty == true ? user!.name : 'Creator'}!',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text('Credits: ${user?.tokensRemaining ?? 0} tokens'),
-                        const SizedBox(height: 16),
-                        AppButton(
-                          label: 'Log Out',
-                          variant: AppButtonVariant.ghost,
-                          onPressed: () => ref.read(authStateProvider).logout(),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Text('Credits: ${user?.tokensRemaining ?? 0} tokens'),
+                          const SizedBox(height: 24),
+                          AppButton(
+                            label: 'Achievements & Streaks 🔥',
+                            variant: AppButtonVariant.primary,
+                            onPressed: () => context.push('/gamification'),
+                          ),
+                          const SizedBox(height: 12),
+                          AppButton(
+                            label: 'AI Companion 🤖',
+                            variant: AppButtonVariant.secondary,
+                            onPressed: () => context.push('/companion'),
+                          ),
+                          const SizedBox(height: 24),
+                          AppButton(
+                            label: 'Log Out',
+                            variant: AppButtonVariant.ghost,
+                            onPressed: () => ref.read(authStateProvider).logout(),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );

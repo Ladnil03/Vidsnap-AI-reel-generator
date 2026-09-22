@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:vidsnap_ai/core/network/app_failure.dart';
 import 'package:vidsnap_ai/core/theme/app_colors.dart';
 import 'package:vidsnap_ai/core/widgets/app_empty_state.dart';
@@ -56,6 +57,24 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.s2),
                 child: _buildTopTabBar(feedState.activeTab),
+              ),
+            ),
+          ),
+
+          // Floating AI Companion launcher
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  top: AppSpacing.s1,
+                  right: AppSpacing.s2,
+                ),
+                child: IconButton(
+                  icon: const Text('✨', style: TextStyle(fontSize: 22)),
+                  tooltip: 'AI Companion',
+                  onPressed: () => context.push('/companion'),
+                ),
               ),
             ),
           ),

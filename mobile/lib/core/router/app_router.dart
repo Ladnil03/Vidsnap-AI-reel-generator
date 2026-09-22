@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vidsnap_ai/core/router/auth_state_provider.dart';
 import 'package:vidsnap_ai/core/widgets/app_button.dart';
+import 'package:vidsnap_ai/core/widgets/main_scaffold.dart';
 import 'package:vidsnap_ai/features/auth/presentation/login_screen.dart';
 import 'package:vidsnap_ai/features/auth/presentation/register_screen.dart';
 import 'package:vidsnap_ai/features/auth/presentation/verify_email_screen.dart';
+import 'package:vidsnap_ai/features/discovery/presentation/explore_screen.dart';
+import 'package:vidsnap_ai/features/feed/presentation/feed_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authNotifier = ref.watch(authStateProvider);
@@ -60,74 +63,87 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return VerifyEmailScreen(email: email);
         },
       ),
-      GoRoute(
-        path: '/feed',
-        builder: (context, state) => Consumer(
-          builder: (context, ref, child) {
-            final user = ref.watch(authStateProvider).currentUser;
-            return Scaffold(
-              appBar: AppBar(
-                title: const Text('VidSnap Feed'),
-                actions: <Widget>[
-                  IconButton(
-                    icon: const Icon(Icons.logout),
-                    tooltip: 'Log Out',
-                    onPressed: () => ref.read(authStateProvider).logout(),
+      ShellRoute(
+        builder: (context, state, child) {
+          final location = state.matchedLocation;
+          final int index;
+          if (location.startsWith('/explore')) {
+            index = 1;
+          } else if (location.startsWith('/create')) {
+            index = 2;
+          } else if (location.startsWith('/rooms')) {
+            index = 3;
+          } else if (location.startsWith('/profile')) {
+            index = 4;
+          } else {
+            index = 0;
+          }
+          return MainScaffold(
+            currentIndex: index,
+            child: child,
+          );
+        },
+        routes: <RouteBase>[
+          GoRoute(
+            path: '/feed',
+            builder: (context, state) => const FeedScreen(),
+          ),
+          GoRoute(
+            path: '/explore',
+            builder: (context, state) => const ExploreScreen(),
+          ),
+          GoRoute(
+            path: '/create',
+            builder: (context, state) => const Scaffold(
+              body: Center(child: Text('Create Reel (M4 Slice)')),
+            ),
+          ),
+          GoRoute(
+            path: '/rooms',
+            builder: (context, state) => const Scaffold(
+              body: Center(child: Text('Watch Together Rooms (M5 Slice)')),
+            ),
+          ),
+          GoRoute(
+            path: '/profile',
+            builder: (context, state) => Consumer(
+              builder: (context, ref, child) {
+                final user = ref.watch(authStateProvider).currentUser;
+                return Scaffold(
+                  appBar: AppBar(
+                    title: const Text('My Profile'),
+                    actions: <Widget>[
+                      IconButton(
+                        icon: const Icon(Icons.logout),
+                        tooltip: 'Log Out',
+                        onPressed: () => ref.read(authStateProvider).logout(),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              body: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      'Welcome, ${user?.name.isNotEmpty == true ? user!.name : 'Creator'}!',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  body: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          'Welcome, ${user?.name.isNotEmpty == true ? user!.name : 'Creator'}!',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text('Credits: ${user?.tokensRemaining ?? 0} tokens'),
+                        const SizedBox(height: 16),
+                        AppButton(
+                          label: 'Log Out',
+                          variant: AppButtonVariant.ghost,
+                          onPressed: () => ref.read(authStateProvider).logout(),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text('Credits: ${user?.tokensRemaining ?? 0} tokens'),
-                    const SizedBox(height: 16),
-                    AppButton(
-                      label: 'Log Out',
-                      variant: AppButtonVariant.ghost,
-                      onPressed: () => ref.read(authStateProvider).logout(),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-      GoRoute(
-        path: '/explore',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Explore (M3 Slice)')),
-        ),
-      ),
-      GoRoute(
-        path: '/create',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Create Reel (M4 Slice)')),
-        ),
-      ),
-      GoRoute(
-        path: '/rooms',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Watch Together Rooms (M5 Slice)')),
-        ),
-      ),
-      GoRoute(
-        path: '/companion',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('AI Companion (M6 Slice)')),
-        ),
-      ),
-      GoRoute(
-        path: '/profile',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Profile (M7 Slice)')),
-        ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     ],
   );

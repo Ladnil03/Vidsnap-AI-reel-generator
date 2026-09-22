@@ -134,7 +134,15 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('VidSnap Feed'), findsOneWidget);
+      expect(find.text('Trending'), findsOneWidget);
+      expect(find.text('Feed'), findsOneWidget);
+      expect(find.text('Explore'), findsOneWidget);
+
+      // Tap Profile in bottom navigation to view user profile details
+      await tester.tap(find.text('Profile'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('My Profile'), findsOneWidget);
       expect(find.textContaining('Welcome, Restored User!'), findsOneWidget);
       expect(find.text('Credits: 15 tokens'), findsOneWidget);
     });

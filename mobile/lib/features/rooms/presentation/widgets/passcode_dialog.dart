@@ -4,10 +4,7 @@ import 'package:vidsnap_ai/core/widgets/app_button.dart';
 import 'package:vidsnap_ai/core/widgets/app_text_field.dart';
 
 class PasscodeDialog extends StatefulWidget {
-  const PasscodeDialog({
-    super.key,
-    this.roomTitle = 'Private Room',
-  });
+  const PasscodeDialog({super.key, this.roomTitle = 'Private Room'});
 
   final String roomTitle;
 
@@ -83,7 +80,9 @@ class _PasscodeDialogState extends State<PasscodeDialog> {
                       Text(
                         widget.roomTitle,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: isDark ? AppColors.cream300 : AppColors.forest700,
+                          color: isDark
+                              ? AppColors.cream300
+                              : AppColors.forest700,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

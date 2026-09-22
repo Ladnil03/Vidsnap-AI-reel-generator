@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vidsnap_ai/features/gamification/data/gamification_repository.dart';
@@ -36,7 +37,7 @@ void main() {
               'last_active_date': '2026-09-22',
               'freeze_tokens': 2,
               'is_frozen_today': false,
-            }
+            },
           ],
           'active_challenges': [
             {
@@ -49,7 +50,7 @@ void main() {
               'reward_xp': 30,
               'is_completed': false,
               'is_claimed': false,
-            }
+            },
           ],
           'badges_unlocked': [
             {
@@ -59,7 +60,7 @@ void main() {
               'icon': '🎬',
               'category': 'watch',
               'is_unlocked': true,
-            }
+            },
           ],
           'badges_unlocked_count': 1,
           'badges_total_count': 12,
@@ -85,33 +86,36 @@ void main() {
       expect(profile.freezeTokensAvailable, 2);
     });
 
-    test('recordStreakActivity records daily login and returns updated streak', () async {
-      dio.httpClientAdapter = _MockAdapter((options) {
-        expect(options.path, '/api/v1/gamification/streaks/record');
-        expect(options.method, 'POST');
+    test(
+      'recordStreakActivity records daily login and returns updated streak',
+      () async {
+        dio.httpClientAdapter = _MockAdapter((options) {
+          expect(options.path, '/api/v1/gamification/streaks/record');
+          expect(options.method, 'POST');
 
-        final data = {
-          'scope': 'daily',
-          'current_streak': 6,
-          'longest_streak': 12,
-          'last_active_date': '2026-09-22',
-          'freeze_tokens': 2,
-          'is_frozen_today': false,
-        };
+          final data = {
+            'scope': 'daily',
+            'current_streak': 6,
+            'longest_streak': 12,
+            'last_active_date': '2026-09-22',
+            'freeze_tokens': 2,
+            'is_frozen_today': false,
+          };
 
-        return ResponseBody.fromString(
-          jsonEncode(data),
-          200,
-          headers: {
-            Headers.contentTypeHeader: [Headers.jsonContentType],
-          },
-        );
-      });
+          return ResponseBody.fromString(
+            jsonEncode(data),
+            200,
+            headers: {
+              Headers.contentTypeHeader: [Headers.jsonContentType],
+            },
+          );
+        });
 
-      final streak = await repository.recordStreakActivity();
-      expect(streak.currentStreak, 6);
-      expect(streak.lastActiveDate, '2026-09-22');
-    });
+        final streak = await repository.recordStreakActivity();
+        expect(streak.currentStreak, 6);
+        expect(streak.lastActiveDate, '2026-09-22');
+      },
+    );
 
     test('freezeStreak uses a freeze token to safeguard streak', () async {
       dio.httpClientAdapter = _MockAdapter((options) {
@@ -156,7 +160,7 @@ void main() {
             'reward_xp': 20,
             'is_completed': false,
             'is_claimed': false,
-          }
+          },
         ];
 
         return ResponseBody.fromString(
@@ -173,36 +177,39 @@ void main() {
       expect(quests.first.progressFraction, 0.5);
     });
 
-    test('claimChallenge claims quest and returns AwardXPResponseModel', () async {
-      dio.httpClientAdapter = _MockAdapter((options) {
-        expect(options.path, '/api/v1/gamification/challenges/q1/claim');
-        expect(options.method, 'POST');
+    test(
+      'claimChallenge claims quest and returns AwardXPResponseModel',
+      () async {
+        dio.httpClientAdapter = _MockAdapter((options) {
+          expect(options.path, '/api/v1/gamification/challenges/q1/claim');
+          expect(options.method, 'POST');
 
-        final data = {
-          'awarded': true,
-          'amount': 50,
-          'action': 'challenge_completed',
-          'new_total_xp': 500,
-          'current_level': 4,
-          'leveled_up': true,
-          'message': 'Challenge reward claimed successfully!',
-        };
+          final data = {
+            'awarded': true,
+            'amount': 50,
+            'action': 'challenge_completed',
+            'new_total_xp': 500,
+            'current_level': 4,
+            'leveled_up': true,
+            'message': 'Challenge reward claimed successfully!',
+          };
 
-        return ResponseBody.fromString(
-          jsonEncode(data),
-          200,
-          headers: {
-            Headers.contentTypeHeader: [Headers.jsonContentType],
-          },
-        );
-      });
+          return ResponseBody.fromString(
+            jsonEncode(data),
+            200,
+            headers: {
+              Headers.contentTypeHeader: [Headers.jsonContentType],
+            },
+          );
+        });
 
-      final award = await repository.claimChallenge('q1');
-      expect(award.awarded, isTrue);
-      expect(award.amount, 50);
-      expect(award.leveledUp, isTrue);
-      expect(award.currentLevel, 4);
-    });
+        final award = await repository.claimChallenge('q1');
+        expect(award.awarded, isTrue);
+        expect(award.amount, 50);
+        expect(award.leveledUp, isTrue);
+        expect(award.currentLevel, 4);
+      },
+    );
 
     test('getBadgesCatalog returns catalog with unlock status', () async {
       dio.httpClientAdapter = _MockAdapter((options) {
@@ -218,7 +225,7 @@ void main() {
             'threshold': 1,
             'is_unlocked': true,
             'unlocked_at': '2026-09-22T08:00:00Z',
-          }
+          },
         ];
 
         return ResponseBody.fromString(
@@ -252,7 +259,7 @@ void main() {
               'score': 12500,
               'level': 12,
               'title': 'Trendsetter 🚀',
-            }
+            },
           ],
           'total_participants': 1420,
         };

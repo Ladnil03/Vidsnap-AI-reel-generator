@@ -8,10 +8,7 @@ import 'package:vidsnap_ai/features/auth/domain/auth_response_model.dart';
 import 'package:vidsnap_ai/features/auth/domain/user_model.dart';
 
 class AuthRepository {
-  AuthRepository({
-    required this.dio,
-    required this.tokenStorage,
-  });
+  AuthRepository({required this.dio, required this.tokenStorage});
 
   final Dio dio;
   final TokenStorage tokenStorage;
@@ -110,7 +107,8 @@ class AuthRepository {
         '/api/v1/auth/reset-password',
         data: request.toJson(),
       );
-      return response.data?['message'] as String? ?? 'Password reset successfully.';
+      return response.data?['message'] as String? ??
+          'Password reset successfully.';
     } on DioException catch (e) {
       throw mapDioExceptionToAppFailure(e);
     } catch (e) {

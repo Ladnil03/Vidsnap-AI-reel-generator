@@ -58,7 +58,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } on AppFailure catch (e) {
       setState(() => _errorMessage = e.message);
     } catch (_) {
-      setState(() => _errorMessage = 'Login failed. Please check your credentials.');
+      setState(
+        () => _errorMessage = 'Login failed. Please check your credentials.',
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -74,9 +76,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
       ),
-      builder: (context) => ForgotPasswordSheet(
-        initialEmail: _emailController.text.trim(),
-      ),
+      builder: (context) =>
+          ForgotPasswordSheet(initialEmail: _emailController.text.trim()),
     );
   }
 
@@ -143,15 +144,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Container(
                             padding: const EdgeInsets.all(AppSpacing.s3),
                             decoration: BoxDecoration(
-                              color: (isDark ? AppColors.dangerDark : AppColors.dangerLight)
-                                  .withValues(alpha: 0.12),
+                              color:
+                                  (isDark
+                                          ? AppColors.dangerDark
+                                          : AppColors.dangerLight)
+                                      .withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(AppRadii.sm),
                             ),
                             child: Row(
                               children: <Widget>[
                                 Icon(
                                   Icons.error_outline_rounded,
-                                  color: isDark ? AppColors.dangerDark : AppColors.dangerLight,
+                                  color: isDark
+                                      ? AppColors.dangerDark
+                                      : AppColors.dangerLight,
                                   size: 18.0,
                                 ),
                                 const SizedBox(width: AppSpacing.s2),
@@ -177,7 +183,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           controller: _emailController,
                           hintText: 'creator@vidsnap.ai',
                           keyboardType: TextInputType.emailAddress,
-                          prefixIcon: const Icon(Icons.email_outlined, size: 20.0),
+                          prefixIcon: const Icon(
+                            Icons.email_outlined,
+                            size: 20.0,
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.s4),
                         AppTextField(
@@ -185,7 +194,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           controller: _passwordController,
                           hintText: 'Enter your password',
                           isPassword: _obscurePassword,
-                          prefixIcon: const Icon(Icons.lock_outline, size: 20.0),
+                          prefixIcon: const Icon(
+                            Icons.lock_outline,
+                            size: 20.0,
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword
@@ -194,7 +206,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               size: 20.0,
                             ),
                             onPressed: () {
-                              setState(() => _obscurePassword = !_obscurePassword);
+                              setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              );
                             },
                           ),
                         ),
@@ -203,8 +217,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: TextButton(
                             onPressed: _showForgotPasswordModal,
                             style: TextButton.styleFrom(
-                              foregroundColor:
-                                  isDark ? AppColors.sage300 : AppColors.forest700,
+                              foregroundColor: isDark
+                                  ? AppColors.sage300
+                                  : AppColors.forest700,
                               textStyle: const TextStyle(
                                 fontSize: 13.0,
                                 fontWeight: FontWeight.w600,
@@ -232,7 +247,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Text(
                         "Don't have an account? ",
                         style: TextStyle(
-                          color: isDark ? AppColors.sage300 : AppColors.forest700,
+                          color: isDark
+                              ? AppColors.sage300
+                              : AppColors.forest700,
                           fontSize: 14.0,
                         ),
                       ),
@@ -241,7 +258,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: Text(
                           'Create one',
                           style: TextStyle(
-                            color: isDark ? AppColors.cream50 : AppColors.forest500,
+                            color: isDark
+                                ? AppColors.cream50
+                                : AppColors.forest500,
                             fontWeight: FontWeight.w700,
                             fontSize: 14.0,
                             decoration: TextDecoration.underline,

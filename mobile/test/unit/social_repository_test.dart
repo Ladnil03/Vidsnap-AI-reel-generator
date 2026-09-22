@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vidsnap_ai/features/social/data/social_repository.dart';
@@ -13,34 +14,37 @@ void main() {
       repository = SocialRepository(dio: dio);
     });
 
-    test('followUser sends follow POST and returns FollowStatusModel', () async {
-      dio.httpClientAdapter = _MockAdapter((options) {
-        expect(options.path, '/api/v1/social/follow/creator-42');
-        expect(options.method, 'POST');
+    test(
+      'followUser sends follow POST and returns FollowStatusModel',
+      () async {
+        dio.httpClientAdapter = _MockAdapter((options) {
+          expect(options.path, '/api/v1/social/follow/creator-42');
+          expect(options.method, 'POST');
 
-        final data = {
-          'target_user_id': 'creator-42',
-          'is_following': true,
-          'is_friend': false,
-          'followers_count': 105,
-          'following_count': 20,
-        };
+          final data = {
+            'target_user_id': 'creator-42',
+            'is_following': true,
+            'is_friend': false,
+            'followers_count': 105,
+            'following_count': 20,
+          };
 
-        return ResponseBody.fromString(
-          jsonEncode(data),
-          200,
-          headers: {
-            Headers.contentTypeHeader: [Headers.jsonContentType],
-          },
-        );
-      });
+          return ResponseBody.fromString(
+            jsonEncode(data),
+            200,
+            headers: {
+              Headers.contentTypeHeader: [Headers.jsonContentType],
+            },
+          );
+        });
 
-      final status = await repository.followUser('creator-42');
-      expect(status.targetUserId, 'creator-42');
-      expect(status.isFollowing, isTrue);
-      expect(status.isFriend, isFalse);
-      expect(status.followersCount, 105);
-    });
+        final status = await repository.followUser('creator-42');
+        expect(status.targetUserId, 'creator-42');
+        expect(status.isFollowing, isTrue);
+        expect(status.isFriend, isFalse);
+        expect(status.followersCount, 105);
+      },
+    );
 
     test('unfollowUser sends DELETE and returns FollowStatusModel', () async {
       dio.httpClientAdapter = _MockAdapter((options) {
@@ -113,8 +117,8 @@ void main() {
               'members_count': 342,
               'is_member': true,
               'created_at': '2026-01-01T00:00:00Z',
-            }
-          ]
+            },
+          ],
         };
 
         return ResponseBody.fromString(
@@ -126,7 +130,10 @@ void main() {
         );
       });
 
-      final communities = await repository.listCommunities(category: 'tech', query: 'flutter');
+      final communities = await repository.listCommunities(
+        category: 'tech',
+        query: 'flutter',
+      );
       expect(communities.length, 1);
       final comm = communities.first;
       expect(comm.communityId, 'comm-1');

@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vidsnap_ai/core/telemetry/telemetry_service.dart';
@@ -6,18 +7,12 @@ import 'package:vidsnap_ai/core/theme/app_colors.dart';
 
 @immutable
 class ConnectivityStatus {
-  const ConnectivityStatus({
-    required this.isOnline,
-    this.wasOffline = false,
-  });
+  const ConnectivityStatus({required this.isOnline, this.wasOffline = false});
 
   final bool isOnline;
   final bool wasOffline;
 
-  ConnectivityStatus copyWith({
-    bool? isOnline,
-    bool? wasOffline,
-  }) {
+  ConnectivityStatus copyWith({bool? isOnline, bool? wasOffline}) {
     return ConnectivityStatus(
       isOnline: isOnline ?? this.isOnline,
       wasOffline: wasOffline ?? this.wasOffline,
@@ -61,15 +56,12 @@ class ConnectivityNotifier extends Notifier<ConnectivityStatus> {
 
 final connectivityProvider =
     NotifierProvider<ConnectivityNotifier, ConnectivityStatus>(
-  ConnectivityNotifier.new,
-);
+      ConnectivityNotifier.new,
+    );
 
 /// Wraps the screen or app shell to display non-intrusive offline & reconnect banners.
 class ConnectivityBanner extends ConsumerWidget {
-  const ConnectivityBanner({
-    super.key,
-    required this.child,
-  });
+  const ConnectivityBanner({super.key, required this.child});
 
   final Widget child;
 
@@ -125,11 +117,7 @@ class ConnectivityBanner extends ConsumerWidget {
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Icon(
-              Icons.wifi_rounded,
-              size: 14,
-              color: Colors.white,
-            ),
+            Icon(Icons.wifi_rounded, size: 14, color: Colors.white),
             SizedBox(width: AppSpacing.s2),
             Text(
               'Back Online • Feed synchronized',

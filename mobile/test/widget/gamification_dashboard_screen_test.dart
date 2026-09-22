@@ -188,50 +188,54 @@ void main() {
 
     Widget createWidget() {
       return ProviderScope(
-        overrides: [
-          gamificationRepositoryProvider.overrideWithValue(fakeRepo),
-        ],
-        child: const MaterialApp(
-          home: GamificationDashboardScreen(),
-        ),
+        overrides: [gamificationRepositoryProvider.overrideWithValue(fakeRepo)],
+        child: const MaterialApp(home: GamificationDashboardScreen()),
       );
     }
 
-    testWidgets('renders progression cards, streak flame, active quest, and badge showcase', (tester) async {
-      tester.view.physicalSize = const Size(800, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
+    testWidgets(
+      'renders progression cards, streak flame, active quest, and badge showcase',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 2000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
 
-      await tester.pumpWidget(createWidget());
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(createWidget());
+        await tester.pumpAndSettle();
 
-      expect(find.text('Achievements & Quests'), findsOneWidget);
-      expect(find.text('Rising Talent ✨'), findsOneWidget);
-      expect(find.text('4 Day Streak'), findsOneWidget);
-      expect(find.text('Active Quests'), findsOneWidget);
-      expect(find.text('Create 1 Reel'), findsOneWidget);
-      expect(find.text('Badge Showcase'), findsOneWidget);
-      expect(find.text('Super Creator'), findsOneWidget);
-      expect(find.text('Global Leaderboard'), findsOneWidget);
-      expect(find.text('Pro Creator'), findsOneWidget);
-    });
+        expect(find.text('Achievements & Quests'), findsOneWidget);
+        expect(find.text('Rising Talent ✨'), findsOneWidget);
+        expect(find.text('4 Day Streak'), findsOneWidget);
+        expect(find.text('Active Quests'), findsOneWidget);
+        expect(find.text('Create 1 Reel'), findsOneWidget);
+        expect(find.text('Badge Showcase'), findsOneWidget);
+        expect(find.text('Super Creator'), findsOneWidget);
+        expect(find.text('Global Leaderboard'), findsOneWidget);
+        expect(find.text('Pro Creator'), findsOneWidget);
+      },
+    );
 
-    testWidgets('tapping Claim Daily +25 XP records check-in and updates state', (tester) async {
-      await tester.pumpWidget(createWidget());
-      await tester.pumpAndSettle();
+    testWidgets(
+      'tapping Claim Daily +25 XP records check-in and updates state',
+      (tester) async {
+        await tester.pumpWidget(createWidget());
+        await tester.pumpAndSettle();
 
-      final claimButton = find.text('Claim Daily +25 XP');
-      expect(claimButton, findsOneWidget);
+        final claimButton = find.text('Claim Daily +25 XP');
+        expect(claimButton, findsOneWidget);
 
-      await tester.tap(claimButton);
-      await tester.pumpAndSettle();
+        await tester.tap(claimButton);
+        await tester.pumpAndSettle();
 
-      expect(fakeRepo.checkInCalled, isTrue);
-      expect(find.text('5 Day Streak'), findsOneWidget);
-      expect(find.text('Checked-In Today ✅'), findsOneWidget);
-    });
+        expect(fakeRepo.checkInCalled, isTrue);
+        expect(find.text('5 Day Streak'), findsOneWidget);
+        expect(find.text('Checked-In Today ✅'), findsOneWidget);
+      },
+    );
 
-    testWidgets('tapping completed quest claim button triggers reward claim', (tester) async {
+    testWidgets('tapping completed quest claim button triggers reward claim', (
+      tester,
+    ) async {
       await tester.pumpWidget(createWidget());
       await tester.pumpAndSettle();
 

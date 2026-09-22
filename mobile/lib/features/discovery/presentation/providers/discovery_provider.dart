@@ -84,10 +84,7 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
         hasMore: response.hasMore,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
@@ -124,7 +121,9 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
       );
 
       final existingIds = state.items.map((e) => e.itemId).toSet();
-      final newUnique = response.items.where((e) => !existingIds.contains(e.itemId)).toList();
+      final newUnique = response.items
+          .where((e) => !existingIds.contains(e.itemId))
+          .toList();
 
       state = state.copyWith(
         items: <DiscoveryItemModel>[...state.items, ...newUnique],
@@ -138,4 +137,6 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
   }
 }
 
-final discoveryProvider = NotifierProvider<DiscoveryNotifier, DiscoveryState>(DiscoveryNotifier.new);
+final discoveryProvider = NotifierProvider<DiscoveryNotifier, DiscoveryState>(
+  DiscoveryNotifier.new,
+);

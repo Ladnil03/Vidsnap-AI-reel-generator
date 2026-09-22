@@ -28,7 +28,8 @@ class User {
       userId: json['user_id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
-      roles: (json['roles'] as List<dynamic>?)
+      roles:
+          (json['roles'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           <String>['user'],

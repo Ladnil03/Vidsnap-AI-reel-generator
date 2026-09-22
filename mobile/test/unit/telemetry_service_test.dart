@@ -10,7 +10,11 @@ void main() {
     });
 
     test('adds breadcrumb and logs category and timestamp', () {
-      telemetry.addBreadcrumb('Tapped play button', category: 'ui', data: {'reel_id': 'r-1'});
+      telemetry.addBreadcrumb(
+        'Tapped play button',
+        category: 'ui',
+        data: {'reel_id': 'r-1'},
+      );
 
       expect(telemetry.breadcrumbs.length, 1);
       final bc = telemetry.breadcrumbs.first;
@@ -33,25 +37,39 @@ void main() {
       telemetry.setUserId('user_test_99');
 
       expect(telemetry.currentUserId, 'user_test_99');
-      expect(telemetry.breadcrumbs.any((b) => b.message.contains('user_test_99')), isTrue);
+      expect(
+        telemetry.breadcrumbs.any((b) => b.message.contains('user_test_99')),
+        isTrue,
+      );
     });
 
-    test('records exception with stack trace and snapshot of active breadcrumbs', () {
-      telemetry.addBreadcrumb('Prior step 1');
-      telemetry.addBreadcrumb('Prior step 2');
+    test(
+      'records exception with stack trace and snapshot of active breadcrumbs',
+      () {
+        telemetry.addBreadcrumb('Prior step 1');
+        telemetry.addBreadcrumb('Prior step 2');
 
-      try {
-        throw const FormatException('Invalid JSON payload');
-      } catch (e, stack) {
-        telemetry.recordError(e, stack, reason: 'Failed parsing response', isFatal: true);
-      }
+        try {
+          throw const FormatException('Invalid JSON payload');
+        } catch (e, stack) {
+          telemetry.recordError(
+            e,
+            stack,
+            reason: 'Failed parsing response',
+            isFatal: true,
+          );
+        }
 
-      expect(telemetry.recordedErrors.length, 1);
-      final errorEvent = telemetry.recordedErrors.first;
-      expect(errorEvent.error, contains('FormatException: Invalid JSON payload'));
-      expect(errorEvent.reason, 'Failed parsing response');
-      expect(errorEvent.isFatal, isTrue);
-      expect(errorEvent.breadcrumbs.length, 2);
-    });
+        expect(telemetry.recordedErrors.length, 1);
+        final errorEvent = telemetry.recordedErrors.first;
+        expect(
+          errorEvent.error,
+          contains('FormatException: Invalid JSON payload'),
+        );
+        expect(errorEvent.reason, 'Failed parsing response');
+        expect(errorEvent.isFatal, isTrue);
+        expect(errorEvent.breadcrumbs.length, 2);
+      },
+    );
   });
 }

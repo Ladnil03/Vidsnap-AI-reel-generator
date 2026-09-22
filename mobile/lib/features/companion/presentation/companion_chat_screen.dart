@@ -8,7 +8,8 @@ class CompanionChatScreen extends ConsumerStatefulWidget {
   const CompanionChatScreen({super.key});
 
   @override
-  ConsumerState<CompanionChatScreen> createState() => _CompanionChatScreenState();
+  ConsumerState<CompanionChatScreen> createState() =>
+      _CompanionChatScreenState();
 }
 
 class _CompanionChatScreenState extends ConsumerState<CompanionChatScreen> {
@@ -155,25 +156,20 @@ class _CompanionChatScreenState extends ConsumerState<CompanionChatScreen> {
               child: state.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : state.messages.isEmpty
-                      ? _buildEmptyState(context, isDark)
-                      : ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.all(AppSpacing.s4),
-                          itemCount: state.messages.length +
-                              (state.isSending ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index == state.messages.length &&
-                                state.isSending) {
-                              return _buildThinkingIndicator(context, isDark);
-                            }
-                            final message = state.messages[index];
-                            return _buildMessageBubble(
-                              context,
-                              message,
-                              isDark,
-                            );
-                          },
-                        ),
+                  ? _buildEmptyState(context, isDark)
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(AppSpacing.s4),
+                      itemCount:
+                          state.messages.length + (state.isSending ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == state.messages.length && state.isSending) {
+                          return _buildThinkingIndicator(context, isDark);
+                        }
+                        final message = state.messages[index];
+                        return _buildMessageBubble(context, message, isDark);
+                      },
+                    ),
             ),
 
             // Suggested action chips
@@ -244,9 +240,7 @@ class _CompanionChatScreenState extends ConsumerState<CompanionChatScreen> {
                 ),
               ),
               onSelected: (_) {
-                ref
-                    .read(companionNotifierProvider.notifier)
-                    .selectMood(mood);
+                ref.read(companionNotifierProvider.notifier).selectMood(mood);
               },
             ),
           );
@@ -308,15 +302,15 @@ class _CompanionChatScreenState extends ConsumerState<CompanionChatScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.s3),
       child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           if (!isUser) ...<Widget>[
             CircleAvatar(
               radius: 16,
-              backgroundColor:
-                  isDark ? AppColors.forest700 : AppColors.sage200,
+              backgroundColor: isDark ? AppColors.forest700 : AppColors.sage200,
               child: const Text('✨', style: TextStyle(fontSize: 14)),
             ),
             const SizedBox(width: AppSpacing.s2),
@@ -331,10 +325,12 @@ class _CompanionChatScreenState extends ConsumerState<CompanionChatScreen> {
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(AppRadii.md),
                   topRight: const Radius.circular(AppRadii.md),
-                  bottomLeft:
-                      Radius.circular(isUser ? AppRadii.md : AppRadii.xs),
-                  bottomRight:
-                      Radius.circular(isUser ? AppRadii.xs : AppRadii.md),
+                  bottomLeft: Radius.circular(
+                    isUser ? AppRadii.md : AppRadii.xs,
+                  ),
+                  bottomRight: Radius.circular(
+                    isUser ? AppRadii.xs : AppRadii.md,
+                  ),
                 ),
                 border: !isUser
                     ? Border.all(

@@ -67,10 +67,7 @@ class _CreatorDashboardScreenState
                 Navigator.of(dialogCtx).pop();
                 final ok = await ref
                     .read(creatorNotifierProvider.notifier)
-                    .applyVerification(
-                      niche: niche,
-                      statement: statement,
-                    );
+                    .applyVerification(niche: niche, statement: statement);
                 if (mounted && ok) {
                   messenger.showSnackBar(
                     const SnackBar(
@@ -138,7 +135,8 @@ class _CreatorDashboardScreenState
                     const SizedBox(height: AppSpacing.s4),
 
                     // 5. Audience Affinity Breakdown
-                    if (state.analytics?.audienceMoodAffinity.isNotEmpty == true)
+                    if (state.analytics?.audienceMoodAffinity.isNotEmpty ==
+                        true)
                       _buildAudienceMoodSection(
                         state.analytics!.audienceMoodAffinity,
                         isDark,
@@ -210,8 +208,9 @@ class _CreatorDashboardScreenState
     CreatorProfileModel? profile,
     bool isDark,
   ) {
-    final handle =
-        profile?.handle.isNotEmpty == true ? '@${profile!.handle}' : '@creator';
+    final handle = profile?.handle.isNotEmpty == true
+        ? '@${profile!.handle}'
+        : '@creator';
     final isVerified = profile?.isVerified ?? false;
 
     return AppCard(
@@ -289,25 +288,19 @@ class _CreatorDashboardScreenState
 
   Widget _buildKpiGrid(CreatorAnalyticsModel? analytics, bool isDark) {
     final views = analytics?.totalViews ?? 0;
-    final watchHours =
-        (analytics?.watchTimeHours ?? 0.0).toStringAsFixed(1);
+    final watchHours = (analytics?.watchTimeHours ?? 0.0).toStringAsFixed(1);
     final impressions = analytics?.totalImpressions ?? 0;
-    final completionRate =
-        (analytics?.avgCompletionRatePct ?? 0.0).toStringAsFixed(1);
-    final engagementRate =
-        (analytics?.engagementRatePct ?? 0.0).toStringAsFixed(1);
+    final completionRate = (analytics?.avgCompletionRatePct ?? 0.0)
+        .toStringAsFixed(1);
+    final engagementRate = (analytics?.engagementRatePct ?? 0.0)
+        .toStringAsFixed(1);
 
     return Column(
       children: <Widget>[
         Row(
           children: <Widget>[
             Expanded(
-              child: _buildMetricTile(
-                'Total Views',
-                '$views',
-                '👁️',
-                isDark,
-              ),
+              child: _buildMetricTile('Total Views', '$views', '👁️', isDark),
             ),
             const SizedBox(width: AppSpacing.s2),
             Expanded(
@@ -381,10 +374,7 @@ class _CreatorDashboardScreenState
           const SizedBox(height: 6),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ],
       ),

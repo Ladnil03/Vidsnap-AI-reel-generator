@@ -11,7 +11,8 @@ class DoubleTapHeartAnimation extends StatefulWidget {
   final VoidCallback onAnimationComplete;
 
   @override
-  State<DoubleTapHeartAnimation> createState() => _DoubleTapHeartAnimationState();
+  State<DoubleTapHeartAnimation> createState() =>
+      _DoubleTapHeartAnimationState();
 }
 
 class _DoubleTapHeartAnimationState extends State<DoubleTapHeartAnimation>
@@ -30,13 +31,17 @@ class _DoubleTapHeartAnimationState extends State<DoubleTapHeartAnimation>
 
     _scaleAnimation = TweenSequence<double>(<TweenSequenceItem<double>>[
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: 0.0, end: 1.25)
-            .chain(CurveTween(curve: Curves.easeOutBack)),
+        tween: Tween<double>(
+          begin: 0.0,
+          end: 1.25,
+        ).chain(CurveTween(curve: Curves.easeOutBack)),
         weight: 60.0,
       ),
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: 1.25, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeInOut)),
+        tween: Tween<double>(
+          begin: 1.25,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeInOut)),
         weight: 40.0,
       ),
     ]).animate(_controller);
@@ -51,8 +56,10 @@ class _DoubleTapHeartAnimationState extends State<DoubleTapHeartAnimation>
         weight: 50.0,
       ),
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: 1.0, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 30.0,
       ),
     ]).animate(_controller);
@@ -99,10 +106,7 @@ class _DoubleTapHeartAnimationState extends State<DoubleTapHeartAnimation>
                 color: Color(0xFFFF4D67),
                 size: 110.0,
                 shadows: <Shadow>[
-                  Shadow(
-                    color: Colors.black45,
-                    blurRadius: 20.0,
-                  ),
+                  Shadow(color: Colors.black45, blurRadius: 20.0),
                 ],
               ),
             ),

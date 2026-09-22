@@ -6,11 +6,7 @@ import 'package:vidsnap_ai/core/widgets/app_button.dart';
 
 /// Wraps widgets to prevent red/gray screens of death and report errors.
 class GlobalErrorBoundary extends StatefulWidget {
-  const GlobalErrorBoundary({
-    super.key,
-    required this.child,
-    this.onReset,
-  });
+  const GlobalErrorBoundary({super.key, required this.child, this.onReset});
 
   final Widget child;
   final VoidCallback? onReset;
@@ -93,8 +89,9 @@ class _GlobalErrorBoundaryState extends State<GlobalErrorBoundary> {
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.s3),
                       decoration: BoxDecoration(
-                        color:
-                            isDark ? AppColors.forest900 : AppColors.cream200,
+                        color: isDark
+                            ? AppColors.forest900
+                            : AppColors.cream200,
                         borderRadius: BorderRadius.circular(AppRadii.sm),
                       ),
                       child: Text(
@@ -124,18 +121,12 @@ class _GlobalErrorBoundaryState extends State<GlobalErrorBoundary> {
       );
     }
 
-    return _ErrorBoundaryScope(
-      state: this,
-      child: widget.child,
-    );
+    return _ErrorBoundaryScope(state: this, child: widget.child);
   }
 }
 
 class _ErrorBoundaryScope extends InheritedWidget {
-  const _ErrorBoundaryScope({
-    required this.state,
-    required super.child,
-  });
+  const _ErrorBoundaryScope({required this.state, required super.child});
 
   final _GlobalErrorBoundaryState state;
 

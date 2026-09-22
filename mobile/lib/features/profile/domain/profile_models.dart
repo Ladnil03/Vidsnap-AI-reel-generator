@@ -56,7 +56,8 @@ class UserProfileModel {
       isFollowing:
           (json['is_following'] ?? json['isFollowing'] ?? false) as bool,
       isFriend: (json['is_friend'] ?? json['isFriend'] ?? false) as bool,
-      roles: (json['roles'] as List<dynamic>?)
+      roles:
+          (json['roles'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const <String>['user'],
@@ -124,21 +125,13 @@ class UserProfileModel {
 /// Input payload for editing personal profile.
 @immutable
 class UpdateProfileInput {
-  const UpdateProfileInput({
-    this.name,
-    this.bio,
-    this.timezone,
-  });
+  const UpdateProfileInput({this.name, this.bio, this.timezone});
 
   final String? name;
   final String? bio;
   final String? timezone;
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'name': ?name,
-      'bio': ?bio,
-      'timezone': ?timezone,
-    };
+    return <String, dynamic>{'name': ?name, 'bio': ?bio, 'timezone': ?timezone};
   }
 }

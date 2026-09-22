@@ -4,11 +4,7 @@ import 'package:vidsnap_ai/core/theme/app_colors.dart';
 import 'package:vidsnap_ai/core/widgets/app_button.dart';
 
 class AppErrorView extends StatelessWidget {
-  const AppErrorView({
-    super.key,
-    required this.failure,
-    this.onRetry,
-  });
+  const AppErrorView({super.key, required this.failure, this.onRetry});
 
   final AppFailure failure;
   final VoidCallback? onRetry;
@@ -56,13 +52,7 @@ class AppErrorView extends StatelessWidget {
                 color: iconColor.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Center(
-                child: Icon(
-                  icon,
-                  size: 36.0,
-                  color: iconColor,
-                ),
-              ),
+              child: Center(child: Icon(icon, size: 36.0, color: iconColor)),
             ),
             const SizedBox(height: AppSpacing.s4),
             Text(
@@ -83,7 +73,9 @@ class AppErrorView extends StatelessWidget {
                 color: isDark ? AppColors.sage300 : AppColors.forest700,
               ),
             ),
-            if (onRetry != null && (failure.isRetryable || failure.type == FailureType.network)) ...<Widget>[
+            if (onRetry != null &&
+                (failure.isRetryable ||
+                    failure.type == FailureType.network)) ...<Widget>[
               const SizedBox(height: AppSpacing.s5),
               AppButton(
                 label: 'Retry',

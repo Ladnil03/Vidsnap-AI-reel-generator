@@ -19,7 +19,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   bool _obscurePassword = true;
   bool _agreeTerms = true;
@@ -58,8 +59,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
 
     if (!_hasMinLength || !_hasNumber || !_hasLetter) {
-      setState(() => _errorMessage =
-          'Password must be at least 8 characters and contain both letters and numbers.');
+      setState(
+        () => _errorMessage = 'Password must be at least 8 characters and contain both letters and numbers.',
+      );
       return;
     }
 
@@ -98,7 +100,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Row(
       children: <Widget>[
         Icon(
-          isSatisfied ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+          isSatisfied
+              ? Icons.check_circle_rounded
+              : Icons.radio_button_unchecked_rounded,
           size: 16.0,
           color: isSatisfied
               ? (isDark ? AppColors.successDark : AppColors.successLight)
@@ -143,7 +147,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       color: isDark ? AppColors.forest800 : AppColors.sage200,
                       borderRadius: BorderRadius.circular(AppRadii.md),
                       border: Border.all(
-                        color: isDark ? AppColors.borderDarkMedium : AppColors.borderLightMedium,
+                        color: isDark
+                            ? AppColors.borderDarkMedium
+                            : AppColors.borderLightMedium,
                       ),
                     ),
                     child: Wrap(
@@ -153,7 +159,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       children: <Widget>[
                         Icon(
                           Icons.stars_rounded,
-                          color: isDark ? AppColors.sage300 : AppColors.forest500,
+                          color: isDark
+                              ? AppColors.sage300
+                              : AppColors.forest500,
                           size: 20.0,
                         ),
                         Text(
@@ -161,7 +169,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           style: TextStyle(
                             fontSize: 13.0,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? AppColors.cream50 : AppColors.forest900,
+                            color: isDark
+                                ? AppColors.cream50
+                                : AppColors.forest900,
                           ),
                         ),
                       ],
@@ -200,15 +210,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           Container(
                             padding: const EdgeInsets.all(AppSpacing.s3),
                             decoration: BoxDecoration(
-                              color: (isDark ? AppColors.dangerDark : AppColors.dangerLight)
-                                  .withValues(alpha: 0.12),
+                              color:
+                                  (isDark
+                                          ? AppColors.dangerDark
+                                          : AppColors.dangerLight)
+                                      .withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(AppRadii.sm),
                             ),
                             child: Row(
                               children: <Widget>[
                                 Icon(
                                   Icons.error_outline_rounded,
-                                  color: isDark ? AppColors.dangerDark : AppColors.dangerLight,
+                                  color: isDark
+                                      ? AppColors.dangerDark
+                                      : AppColors.dangerLight,
                                   size: 18.0,
                                 ),
                                 const SizedBox(width: AppSpacing.s2),
@@ -233,7 +248,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           label: 'Full Name',
                           controller: _nameController,
                           hintText: 'John Doe',
-                          prefixIcon: const Icon(Icons.person_outline, size: 20.0),
+                          prefixIcon: const Icon(
+                            Icons.person_outline,
+                            size: 20.0,
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.s4),
                         AppTextField(
@@ -241,7 +259,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           controller: _emailController,
                           hintText: 'creator@vidsnap.ai',
                           keyboardType: TextInputType.emailAddress,
-                          prefixIcon: const Icon(Icons.email_outlined, size: 20.0),
+                          prefixIcon: const Icon(
+                            Icons.email_outlined,
+                            size: 20.0,
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.s4),
                         AppTextField(
@@ -250,7 +271,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           hintText: 'Min 8 characters',
                           isPassword: _obscurePassword,
                           onChanged: (_) => setState(() {}),
-                          prefixIcon: const Icon(Icons.lock_outline, size: 20.0),
+                          prefixIcon: const Icon(
+                            Icons.lock_outline,
+                            size: 20.0,
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword
@@ -259,7 +283,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               size: 20.0,
                             ),
                             onPressed: () {
-                              setState(() => _obscurePassword = !_obscurePassword);
+                              setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              );
                             },
                           ),
                         ),
@@ -270,7 +296,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           hintText: 'Re-enter password',
                           isPassword: _obscurePassword,
                           onChanged: (_) => setState(() {}),
-                          prefixIcon: const Icon(Icons.lock_clock_outlined, size: 20.0),
+                          prefixIcon: const Icon(
+                            Icons.lock_clock_outlined,
+                            size: 20.0,
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.s3),
 
@@ -278,17 +307,31 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         Container(
                           padding: const EdgeInsets.all(AppSpacing.s3),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.forest950 : AppColors.cream100,
+                            color: isDark
+                                ? AppColors.forest950
+                                : AppColors.cream100,
                             borderRadius: BorderRadius.circular(AppRadii.sm),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              _buildCheckItem('At least 8 characters', _hasMinLength, isDark),
+                              _buildCheckItem(
+                                'At least 8 characters',
+                                _hasMinLength,
+                                isDark,
+                              ),
                               const SizedBox(height: 4.0),
-                              _buildCheckItem('Contains numbers & letters', _hasNumber && _hasLetter, isDark),
+                              _buildCheckItem(
+                                'Contains numbers & letters',
+                                _hasNumber && _hasLetter,
+                                isDark,
+                              ),
                               const SizedBox(height: 4.0),
-                              _buildCheckItem('Passwords match', _passwordsMatch, isDark),
+                              _buildCheckItem(
+                                'Passwords match',
+                                _passwordsMatch,
+                                isDark,
+                              ),
                             ],
                           ),
                         ),
@@ -310,7 +353,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 'I agree to the Terms of Service and Privacy Policy.',
                                 style: TextStyle(
                                   fontSize: 13.0,
-                                  color: isDark ? AppColors.sage300 : AppColors.forest700,
+                                  color: isDark
+                                      ? AppColors.sage300
+                                      : AppColors.forest700,
                                 ),
                               ),
                             ),
@@ -336,7 +381,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       Text(
                         'Already have an account? ',
                         style: TextStyle(
-                          color: isDark ? AppColors.sage300 : AppColors.forest700,
+                          color: isDark
+                              ? AppColors.sage300
+                              : AppColors.forest700,
                           fontSize: 14.0,
                         ),
                       ),
@@ -345,7 +392,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         child: Text(
                           'Log in',
                           style: TextStyle(
-                            color: isDark ? AppColors.cream50 : AppColors.forest500,
+                            color: isDark
+                                ? AppColors.cream50
+                                : AppColors.forest500,
                             fontWeight: FontWeight.w700,
                             fontSize: 14.0,
                             decoration: TextDecoration.underline,

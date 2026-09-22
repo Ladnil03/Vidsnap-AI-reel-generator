@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -61,7 +62,10 @@ class _FakeActiveRoomRepository implements RoomsRepository {
   }
 
   @override
-  Future<List<RoomChatMessageModel>> getChatHistory(String roomId, {int limit = 50}) async {
+  Future<List<RoomChatMessageModel>> getChatHistory(
+    String roomId, {
+    int limit = 50,
+  }) async {
     return mockMessages;
   }
 
@@ -124,7 +128,9 @@ class _DummySocket implements IRoomSocket {
 
 void main() {
   group('ActiveRoomScreen Widget Tests', () {
-    testWidgets('renders video player, participants, and sends chat message', (tester) async {
+    testWidgets('renders video player, participants, and sends chat message', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -145,9 +151,7 @@ void main() {
             roomsRepositoryProvider.overrideWithValue(fakeRepo),
             roomSocketServiceProvider.overrideWithValue(socketService),
           ],
-          child: const MaterialApp(
-            home: ActiveRoomScreen(roomId: 'room-1'),
-          ),
+          child: const MaterialApp(home: ActiveRoomScreen(roomId: 'room-1')),
         ),
       );
 
@@ -175,14 +179,19 @@ void main() {
       expect(find.text('🎉'), findsOneWidget);
 
       // Send a chat message
-      await tester.enterText(find.byType(TextField), 'Cant wait for the movie!');
+      await tester.enterText(
+        find.byType(TextField),
+        'Cant wait for the movie!',
+      );
       await tester.tap(find.byIcon(Icons.send));
       await tester.pumpAndSettle();
 
       expect(find.text('Cant wait for the movie!'), findsOneWidget);
     });
 
-    testWidgets('tapping AI Room Recap opens catch-up summary sheet', (tester) async {
+    testWidgets('tapping AI Room Recap opens catch-up summary sheet', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -203,9 +212,7 @@ void main() {
             roomsRepositoryProvider.overrideWithValue(fakeRepo),
             roomSocketServiceProvider.overrideWithValue(socketService),
           ],
-          child: const MaterialApp(
-            home: ActiveRoomScreen(roomId: 'room-1'),
-          ),
+          child: const MaterialApp(home: ActiveRoomScreen(roomId: 'room-1')),
         ),
       );
 
@@ -216,7 +223,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('AI Room Catch-up Recap'), findsOneWidget);
-      expect(find.text('Exciting trailer playback with synchronized discussion.'), findsOneWidget);
+      expect(
+        find.text('Exciting trailer playback with synchronized discussion.'),
+        findsOneWidget,
+      );
       expect(find.text('Intro sequence at 00:15'), findsOneWidget);
 
       // Close recap
@@ -226,7 +236,9 @@ void main() {
       expect(find.text('AI Room Catch-up Recap'), findsNothing);
     });
 
-    testWidgets('tapping Audio Lounge action opens LiveKit credentials modal', (tester) async {
+    testWidgets('tapping Audio Lounge action opens LiveKit credentials modal', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -247,9 +259,7 @@ void main() {
             roomsRepositoryProvider.overrideWithValue(fakeRepo),
             roomSocketServiceProvider.overrideWithValue(socketService),
           ],
-          child: const MaterialApp(
-            home: ActiveRoomScreen(roomId: 'room-1'),
-          ),
+          child: const MaterialApp(home: ActiveRoomScreen(roomId: 'room-1')),
         ),
       );
 

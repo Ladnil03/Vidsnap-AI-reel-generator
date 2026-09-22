@@ -19,7 +19,11 @@ class BusinessMarketplaceScreen extends ConsumerWidget {
     'beauty',
   ];
 
-  void _showPitchSheet(BuildContext context, WidgetRef ref, CampaignModel campaign) {
+  void _showPitchSheet(
+    BuildContext context,
+    WidgetRef ref,
+    CampaignModel campaign,
+  ) {
     final pitchController = TextEditingController();
     final reelIdController = TextEditingController();
 
@@ -85,7 +89,8 @@ class BusinessMarketplaceScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.s4),
                 AppTextField(
                   label: 'Your Pitch / Proposal',
-                  hintText: 'Describe your creative video concept for this brand...',
+                  hintText:
+                      'Describe your creative video concept for this brand...',
                   controller: pitchController,
                   maxLines: 3,
                 ),
@@ -104,7 +109,11 @@ class BusinessMarketplaceScreen extends ConsumerWidget {
                   ),
                   child: const Row(
                     children: <Widget>[
-                      Icon(Icons.verified_user_outlined, size: 16, color: AppColors.moss500),
+                      Icon(
+                        Icons.verified_user_outlined,
+                        size: 16,
+                        color: AppColors.moss500,
+                      ),
                       SizedBox(width: AppSpacing.s2),
                       Expanded(
                         child: Text(
@@ -180,10 +189,12 @@ class BusinessMarketplaceScreen extends ConsumerWidget {
                   initialValue: category,
                   decoration: const InputDecoration(labelText: 'Category'),
                   items: categories
-                      .map((c) => DropdownMenuItem(
-                            value: c,
-                            child: Text(c.toUpperCase()),
-                          ))
+                      .map(
+                        (c) => DropdownMenuItem(
+                          value: c,
+                          child: Text(c.toUpperCase()),
+                        ),
+                      )
                       .toList(),
                   onChanged: (val) {
                     if (val != null) setState(() => category = val);
@@ -285,8 +296,9 @@ class BusinessMarketplaceScreen extends ConsumerWidget {
                     return FilterChip(
                       label: const Text('All'),
                       selected: isAllSelected,
-                      selectedColor:
-                          isDark ? AppColors.forest700 : AppColors.sage200,
+                      selectedColor: isDark
+                          ? AppColors.forest700
+                          : AppColors.sage200,
                       onSelected: (_) => ref
                           .read(businessNotifierProvider.notifier)
                           .selectCategory(null),
@@ -299,8 +311,9 @@ class BusinessMarketplaceScreen extends ConsumerWidget {
                   return FilterChip(
                     label: Text(cat.toUpperCase()),
                     selected: isSelected,
-                    selectedColor:
-                        isDark ? AppColors.forest700 : AppColors.sage200,
+                    selectedColor: isDark
+                        ? AppColors.forest700
+                        : AppColors.sage200,
                     onSelected: (_) => ref
                         .read(businessNotifierProvider.notifier)
                         .selectCategory(cat),
@@ -314,31 +327,31 @@ class BusinessMarketplaceScreen extends ConsumerWidget {
               child: state.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : state.campaigns.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No active sponsorship briefs right now.',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: isDark
-                                  ? AppColors.forest200
-                                  : AppColors.forest700,
-                            ),
-                          ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.all(AppSpacing.s4),
-                          itemCount: state.campaigns.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: AppSpacing.s3),
-                          itemBuilder: (context, index) {
-                            final campaign = state.campaigns[index];
-                            return _buildCampaignCard(
-                              context,
-                              ref,
-                              campaign,
-                              isDark,
-                            );
-                          },
+                  ? Center(
+                      child: Text(
+                        'No active sponsorship briefs right now.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: isDark
+                              ? AppColors.forest200
+                              : AppColors.forest700,
                         ),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(AppSpacing.s4),
+                      itemCount: state.campaigns.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: AppSpacing.s3),
+                      itemBuilder: (context, index) {
+                        final campaign = state.campaigns[index];
+                        return _buildCampaignCard(
+                          context,
+                          ref,
+                          campaign,
+                          isDark,
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -370,10 +383,7 @@ class BusinessMarketplaceScreen extends ConsumerWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.forest800 : AppColors.sage100,
                   borderRadius: BorderRadius.circular(AppRadii.pill),

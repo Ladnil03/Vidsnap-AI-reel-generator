@@ -16,10 +16,7 @@ class RoomsRepository {
     String? roomType,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'skip': skip,
-        'limit': limit,
-      };
+      final queryParams = <String, dynamic>{'skip': skip, 'limit': limit};
       if (search != null && search.isNotEmpty) {
         queryParams['search'] = search;
       }
@@ -102,9 +99,7 @@ class RoomsRepository {
 
   Future<RoomModel> joinRoom(String roomId, {String? passcode}) async {
     try {
-      final payload = <String, dynamic>{
-        'passcode': ?passcode,
-      };
+      final payload = <String, dynamic>{'passcode': ?passcode};
 
       final response = await dio.post<Map<String, dynamic>>(
         '/api/v1/rooms/$roomId/join',

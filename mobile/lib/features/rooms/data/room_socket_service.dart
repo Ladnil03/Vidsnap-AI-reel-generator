@@ -29,28 +29,19 @@ class RoomReactionEvent extends RoomSocketEvent {
 }
 
 class RoomSyncEvent extends RoomSocketEvent {
-  const RoomSyncEvent({
-    required this.watchState,
-    required this.triggeredBy,
-  });
+  const RoomSyncEvent({required this.watchState, required this.triggeredBy});
   final WatchStateModel watchState;
   final String triggeredBy;
 }
 
 class RoomUserJoinedEvent extends RoomSocketEvent {
-  const RoomUserJoinedEvent({
-    required this.userId,
-    required this.userName,
-  });
+  const RoomUserJoinedEvent({required this.userId, required this.userName});
   final String userId;
   final String userName;
 }
 
 class RoomUserLeftEvent extends RoomSocketEvent {
-  const RoomUserLeftEvent({
-    required this.userId,
-    required this.userName,
-  });
+  const RoomUserLeftEvent({required this.userId, required this.userName});
   final String userId;
   final String userName;
 }
@@ -77,7 +68,8 @@ class IoRoomSocket implements IRoomSocket {
   void add(dynamic data) => _socket.add(data);
 
   @override
-  Future<void> close([int? code, String? reason]) => _socket.close(code, reason);
+  Future<void> close([int? code, String? reason]) =>
+      _socket.close(code, reason);
 }
 
 typedef RoomSocketFactory = Future<IRoomSocket> Function(Uri uri);
@@ -116,7 +108,9 @@ class RoomSocketService {
     final wsScheme = baseUrl.startsWith('https') ? 'wss' : 'ws';
     final hostAndPort = baseUrl.replaceFirst(RegExp(r'^https?://'), '');
 
-    final uri = Uri.parse('$wsScheme://$hostAndPort/api/v1/rooms/$roomId/ws?token=${token ?? ''}');
+    final uri = Uri.parse(
+      '$wsScheme://$hostAndPort/api/v1/rooms/$roomId/ws?token=${token ?? ''}',
+    );
 
     try {
       _socket = await _socketFactory(uri);
@@ -154,41 +148,55 @@ class RoomSocketService {
         case 'chat':
           final msgData = jsonMap['message'] as Map<String, dynamic>?;
           if (msgData != null) {
-            _eventController.add(RoomChatEvent(RoomChatMessageModel.fromJson(msgData)));
+            _eventController.add(
+              RoomChatEvent(RoomChatMessageModel.fromJson(msgData)),
+            );
           }
           break;
         case 'reaction':
-          _eventController.add(RoomReactionEvent(
-            userId: (jsonMap['user_id'] as String?) ?? '',
-            userName: (jsonMap['user_name'] as String?) ?? '',
-            emoji: (jsonMap['emoji'] as String?) ?? '🔥',
-          ));
+          _eventController.add(
+            RoomReactionEvent(
+              userId: (jsonMap['user_id'] as String?) ?? '',
+              userName: (jsonMap['user_name'] as String?) ?? '',
+              emoji: (jsonMap['emoji'] as String?) ?? '🔥',
+            ),
+          );
           break;
         case 'sync_state':
           final watchData = jsonMap['watch_state'] as Map<String, dynamic>?;
           if (watchData != null) {
-            _eventController.add(RoomSyncEvent(
-              watchState: WatchStateModel.fromJson(watchData),
-              triggeredBy: (jsonMap['triggered_by'] as String?) ?? '',
-            ));
+            _eventController.add(
+              RoomSyncEvent(
+                watchState: WatchStateModel.fromJson(watchData),
+                triggeredBy: (jsonMap['triggered_by'] as String?) ?? '',
+              ),
+            );
           }
           break;
         case 'user_joined':
-          _eventController.add(RoomUserJoinedEvent(
-            userId: (jsonMap['user_id'] as String?) ?? '',
-            userName: (jsonMap['user_name'] as String?) ?? 'Viewer',
-          ));
+          _eventController.add(
+            RoomUserJoinedEvent(
+              userId: (jsonMap['user_id'] as String?) ?? '',
+              userName: (jsonMap['user_name'] as String?) ?? 'Viewer',
+            ),
+          );
           break;
         case 'user_left':
-          _eventController.add(RoomUserLeftEvent(
-            userId: (jsonMap['user_id'] as String?) ?? '',
-            userName: (jsonMap['user_name'] as String?) ?? 'Viewer',
-          ));
+          _eventController.add(
+            RoomUserLeftEvent(
+              userId: (jsonMap['user_id'] as String?) ?? '',
+              userName: (jsonMap['user_name'] as String?) ?? 'Viewer',
+            ),
+          );
           break;
         case 'error':
-          _eventController.add(RoomErrorEvent(
-            (jsonMap['detail'] as String?) ?? (jsonMap['message'] as String?) ?? 'Unknown error',
-          ));
+          _eventController.add(
+            RoomErrorEvent(
+              (jsonMap['detail'] as String?) ??
+                  (jsonMap['message'] as String?) ??
+                  'Unknown error',
+            ),
+          );
           break;
         default:
           break;

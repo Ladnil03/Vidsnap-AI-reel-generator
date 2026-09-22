@@ -13,7 +13,8 @@ class ForgotPasswordSheet extends ConsumerStatefulWidget {
   final String? initialEmail;
 
   @override
-  ConsumerState<ForgotPasswordSheet> createState() => _ForgotPasswordSheetState();
+  ConsumerState<ForgotPasswordSheet> createState() =>
+      _ForgotPasswordSheetState();
 }
 
 class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
@@ -57,14 +58,15 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
         _isOtpSent = true;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
       }
     } on AppFailure catch (e) {
       setState(() => _errorMessage = e.message);
     } catch (_) {
-      setState(() => _errorMessage = 'Failed to send OTP code. Please try again.');
+      setState(
+        () => _errorMessage = 'Failed to send OTP code. Please try again.',
+      );
     } finally {
       setState(() => _isLoading = false);
     }
@@ -76,12 +78,16 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
     final newPassword = _newPasswordController.text;
 
     if (otp.length != 6) {
-      setState(() => _errorMessage = 'Please enter the 6-digit verification code.');
+      setState(
+        () => _errorMessage = 'Please enter the 6-digit verification code.',
+      );
       return;
     }
 
     if (newPassword.length < 8) {
-      setState(() => _errorMessage = 'Password must be at least 8 characters long.');
+      setState(
+        () => _errorMessage = 'Password must be at least 8 characters long.',
+      );
       return;
     }
 
@@ -91,7 +97,9 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
     });
 
     try {
-      final msg = await ref.read(authRepositoryProvider).resetPassword(
+      final msg = await ref
+          .read(authRepositoryProvider)
+          .resetPassword(
             ResetPasswordRequest(
               email: email,
               otp: otp,
@@ -100,10 +108,7 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: AppColors.successLight,
-          ),
+          SnackBar(content: Text(msg), backgroundColor: AppColors.successLight),
         );
         Navigator.of(context).pop();
       }

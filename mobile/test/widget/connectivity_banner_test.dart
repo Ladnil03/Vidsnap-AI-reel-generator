@@ -5,13 +5,13 @@ import 'package:vidsnap_ai/core/widgets/connectivity_banner.dart';
 
 void main() {
   group('ConnectivityBanner Widget Tests', () {
-    testWidgets('renders child content without banner when online', (tester) async {
+    testWidgets('renders child content without banner when online', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
-            home: ConnectivityBanner(
-              child: Text('Main Feed Content'),
-            ),
+            home: ConnectivityBanner(child: Text('Main Feed Content')),
           ),
         ),
       );
@@ -21,7 +21,9 @@ void main() {
       expect(find.byKey(const Key('reconnected_banner')), findsNothing);
     });
 
-    testWidgets('displays offline banner when network drops to offline', (tester) async {
+    testWidgets('displays offline banner when network drops to offline', (
+      tester,
+    ) async {
       late WidgetRef capturedRef;
 
       await tester.pumpWidget(

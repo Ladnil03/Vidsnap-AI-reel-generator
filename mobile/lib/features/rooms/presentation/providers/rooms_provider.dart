@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vidsnap_ai/features/rooms/data/room_socket_service.dart';
 import 'package:vidsnap_ai/features/rooms/data/rooms_repository.dart';
@@ -57,17 +58,16 @@ class RoomsLobbyNotifier extends Notifier<RoomsLobbyState> {
   Future<void> loadRooms() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final roomType = state.selectedFilter == 'all' ? null : state.selectedFilter;
+      final roomType = state.selectedFilter == 'all'
+          ? null
+          : state.selectedFilter;
       final rooms = await _repository.listRooms(
         search: state.searchQuery.isEmpty ? null : state.searchQuery,
         roomType: roomType,
       );
       state = state.copyWith(rooms: rooms, isLoading: false);
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
@@ -105,17 +105,16 @@ class RoomsLobbyNotifier extends Notifier<RoomsLobbyState> {
       await loadRooms();
       return room;
     } catch (e) {
-      state = state.copyWith(
-        isCreating: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isCreating: false, errorMessage: e.toString());
       return null;
     }
   }
 }
 
 final roomsLobbyProvider =
-    NotifierProvider<RoomsLobbyNotifier, RoomsLobbyState>(RoomsLobbyNotifier.new);
+    NotifierProvider<RoomsLobbyNotifier, RoomsLobbyState>(
+      RoomsLobbyNotifier.new,
+    );
 
 // -------------------------------------------------------------
 // Active Room State & Notifier
@@ -169,7 +168,9 @@ class ActiveRoomState {
       watchState: watchState ?? this.watchState,
       messages: messages ?? this.messages,
       participants: participants ?? this.participants,
-      recentReaction: clearReaction ? null : (recentReaction ?? this.recentReaction),
+      recentReaction: clearReaction
+          ? null
+          : (recentReaction ?? this.recentReaction),
       rtcCredentials: rtcCredentials ?? this.rtcCredentials,
       summary: clearSummary ? null : (summary ?? this.summary),
       isLoading: isLoading ?? this.isLoading,
@@ -219,14 +220,12 @@ class ActiveRoomNotifier extends Notifier<ActiveRoomState> {
       } catch (wsErr) {
         state = state.copyWith(
           isConnectingSocket: false,
-          errorMessage: 'Realtime socket connection failed; falling back to REST: $wsErr',
+          errorMessage:
+              'Realtime socket connection failed; falling back to REST: $wsErr',
         );
       }
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
@@ -235,9 +234,7 @@ class ActiveRoomNotifier extends Notifier<ActiveRoomState> {
     _socketSubscription = _socketService.events.listen((event) {
       switch (event) {
         case RoomChatEvent(:final message):
-          state = state.copyWith(
-            messages: [...state.messages, message],
-          );
+          state = state.copyWith(messages: [...state.messages, message]);
         case RoomReactionEvent(:final emoji):
           state = state.copyWith(recentReaction: emoji);
           Future.delayed(const Duration(seconds: 3), () {
@@ -261,7 +258,9 @@ class ActiveRoomNotifier extends Notifier<ActiveRoomState> {
           }
         case RoomUserLeftEvent(:final userId):
           state = state.copyWith(
-            participants: state.participants.where((p) => p.userId != userId).toList(),
+            participants: state.participants
+                .where((p) => p.userId != userId)
+                .toList(),
           );
         case RoomErrorEvent(:final message):
           state = state.copyWith(errorMessage: message);
@@ -342,7 +341,9 @@ class ActiveRoomNotifier extends Notifier<ActiveRoomState> {
       final creds = await _repository.getRtcToken(roomId);
       state = state.copyWith(rtcCredentials: creds);
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to obtain LiveKit RTC token: $e');
+      state = state.copyWith(
+        errorMessage: 'Failed to obtain LiveKit RTC token: $e',
+      );
     }
   }
 
@@ -376,4 +377,6 @@ class ActiveRoomNotifier extends Notifier<ActiveRoomState> {
 }
 
 final activeRoomProvider =
-    NotifierProvider<ActiveRoomNotifier, ActiveRoomState>(ActiveRoomNotifier.new);
+    NotifierProvider<ActiveRoomNotifier, ActiveRoomState>(
+      ActiveRoomNotifier.new,
+    );

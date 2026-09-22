@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vidsnap_ai/features/feed/data/feed_repository.dart';
@@ -14,58 +15,64 @@ void main() {
       repository = FeedRepository(dio: dio);
     });
 
-    test('getFeed calls /api/v1/feed with tab and limit and returns parsed items', () async {
-      dio.httpClientAdapter = _MockAdapter((options) {
-        expect(options.path, '/api/v1/feed');
-        expect(options.queryParameters['tab'], 'trending');
-        expect(options.queryParameters['limit'], 10);
+    test(
+      'getFeed calls /api/v1/feed with tab and limit and returns parsed items',
+      () async {
+        dio.httpClientAdapter = _MockAdapter((options) {
+          expect(options.path, '/api/v1/feed');
+          expect(options.queryParameters['tab'], 'trending');
+          expect(options.queryParameters['limit'], 10);
 
-        final data = <String, dynamic>{
-          'tab': 'trending',
-          'total': 1,
-          'has_more': false,
-          'items': <Map<String, dynamic>>[
-            <String, dynamic>{
-              'video_id': 'vid-123',
-              'user_id': 'user-1',
-              'author_name': 'SuperCreator',
-              'title': 'Viral AI Reel',
-              'description': 'Exploring agentic AI generation in 2026',
-              'hashtags': <String>['ai', 'future'],
-              'video_url': 'https://cdn.vidsnap.ai/vid-123.mp4',
-              'thumbnail_url': 'https://cdn.vidsnap.ai/thumb-123.jpg',
-              'duration': 15.5,
-              'likes_count': 1420,
-              'saves_count': 89,
-              'comments_count': 34,
-              'views_count': 9200,
-              'has_liked': true,
-              'has_saved': false,
-              'created_at': '2026-03-15T12:00:00Z',
+          final data = <String, dynamic>{
+            'tab': 'trending',
+            'total': 1,
+            'has_more': false,
+            'items': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'video_id': 'vid-123',
+                'user_id': 'user-1',
+                'author_name': 'SuperCreator',
+                'title': 'Viral AI Reel',
+                'description': 'Exploring agentic AI generation in 2026',
+                'hashtags': <String>['ai', 'future'],
+                'video_url': 'https://cdn.vidsnap.ai/vid-123.mp4',
+                'thumbnail_url': 'https://cdn.vidsnap.ai/thumb-123.jpg',
+                'duration': 15.5,
+                'likes_count': 1420,
+                'saves_count': 89,
+                'comments_count': 34,
+                'views_count': 9200,
+                'has_liked': true,
+                'has_saved': false,
+                'created_at': '2026-03-15T12:00:00Z',
+              },
+            ],
+          };
+
+          return ResponseBody.fromString(
+            jsonEncode(data),
+            200,
+            headers: <String, List<String>>{
+              Headers.contentTypeHeader: <String>[Headers.jsonContentType],
             },
-          ],
-        };
+          );
+        });
 
-        return ResponseBody.fromString(
-          jsonEncode(data),
-          200,
-          headers: <String, List<String>>{
-            Headers.contentTypeHeader: <String>[Headers.jsonContentType],
-          },
+        final items = await repository.getFeed(
+          tab: FeedTab.trending,
+          limit: 10,
         );
-      });
 
-      final items = await repository.getFeed(tab: FeedTab.trending, limit: 10);
-
-      expect(items.length, 1);
-      final item = items.first;
-      expect(item.videoId, 'vid-123');
-      expect(item.authorName, 'SuperCreator');
-      expect(item.likesCount, 1420);
-      expect(item.hasLiked, true);
-      expect(item.hasSaved, false);
-      expect(item.hashtags, <String>['ai', 'future']);
-    });
+        expect(items.length, 1);
+        final item = items.first;
+        expect(item.videoId, 'vid-123');
+        expect(item.authorName, 'SuperCreator');
+        expect(item.likesCount, 1420);
+        expect(item.hasLiked, true);
+        expect(item.hasSaved, false);
+        expect(item.hashtags, <String>['ai', 'future']);
+      },
+    );
 
     test('toggleLike sends POST when currently unliked and DELETE when currently liked', () async {
       int requestCount = 0;
@@ -102,11 +109,17 @@ void main() {
       });
 
       // Like
-      final likeResp = await repository.toggleLike('vid-1', currentlyLiked: false);
+      final likeResp = await repository.toggleLike(
+        'vid-1',
+        currentlyLiked: false,
+      );
       expect(likeResp['liked'], true);
 
       // Unlike
-      final unlikeResp = await repository.toggleLike('vid-1', currentlyLiked: true);
+      final unlikeResp = await repository.toggleLike(
+        'vid-1',
+        currentlyLiked: true,
+      );
       expect(unlikeResp['liked'], false);
       expect(requestCount, 2);
     });

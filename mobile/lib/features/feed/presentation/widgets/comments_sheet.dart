@@ -14,12 +14,17 @@ class CommentsSheet extends ConsumerStatefulWidget {
   final String videoId;
   final int initialCount;
 
-  static Future<void> show(BuildContext context, {required String videoId, int initialCount = 0}) {
+  static Future<void> show(
+    BuildContext context, {
+    required String videoId,
+    int initialCount = 0,
+  }) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CommentsSheet(videoId: videoId, initialCount: initialCount),
+      builder: (context) =>
+          CommentsSheet(videoId: videoId, initialCount: initialCount),
     );
   }
 
@@ -100,7 +105,9 @@ class _CommentsSheetState extends ConsumerState<CommentsSheet> {
       if (mounted) {
         setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to post comment. Please try again.')),
+          const SnackBar(
+            content: Text('Failed to post comment. Please try again.'),
+          ),
         );
       }
     }
@@ -130,7 +137,9 @@ class _CommentsSheetState extends ConsumerState<CommentsSheet> {
         height: MediaQuery.of(context).size.height * 0.65,
         decoration: BoxDecoration(
           color: surfaceColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadii.xl),
+          ),
           boxShadow: const <BoxShadow>[
             BoxShadow(
               color: Colors.black26,
@@ -158,7 +167,9 @@ class _CommentsSheetState extends ConsumerState<CommentsSheet> {
                       height: 4.0,
                       margin: const EdgeInsets.only(bottom: AppSpacing.s2),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.forest600 : AppColors.cream300,
+                        color: isDark
+                            ? AppColors.forest600
+                            : AppColors.cream300,
                         borderRadius: BorderRadius.circular(AppRadii.pill),
                       ),
                     ),
@@ -190,110 +201,123 @@ class _CommentsSheetState extends ConsumerState<CommentsSheet> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _errorMessage != null
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              Text(_errorMessage!, style: TextStyle(color: subtleTextColor)),
-                              const SizedBox(height: AppSpacing.s2),
-                              TextButton(
-                                onPressed: _fetchComments,
-                                child: const Text('Retry'),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(
+                            _errorMessage!,
+                            style: TextStyle(color: subtleTextColor),
                           ),
-                        )
-                      : _comments.isEmpty
-                          ? Center(
+                          const SizedBox(height: AppSpacing.s2),
+                          TextButton(
+                            onPressed: _fetchComments,
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _comments.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Icon(
+                            Icons.chat_bubble_outline,
+                            size: 48.0,
+                            color: isDark
+                                ? AppColors.forest600
+                                : AppColors.cream300,
+                          ),
+                          const SizedBox(height: AppSpacing.s2),
+                          Text(
+                            'No comments yet',
+                            style: TextStyle(
+                              color: textColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15.0,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.s1),
+                          Text(
+                            'Be the first to share your thoughts!',
+                            style: TextStyle(
+                              color: subtleTextColor,
+                              fontSize: 13.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.separated(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(AppSpacing.s4),
+                      itemCount: _comments.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: AppSpacing.s3),
+                      itemBuilder: (context, index) {
+                        final comment = _comments[index];
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            CircleAvatar(
+                              radius: 16.0,
+                              backgroundColor: isDark
+                                  ? AppColors.forest700
+                                  : AppColors.sage200,
+                              child: Text(
+                                comment.userName.isNotEmpty
+                                    ? comment.userName[0].toUpperCase()
+                                    : 'U',
+                                style: TextStyle(
+                                  color: isDark
+                                      ? AppColors.cream50
+                                      : AppColors.forest900,
+                                  fontSize: 12.0,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.s3),
+                            Expanded(
                               child: Column(
-                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
-                                  Icon(
-                                    Icons.chat_bubble_outline,
-                                    size: 48.0,
-                                    color: isDark ? AppColors.forest600 : AppColors.cream300,
+                                  Row(
+                                    children: <Widget>[
+                                      Text(
+                                        comment.userName,
+                                        style: TextStyle(
+                                          color: textColor,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13.0,
+                                        ),
+                                      ),
+                                      const SizedBox(width: AppSpacing.s2),
+                                      Text(
+                                        _formatTime(comment.createdAt),
+                                        style: TextStyle(
+                                          color: subtleTextColor,
+                                          fontSize: 11.0,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: AppSpacing.s2),
+                                  const SizedBox(height: 2.0),
                                   Text(
-                                    'No comments yet',
+                                    comment.text,
                                     style: TextStyle(
                                       color: textColor,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 15.0,
+                                      fontSize: 13.5,
                                     ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.s1),
-                                  Text(
-                                    'Be the first to share your thoughts!',
-                                    style: TextStyle(color: subtleTextColor, fontSize: 13.0),
                                   ),
                                 ],
                               ),
-                            )
-                          : ListView.separated(
-                              controller: _scrollController,
-                              padding: const EdgeInsets.all(AppSpacing.s4),
-                              itemCount: _comments.length,
-                              separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.s3),
-                              itemBuilder: (context, index) {
-                                final comment = _comments[index];
-                                return Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    CircleAvatar(
-                                      radius: 16.0,
-                                      backgroundColor: isDark ? AppColors.forest700 : AppColors.sage200,
-                                      child: Text(
-                                        comment.userName.isNotEmpty
-                                            ? comment.userName[0].toUpperCase()
-                                            : 'U',
-                                        style: TextStyle(
-                                          color: isDark ? AppColors.cream50 : AppColors.forest900,
-                                          fontSize: 12.0,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: AppSpacing.s3),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: <Widget>[
-                                          Row(
-                                            children: <Widget>[
-                                              Text(
-                                                comment.userName,
-                                                style: TextStyle(
-                                                  color: textColor,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 13.0,
-                                                ),
-                                              ),
-                                              const SizedBox(width: AppSpacing.s2),
-                                              Text(
-                                                _formatTime(comment.createdAt),
-                                                style: TextStyle(
-                                                  color: subtleTextColor,
-                                                  fontSize: 11.0,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 2.0),
-                                          Text(
-                                            comment.text,
-                                            style: TextStyle(
-                                              color: textColor,
-                                              fontSize: 13.5,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
                             ),
+                          ],
+                        );
+                      },
+                    ),
             ),
 
             // Input Bar
@@ -316,7 +340,10 @@ class _CommentsSheetState extends ConsumerState<CommentsSheet> {
                         style: TextStyle(color: textColor, fontSize: 14.0),
                         decoration: InputDecoration(
                           hintText: 'Add a comment...',
-                          hintStyle: TextStyle(color: subtleTextColor, fontSize: 14.0),
+                          hintStyle: TextStyle(
+                            color: subtleTextColor,
+                            fontSize: 14.0,
+                          ),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(
@@ -333,7 +360,9 @@ class _CommentsSheetState extends ConsumerState<CommentsSheet> {
                           ? const SizedBox(
                               width: 18.0,
                               height: 18.0,
-                              child: CircularProgressIndicator(strokeWidth: 2.0),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.0,
+                              ),
                             )
                           : const Icon(Icons.send_rounded, size: 20.0),
                       color: AppColors.moss500,

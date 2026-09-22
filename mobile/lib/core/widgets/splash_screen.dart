@@ -71,10 +71,7 @@ class _SplashScreenState extends State<SplashScreen>
                     gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.forest600,
-                        AppColors.moss500,
-                      ],
+                      colors: [AppColors.forest600, AppColors.moss500],
                     ),
                     borderRadius: BorderRadius.circular(AppRadii.xl),
                     boxShadow: [

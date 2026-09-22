@@ -30,22 +30,42 @@ class _FakeFeedRepository implements FeedRepository {
   ];
 
   @override
-  Future<List<FeedItemModel>> getFeed({FeedTab tab = FeedTab.trending, String? cursor, int limit = 10}) async {
+  Future<List<FeedItemModel>> getFeed({
+    FeedTab tab = FeedTab.trending,
+    String? cursor,
+    int limit = 10,
+  }) async {
     return items;
   }
 
   @override
-  Future<Map<String, dynamic>> toggleLike(String videoId, {required bool currentlyLiked}) async {
-    return <String, dynamic>{'liked': !currentlyLiked, 'likes_count': currentlyLiked ? 149 : 151};
+  Future<Map<String, dynamic>> toggleLike(
+    String videoId, {
+    required bool currentlyLiked,
+  }) async {
+    return <String, dynamic>{
+      'liked': !currentlyLiked,
+      'likes_count': currentlyLiked ? 149 : 151,
+    };
   }
 
   @override
-  Future<Map<String, dynamic>> toggleSave(String videoId, {required bool currentlySaved}) async {
-    return <String, dynamic>{'saved': !currentlySaved, 'saves_count': currentlySaved ? 29 : 31};
+  Future<Map<String, dynamic>> toggleSave(
+    String videoId, {
+    required bool currentlySaved,
+  }) async {
+    return <String, dynamic>{
+      'saved': !currentlySaved,
+      'saves_count': currentlySaved ? 29 : 31,
+    };
   }
 
   @override
-  Future<List<CommentModel>> getComments(String videoId, {int skip = 0, int limit = 50}) async {
+  Future<List<CommentModel>> getComments(
+    String videoId, {
+    int skip = 0,
+    int limit = 50,
+  }) async {
     return <CommentModel>[
       CommentModel(
         commentId: 'c-1',
@@ -71,7 +91,9 @@ class _FakeFeedRepository implements FeedRepository {
   }
 
   @override
-  Future<WatchProgressModel> recordWatchProgress(WatchProgressRequestModel request) async {
+  Future<WatchProgressModel> recordWatchProgress(
+    WatchProgressRequestModel request,
+  ) async {
     return WatchProgressModel(
       videoId: request.videoId,
       watchedSeconds: request.watchedSeconds,
@@ -88,7 +110,9 @@ class _FakeFeedRepository implements FeedRepository {
 
 void main() {
   group('FeedScreen Widget Tests', () {
-    testWidgets('renders top tabs, creator info, and engagement buttons', (tester) async {
+    testWidgets('renders top tabs, creator info, and engagement buttons', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -100,12 +124,8 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            feedRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
-          child: const MaterialApp(
-            home: FeedScreen(),
-          ),
+          overrides: [feedRepositoryProvider.overrideWithValue(fakeRepo)],
+          child: const MaterialApp(home: FeedScreen()),
         ),
       );
 
@@ -127,12 +147,14 @@ void main() {
 
       // Counters
       expect(find.text('150'), findsOneWidget); // Likes
-      expect(find.text('12'), findsOneWidget);  // Comments
-      expect(find.text('30'), findsOneWidget);  // Saves
+      expect(find.text('12'), findsOneWidget); // Comments
+      expect(find.text('30'), findsOneWidget); // Saves
       expect(find.text('Share'), findsOneWidget);
     });
 
-    testWidgets('tapping like button optimistically updates count', (tester) async {
+    testWidgets('tapping like button optimistically updates count', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -144,12 +166,8 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            feedRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
-          child: const MaterialApp(
-            home: FeedScreen(),
-          ),
+          overrides: [feedRepositoryProvider.overrideWithValue(fakeRepo)],
+          child: const MaterialApp(home: FeedScreen()),
         ),
       );
 
@@ -168,7 +186,9 @@ void main() {
       expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
     });
 
-    testWidgets('tapping comment button opens CommentsSheet modal', (tester) async {
+    testWidgets('tapping comment button opens CommentsSheet modal', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -180,12 +200,8 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            feedRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
-          child: const MaterialApp(
-            home: FeedScreen(),
-          ),
+          overrides: [feedRepositoryProvider.overrideWithValue(fakeRepo)],
+          child: const MaterialApp(home: FeedScreen()),
         ),
       );
 

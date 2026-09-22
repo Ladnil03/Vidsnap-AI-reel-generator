@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vidsnap_ai/core/theme/app_colors.dart';
 
-enum AppCardVariant {
-  standard,
-  raised,
-  sunken,
-}
+enum AppCardVariant { standard, raised, sunken }
 
 class AppCard extends StatelessWidget {
   const AppCard({
@@ -37,14 +33,20 @@ class AppCard extends StatelessWidget {
       case AppCardVariant.standard:
         backgroundColor = isDark ? AppColors.forest900 : AppColors.cream50;
         borderSide = BorderSide(
-          color: isDark ? AppColors.borderDarkSubtle : AppColors.borderLightSubtle,
+          color: isDark
+              ? AppColors.borderDarkSubtle
+              : AppColors.borderLightSubtle,
           width: 1.0,
         );
         break;
       case AppCardVariant.raised:
-        backgroundColor = isDark ? AppColors.forest800 : const Color(0xFFFAF8F2);
+        backgroundColor = isDark
+            ? AppColors.forest800
+            : const Color(0xFFFAF8F2);
         borderSide = BorderSide(
-          color: isDark ? AppColors.borderDarkMedium : AppColors.borderLightMedium,
+          color: isDark
+              ? AppColors.borderDarkMedium
+              : AppColors.borderLightMedium,
           width: 1.0,
         );
         elevation = isDark ? 2.0 : 1.0;
@@ -62,7 +64,9 @@ class AppCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: effectiveRadius,
-        border: borderSide == BorderSide.none ? null : Border.fromBorderSide(borderSide),
+        border: borderSide == BorderSide.none
+            ? null
+            : Border.fromBorderSide(borderSide),
         boxShadow: elevation > 0
             ? <BoxShadow>[
                 BoxShadow(
@@ -79,10 +83,7 @@ class AppCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: effectiveRadius,
-          child: Padding(
-            padding: padding,
-            child: child,
-          ),
+          child: Padding(padding: padding, child: child),
         ),
       ),
     );

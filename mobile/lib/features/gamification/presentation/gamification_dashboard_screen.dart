@@ -15,7 +15,10 @@ class GamificationDashboardScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
     final state = ref.watch(gamificationNotifierProvider);
 
-    ref.listen<GamificationState>(gamificationNotifierProvider, (previous, next) {
+    ref.listen<GamificationState>(gamificationNotifierProvider, (
+      previous,
+      next,
+    ) {
       if (next.feedbackMessage != null &&
           next.feedbackMessage != previous?.feedbackMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -83,7 +86,7 @@ class GamificationDashboardScreen extends ConsumerWidget {
                       state.badges.isNotEmpty
                           ? state.badges
                           : (state.profile?.badgesUnlocked ??
-                              const <UserBadgeModel>[]),
+                                const <UserBadgeModel>[]),
                       state.profile?.badgesUnlockedCount ?? 0,
                       state.profile?.badgesTotalCount ?? 0,
                       isDark,
@@ -189,9 +192,12 @@ class GamificationDashboardScreen extends ConsumerWidget {
             child: LinearProgressIndicator(
               value: progress.clamp(0.0, 1.0),
               minHeight: 10,
-              backgroundColor:
-                  isDark ? AppColors.forest950 : AppColors.cream200,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.moss500),
+              backgroundColor: isDark
+                  ? AppColors.forest950
+                  : AppColors.cream200,
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.moss500,
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.s2),
@@ -253,8 +259,9 @@ class GamificationDashboardScreen extends ConsumerWidget {
                       Text(
                         'Best Record: $longestStreak days',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color:
-                              isDark ? AppColors.forest200 : AppColors.forest700,
+                          color: isDark
+                              ? AppColors.forest200
+                              : AppColors.forest700,
                         ),
                       ),
                     ],
@@ -281,7 +288,9 @@ class GamificationDashboardScreen extends ConsumerWidget {
             children: <Widget>[
               Expanded(
                 child: AppButton(
-                  label: isActiveToday ? 'Checked-In Today ✅' : 'Claim Daily +25 XP',
+                  label: isActiveToday
+                      ? 'Checked-In Today ✅'
+                      : 'Claim Daily +25 XP',
                   variant: isActiveToday
                       ? AppButtonVariant.ghost
                       : AppButtonVariant.primary,
@@ -289,8 +298,8 @@ class GamificationDashboardScreen extends ConsumerWidget {
                   onPressed: isActiveToday
                       ? null
                       : () => ref
-                          .read(gamificationNotifierProvider.notifier)
-                          .recordDailyCheckIn(),
+                            .read(gamificationNotifierProvider.notifier)
+                            .recordDailyCheckIn(),
                 ),
               ),
               if (freezeTokens > 0 && !isActiveToday) ...<Widget>[
@@ -397,14 +406,17 @@ class GamificationDashboardScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: AppSpacing.s2),
                     if (quest.isClaimed)
-                      const Icon(Icons.check_circle, color: AppColors.successLight)
+                      const Icon(
+                        Icons.check_circle,
+                        color: AppColors.successLight,
+                      )
                     else if (quest.isCompleted)
                       ElevatedButton(
                         onPressed: isClaiming
                             ? null
                             : () => ref
-                                .read(gamificationNotifierProvider.notifier)
-                                .claimChallenge(quest.challengeId),
+                                  .read(gamificationNotifierProvider.notifier)
+                                  .claimChallenge(quest.challengeId),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.moss500,
                           foregroundColor: Colors.white,
@@ -506,7 +518,9 @@ class GamificationDashboardScreen extends ConsumerWidget {
                         Text(badge.description),
                         const SizedBox(height: AppSpacing.s2),
                         Text(
-                          unlocked ? 'Status: Unlocked 🏆' : 'Status: Locked 🔒',
+                          unlocked
+                              ? 'Status: Unlocked 🏆'
+                              : 'Status: Locked 🔒',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: unlocked
@@ -533,8 +547,8 @@ class GamificationDashboardScreen extends ConsumerWidget {
                     color: unlocked
                         ? (isDark ? AppColors.sage400 : AppColors.moss500)
                         : (isDark
-                            ? AppColors.borderDarkSubtle
-                            : AppColors.borderLightSubtle),
+                              ? AppColors.borderDarkSubtle
+                              : AppColors.borderLightSubtle),
                     width: unlocked ? 1.5 : 1.0,
                   ),
                 ),
@@ -562,8 +576,8 @@ class GamificationDashboardScreen extends ConsumerWidget {
                           fontWeight: FontWeight.bold,
                           color: unlocked
                               ? (isDark
-                                  ? AppColors.cream50
-                                  : AppColors.forest900)
+                                    ? AppColors.cream50
+                                    : AppColors.forest900)
                               : Colors.grey,
                         ),
                       ),
@@ -606,10 +620,10 @@ class GamificationDashboardScreen extends ConsumerWidget {
               final medal = entry.rank == 1
                   ? '🥇'
                   : entry.rank == 2
-                      ? '🥈'
-                      : entry.rank == 3
-                          ? '🥉'
-                          : '#${entry.rank}';
+                  ? '🥈'
+                  : entry.rank == 3
+                  ? '🥉'
+                  : '#${entry.rank}';
 
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
@@ -621,8 +635,9 @@ class GamificationDashboardScreen extends ConsumerWidget {
                         medal,
                         style: TextStyle(
                           fontSize: isTop3 ? 18 : 14,
-                          fontWeight:
-                              isTop3 ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isTop3
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                     ),

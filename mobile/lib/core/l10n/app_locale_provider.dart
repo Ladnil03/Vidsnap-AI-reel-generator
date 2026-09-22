@@ -57,76 +57,78 @@ class LocaleNotifier extends Notifier<Locale> {
   }
 }
 
-final localeProvider =
-    NotifierProvider<LocaleNotifier, Locale>(LocaleNotifier.new);
+final localeProvider = NotifierProvider<LocaleNotifier, Locale>(
+  LocaleNotifier.new,
+);
 
 class AppStrings {
   AppStrings(this.locale);
 
   final Locale locale;
 
-  static final Map<String, Map<String, String>> _localizedValues = <String, Map<String, String>>{
-    'en': <String, String>{
-      'appName': 'VidSnap.AI',
-      'tagline': 'AI-Powered Short Video Entertainment',
-      'login': 'Log In',
-      'register': 'Create Account',
-      'logout': 'Log Out',
-      'feed': 'Feed',
-      'explore': 'Explore',
-      'create': 'Create',
-      'rooms': 'Rooms',
-      'companion': 'Companion',
-      'profile': 'Profile',
-      'retry': 'Retry',
-      'cancel': 'Cancel',
-      'save': 'Save',
-      'email': 'Email',
-      'password': 'Password',
-      'error': 'Error',
-      'noContent': 'No content available',
-    },
-    'hi': <String, String>{
-      'appName': 'विडस्नैप.एआई',
-      'tagline': 'एआई-संचालित लघु वीडियो मनोरंजन',
-      'login': 'लॉग इन करें',
-      'register': 'खाता बनाएं',
-      'logout': 'लॉग आउट',
-      'feed': 'फ़ीड',
-      'explore': 'खोजें',
-      'create': 'बनाएं',
-      'rooms': 'रूम्स',
-      'companion': 'साथी',
-      'profile': 'प्रोफ़ाइल',
-      'retry': 'पुनः प्रयास करें',
-      'cancel': 'रद्द करें',
-      'save': 'सहेजें',
-      'email': 'ईमेल',
-      'password': 'पासवर्ड',
-      'error': 'त्रुटि',
-      'noContent': 'कोई सामग्री उपलब्ध नहीं है',
-    },
-    'gu': <String, String>{
-      'appName': 'વિડસ્નેપ.એઆઈ',
-      'tagline': 'એઆઈ-સંચાલિત ટૂંકી વિડિઓ મનોરંજન',
-      'login': 'લૉગ ઇન કરો',
-      'register': 'ખાતું બનાવો',
-      'logout': 'લૉગ આઉટ',
-      'feed': 'ફીડ',
-      'explore': 'શોધો',
-      'create': 'બનાવો',
-      'rooms': 'રૂમ્સ',
-      'companion': 'સાથી',
-      'profile': 'પ્રોફાઇલ',
-      'retry': 'ફરી પ્રયાસ કરો',
-      'cancel': 'રદ કરો',
-      'save': 'સાચવો',
-      'email': 'ઇમેઇલ',
-      'password': 'પાસવર્ડ',
-      'error': 'ભૂલ',
-      'noContent': 'કોઈ સામગ્રી ઉપલબ્ધ નથી',
-    },
-  };
+  static final Map<String, Map<String, String>> _localizedValues =
+      <String, Map<String, String>>{
+        'en': <String, String>{
+          'appName': 'VidSnap.AI',
+          'tagline': 'AI-Powered Short Video Entertainment',
+          'login': 'Log In',
+          'register': 'Create Account',
+          'logout': 'Log Out',
+          'feed': 'Feed',
+          'explore': 'Explore',
+          'create': 'Create',
+          'rooms': 'Rooms',
+          'companion': 'Companion',
+          'profile': 'Profile',
+          'retry': 'Retry',
+          'cancel': 'Cancel',
+          'save': 'Save',
+          'email': 'Email',
+          'password': 'Password',
+          'error': 'Error',
+          'noContent': 'No content available',
+        },
+        'hi': <String, String>{
+          'appName': 'विडस्नैप.एआई',
+          'tagline': 'एआई-संचालित लघु वीडियो मनोरंजन',
+          'login': 'लॉग इन करें',
+          'register': 'खाता बनाएं',
+          'logout': 'लॉग आउट',
+          'feed': 'फ़ीड',
+          'explore': 'खोजें',
+          'create': 'बनाएं',
+          'rooms': 'रूम्स',
+          'companion': 'साथी',
+          'profile': 'प्रोफ़ाइल',
+          'retry': 'पुनः प्रयास करें',
+          'cancel': 'रद्द करें',
+          'save': 'सहेजें',
+          'email': 'ईमेल',
+          'password': 'पासवर्ड',
+          'error': 'त्रुटि',
+          'noContent': 'कोई सामग्री उपलब्ध नहीं है',
+        },
+        'gu': <String, String>{
+          'appName': 'વિડસ્નેપ.એઆઈ',
+          'tagline': 'એઆઈ-સંચાલિત ટૂંકી વિડિઓ મનોરંજન',
+          'login': 'લૉગ ઇન કરો',
+          'register': 'ખાતું બનાવો',
+          'logout': 'લૉગ આઉટ',
+          'feed': 'ફીડ',
+          'explore': 'શોધો',
+          'create': 'બનાવો',
+          'rooms': 'રૂમ્સ',
+          'companion': 'સાથી',
+          'profile': 'પ્રોફાઇલ',
+          'retry': 'ફરી પ્રયાસ કરો',
+          'cancel': 'રદ કરો',
+          'save': 'સાચવો',
+          'email': 'ઇમેઇલ',
+          'password': 'પાસવર્ડ',
+          'error': 'ભૂલ',
+          'noContent': 'કોઈ સામગ્રી ઉપલબ્ધ નથી',
+        },
+      };
 
   String get(String key) {
     final lang = locale.languageCode;
@@ -138,7 +140,8 @@ class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {
   const AppStringsDelegate();
 
   @override
-  bool isSupported(Locale locale) => <String>['en', 'hi', 'gu'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['en', 'hi', 'gu'].contains(locale.languageCode);
 
   @override
   Future<AppStrings> load(Locale locale) async => AppStrings(locale);

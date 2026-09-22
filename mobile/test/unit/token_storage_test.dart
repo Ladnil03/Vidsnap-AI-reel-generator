@@ -22,9 +22,7 @@ class FakeSecureStoragePlatform extends FlutterSecureStoragePlatform {
   }
 
   @override
-  Future<void> deleteAll({
-    required Map<String, String> options,
-  }) async {
+  Future<void> deleteAll({required Map<String, String> options}) async {
     _storage.clear();
   }
 

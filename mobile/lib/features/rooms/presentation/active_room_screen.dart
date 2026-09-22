@@ -6,11 +6,7 @@ import 'package:vidsnap_ai/features/rooms/domain/room_models.dart';
 import 'package:vidsnap_ai/features/rooms/presentation/providers/rooms_provider.dart';
 
 class ActiveRoomScreen extends ConsumerStatefulWidget {
-  const ActiveRoomScreen({
-    super.key,
-    required this.roomId,
-    this.passcode,
-  });
+  const ActiveRoomScreen({super.key, required this.roomId, this.passcode});
 
   final String roomId;
   final String? passcode;
@@ -28,10 +24,9 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(activeRoomProvider.notifier).joinRoom(
-            widget.roomId,
-            passcode: widget.passcode,
-          );
+      ref
+          .read(activeRoomProvider.notifier)
+          .joinRoom(widget.roomId, passcode: widget.passcode);
     });
   }
 
@@ -68,7 +63,9 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Leave Watch Party?'),
-        content: const Text('You will be disconnected from the synchronized stream and live chat.'),
+        content: const Text(
+          'You will be disconnected from the synchronized stream and live chat.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -76,7 +73,9 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
           ),
           TextButton(
             style: TextButton.styleFrom(
-              foregroundColor: isDark ? AppColors.dangerDark : AppColors.dangerLight,
+              foregroundColor: isDark
+                  ? AppColors.dangerDark
+                  : AppColors.dangerLight,
             ),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Leave Party'),
@@ -141,7 +140,10 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
                         ),
                         child: const Text(
                           'Microphone is active for high-fidelity spatial voice chat.',
-                          style: TextStyle(fontSize: 12, color: AppColors.moss500),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.moss500,
+                          ),
                         ),
                       ),
                     ],
@@ -175,7 +177,9 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
           return Container(
             decoration: BoxDecoration(
               color: isDark ? AppColors.forest950 : AppColors.cream50,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadii.xl),
+              ),
             ),
             padding: const EdgeInsets.all(AppSpacing.s5),
             child: Column(
@@ -199,7 +203,10 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
                     SizedBox(width: AppSpacing.s2),
                     Text(
                       'AI Room Catch-up Recap',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -208,7 +215,9 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
                   const Center(
                     child: Padding(
                       padding: EdgeInsets.symmetric(vertical: 32),
-                      child: CircularProgressIndicator(color: AppColors.moss500),
+                      child: CircularProgressIndicator(
+                        color: AppColors.moss500,
+                      ),
                     ),
                   )
                 else if (recap != null) ...[
@@ -220,7 +229,10 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
                     const SizedBox(height: AppSpacing.s3),
                     const Text(
                       'Key Highlights:',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.s2),
                     ...recap.highlights.map(
@@ -229,8 +241,19 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('• ', style: TextStyle(color: AppColors.moss500, fontWeight: FontWeight.bold)),
-                            Expanded(child: Text(h, style: const TextStyle(fontSize: 13))),
+                            const Text(
+                              '• ',
+                              style: TextStyle(
+                                color: AppColors.moss500,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                h,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -288,7 +311,10 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
             children: [
               Text(
                 state.room?.name ?? 'Watch Party',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -296,7 +322,9 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
                 children: [
                   Icon(
                     Icons.fiber_manual_record,
-                    color: isDark ? AppColors.dangerDark : AppColors.dangerLight,
+                    color: isDark
+                        ? AppColors.dangerDark
+                        : AppColors.dangerLight,
                     size: 8,
                   ),
                   const SizedBox(width: 4),
@@ -325,7 +353,9 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
           ],
         ),
         body: state.isLoading
-            ? const Center(child: CircularProgressIndicator(color: AppColors.moss500))
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.moss500),
+              )
             : Stack(
                 children: [
                   Column(
@@ -333,9 +363,7 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
                       _buildSynchronizedVideoHeader(state, isDark, theme),
                       _buildParticipantsRail(state, isDark, theme),
                       const Divider(height: 1),
-                      Expanded(
-                        child: _buildChatStream(state, isDark, theme),
-                      ),
+                      Expanded(child: _buildChatStream(state, isDark, theme)),
                       _buildReactionAndInputBar(state, isDark),
                     ],
                   ),
@@ -351,7 +379,11 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
     );
   }
 
-  Widget _buildSynchronizedVideoHeader(ActiveRoomState state, bool isDark, ThemeData theme) {
+  Widget _buildSynchronizedVideoHeader(
+    ActiveRoomState state,
+    bool isDark,
+    ThemeData theme,
+  ) {
     final watchState = state.watchState;
     final isPlaying = watchState?.isPlaying ?? false;
     final currentPos = watchState?.positionSeconds ?? 0.0;
@@ -362,7 +394,10 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
     return Container(
       width: double.infinity,
       color: Colors.black,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s4,
+        vertical: AppSpacing.s3,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -381,7 +416,11 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
                     SizedBox(width: 4),
                     Text(
                       'HOST SYNCED',
-                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -390,7 +429,11 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -415,14 +458,21 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isPlaying ? Icons.play_circle_fill : Icons.pause_circle_filled,
+                        isPlaying
+                            ? Icons.play_circle_fill
+                            : Icons.pause_circle_filled,
                         size: 42,
                         color: AppColors.moss500,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        isPlaying ? 'Streaming Synchronously' : 'Stream Paused by Host',
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        isPlaying
+                            ? 'Streaming Synchronously'
+                            : 'Stream Paused by Host',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -432,7 +482,11 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
                   left: 12,
                   child: Text(
                     _formatDuration(currentPos),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ],
@@ -444,26 +498,33 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.replay_10, color: Colors.white, size: 22),
+                icon: const Icon(
+                  Icons.replay_10,
+                  color: Colors.white,
+                  size: 22,
+                ),
                 tooltip: 'Seek back 10s',
                 onPressed: () {
                   final newPos = (currentPos - 10).clamp(0.0, 999999.0);
-                  ref.read(activeRoomProvider.notifier).syncPlayback(
-                        action: 'seek',
-                        positionSeconds: newPos,
-                      );
+                  ref
+                      .read(activeRoomProvider.notifier)
+                      .syncPlayback(action: 'seek', positionSeconds: newPos);
                 },
               ),
               const SizedBox(width: AppSpacing.s3),
               IconButton(
                 icon: Icon(
-                  isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                  isPlaying
+                      ? Icons.pause_circle_filled
+                      : Icons.play_circle_filled,
                   color: AppColors.moss500,
                   size: 36,
                 ),
                 tooltip: isPlaying ? 'Pause for all' : 'Play for all',
                 onPressed: () {
-                  ref.read(activeRoomProvider.notifier).syncPlayback(
+                  ref
+                      .read(activeRoomProvider.notifier)
+                      .syncPlayback(
                         action: isPlaying ? 'pause' : 'play',
                         positionSeconds: currentPos,
                       );
@@ -471,14 +532,17 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
               ),
               const SizedBox(width: AppSpacing.s3),
               IconButton(
-                icon: const Icon(Icons.forward_10, color: Colors.white, size: 22),
+                icon: const Icon(
+                  Icons.forward_10,
+                  color: Colors.white,
+                  size: 22,
+                ),
                 tooltip: 'Seek forward 10s',
                 onPressed: () {
                   final newPos = currentPos + 10;
-                  ref.read(activeRoomProvider.notifier).syncPlayback(
-                        action: 'seek',
-                        positionSeconds: newPos,
-                      );
+                  ref
+                      .read(activeRoomProvider.notifier)
+                      .syncPlayback(action: 'seek', positionSeconds: newPos);
                 },
               ),
             ],
@@ -488,14 +552,25 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
     );
   }
 
-  Widget _buildParticipantsRail(ActiveRoomState state, bool isDark, ThemeData theme) {
+  Widget _buildParticipantsRail(
+    ActiveRoomState state,
+    bool isDark,
+    ThemeData theme,
+  ) {
     return Container(
       height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s3,
+        vertical: 6,
+      ),
       color: isDark ? AppColors.forest900 : AppColors.cream100,
       child: Row(
         children: [
-          Icon(Icons.groups, size: 16, color: isDark ? AppColors.cream400 : AppColors.forest700),
+          Icon(
+            Icons.groups,
+            size: 16,
+            color: isDark ? AppColors.cream400 : AppColors.forest700,
+          ),
           const SizedBox(width: 6),
           Text(
             '${state.participants.length}',
@@ -510,15 +585,24 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
               itemBuilder: (context, index) {
                 final participant = state.participants[index];
                 return Tooltip(
-                  message: '${participant.name}${participant.isHost ? " (Host)" : ""}',
+                  message:
+                      '${participant.name}${participant.isHost ? " (Host)" : ""}',
                   child: Stack(
                     children: [
                       CircleAvatar(
                         radius: 16,
-                        backgroundColor: AppColors.moss500.withValues(alpha: 0.2),
+                        backgroundColor: AppColors.moss500.withValues(
+                          alpha: 0.2,
+                        ),
                         child: Text(
-                          participant.name.isNotEmpty ? participant.name[0].toUpperCase() : '?',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.moss500),
+                          participant.name.isNotEmpty
+                              ? participant.name[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.moss500,
+                          ),
                         ),
                       ),
                       if (participant.isHost)
@@ -527,7 +611,9 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
                           bottom: 0,
                           child: Icon(
                             Icons.star,
-                            color: isDark ? AppColors.warningDark : AppColors.warningLight,
+                            color: isDark
+                                ? AppColors.warningDark
+                                : AppColors.warningLight,
                             size: 12,
                           ),
                         ),
@@ -557,7 +643,10 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
 
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s4,
+        vertical: AppSpacing.s3,
+      ),
       itemCount: state.messages.length,
       itemBuilder: (context, index) {
         final message = state.messages[index];
@@ -566,7 +655,11 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
     );
   }
 
-  Widget _buildChatMessageItem(RoomChatMessageModel message, bool isDark, ThemeData theme) {
+  Widget _buildChatMessageItem(
+    RoomChatMessageModel message,
+    bool isDark,
+    ThemeData theme,
+  ) {
     if (message.isSystem) {
       return Center(
         child: Padding(
@@ -621,21 +714,28 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
                       '${message.createdAt.hour.toString().padLeft(2, '0')}:${message.createdAt.minute.toString().padLeft(2, '0')}',
                       style: TextStyle(
                         fontSize: 10,
-                        color: isDark ? AppColors.cream400 : AppColors.forest600,
+                        color: isDark
+                            ? AppColors.cream400
+                            : AppColors.forest600,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 2),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: isAssistant
                         ? AppColors.moss500.withValues(alpha: 0.12)
                         : (isDark ? AppColors.forest900 : AppColors.cream100),
                     borderRadius: BorderRadius.circular(AppRadii.sm),
                     border: isAssistant
-                        ? Border.all(color: AppColors.moss500.withValues(alpha: 0.3))
+                        ? Border.all(
+                            color: AppColors.moss500.withValues(alpha: 0.3),
+                          )
                         : null,
                   ),
                   child: Text(
@@ -666,7 +766,9 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
         color: isDark ? AppColors.forest950 : AppColors.cream50,
         border: Border(
           top: BorderSide(
-            color: isDark ? AppColors.borderDarkSubtle : AppColors.borderLightSubtle,
+            color: isDark
+                ? AppColors.borderDarkSubtle
+                : AppColors.borderLightSubtle,
           ),
         ),
       ),
@@ -676,13 +778,18 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
           // Quick reactions rail
           Row(
             children: [
-              const Text('React: ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              const Text(
+                'React: ',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+              ),
               ..._quickReactions.map(
                 (emoji) => Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(AppRadii.pill),
-                    onTap: () => ref.read(activeRoomProvider.notifier).sendReaction(emoji),
+                    onTap: () => ref
+                        .read(activeRoomProvider.notifier)
+                        .sendReaction(emoji),
                     child: Padding(
                       padding: const EdgeInsets.all(4),
                       child: Text(emoji, style: const TextStyle(fontSize: 18)),
@@ -705,9 +812,14 @@ class _ActiveRoomScreenState extends ConsumerState<ActiveRoomScreen> {
                       color: isDark ? AppColors.cream400 : AppColors.forest600,
                     ),
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     filled: true,
-                    fillColor: isDark ? AppColors.forest900 : AppColors.cream100,
+                    fillColor: isDark
+                        ? AppColors.forest900
+                        : AppColors.cream100,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadii.pill),
                       borderSide: BorderSide.none,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,10 +10,7 @@ import 'package:vidsnap_ai/features/create/domain/create_video_model.dart';
 import 'package:vidsnap_ai/features/feed/domain/feed_item_model.dart';
 
 class CreateRepository {
-  CreateRepository({
-    required this.dio,
-    required this.preferences,
-  });
+  CreateRepository({required this.dio, required this.preferences});
 
   final Dio dio;
   final SharedPreferences preferences;
@@ -66,7 +64,8 @@ class CreateRepository {
         '/api/v1/content/ai/suggest-tags',
         data: <String, dynamic>{
           'title': title,
-          if (transcript != null && transcript.isNotEmpty) 'transcript': transcript,
+          if (transcript != null && transcript.isNotEmpty)
+            'transcript': transcript,
         },
       );
       return HashtagSuggestionResponseModel.fromJson(response.data!);

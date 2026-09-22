@@ -51,8 +51,9 @@ class GamificationState {
       isLoading: isLoading ?? this.isLoading,
       isClaiming: isClaiming ?? this.isClaiming,
       isCheckingIn: isCheckingIn ?? this.isCheckingIn,
-      feedbackMessage:
-          clearFeedback ? null : (feedbackMessage ?? this.feedbackMessage),
+      feedbackMessage: clearFeedback
+          ? null
+          : (feedbackMessage ?? this.feedbackMessage),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -60,8 +61,8 @@ class GamificationState {
 
 final gamificationNotifierProvider =
     NotifierProvider<GamificationNotifier, GamificationState>(
-  GamificationNotifier.new,
-);
+      GamificationNotifier.new,
+    );
 
 class GamificationNotifier extends Notifier<GamificationState> {
   GamificationRepository get _repo => ref.read(gamificationRepositoryProvider);
@@ -101,7 +102,11 @@ class GamificationNotifier extends Notifier<GamificationState> {
 
   Future<void> recordDailyCheckIn() async {
     if (state.isCheckingIn) return;
-    state = state.copyWith(isCheckingIn: true, clearFeedback: true, clearError: true);
+    state = state.copyWith(
+      isCheckingIn: true,
+      clearFeedback: true,
+      clearError: true,
+    );
     try {
       final streak = await _repo.recordStreakActivity();
       // Reload profile to get refreshed XP & level
@@ -109,7 +114,8 @@ class GamificationNotifier extends Notifier<GamificationState> {
       state = state.copyWith(
         profile: updatedProfile,
         isCheckingIn: false,
-        feedbackMessage: '🔥 Day ${streak.currentStreak} logged! +25 XP awarded.',
+        feedbackMessage:
+            '🔥 Day ${streak.currentStreak} logged! +25 XP awarded.',
       );
     } catch (e) {
       state = state.copyWith(
@@ -121,7 +127,11 @@ class GamificationNotifier extends Notifier<GamificationState> {
 
   Future<void> claimChallenge(String challengeId) async {
     if (state.isClaiming) return;
-    state = state.copyWith(isClaiming: true, clearFeedback: true, clearError: true);
+    state = state.copyWith(
+      isClaiming: true,
+      clearFeedback: true,
+      clearError: true,
+    );
     try {
       final result = await _repo.claimChallenge(challengeId);
       final updatedProfile = await _repo.getProfile();

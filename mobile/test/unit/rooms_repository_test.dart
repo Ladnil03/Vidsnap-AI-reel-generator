@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vidsnap_ai/features/rooms/data/rooms_repository.dart';
@@ -13,62 +14,68 @@ void main() {
       repository = RoomsRepository(dio: dio);
     });
 
-    test('listRooms sends search and room_type and returns parsed rooms', () async {
-      dio.httpClientAdapter = _MockAdapter((options) {
-        expect(options.path, '/api/v1/rooms');
-        expect(options.queryParameters['search'], 'Anime');
-        expect(options.queryParameters['room_type'], 'public');
+    test(
+      'listRooms sends search and room_type and returns parsed rooms',
+      () async {
+        dio.httpClientAdapter = _MockAdapter((options) {
+          expect(options.path, '/api/v1/rooms');
+          expect(options.queryParameters['search'], 'Anime');
+          expect(options.queryParameters['room_type'], 'public');
 
-        final data = [
-          {
-            'room_id': 'room-101',
-            'name': 'Anime Night',
-            'description': 'Watching ep 1-3',
-            'room_type': 'public',
-            'control_mode': 'host_only',
-            'host_id': 'host-1',
-            'host_name': 'OtakuKing',
-            'participant_count': 5,
-            'participants': [
-              {
-                'user_id': 'host-1',
-                'name': 'OtakuKing',
-                'is_host': true,
-                'joined_at': '2026-03-22T10:00:00Z',
-                'last_seen_at': '2026-03-22T10:05:00Z',
+          final data = [
+            {
+              'room_id': 'room-101',
+              'name': 'Anime Night',
+              'description': 'Watching ep 1-3',
+              'room_type': 'public',
+              'control_mode': 'host_only',
+              'host_id': 'host-1',
+              'host_name': 'OtakuKing',
+              'participant_count': 5,
+              'participants': [
+                {
+                  'user_id': 'host-1',
+                  'name': 'OtakuKing',
+                  'is_host': true,
+                  'joined_at': '2026-03-22T10:00:00Z',
+                  'last_seen_at': '2026-03-22T10:05:00Z',
+                },
+              ],
+              'watch_state': {
+                'media_url': 'https://cdn.example.com/anime.mp4',
+                'media_title': 'Episode 1',
+                'media_type': 'native',
+                'state': 'playing',
+                'position_seconds': 45.2,
+                'playback_rate': 1.0,
+                'last_updated_at': '2026-03-22T10:05:00Z',
               },
-            ],
-            'watch_state': {
-              'media_url': 'https://cdn.example.com/anime.mp4',
-              'media_title': 'Episode 1',
-              'media_type': 'native',
-              'state': 'playing',
-              'position_seconds': 45.2,
-              'playback_rate': 1.0,
-              'last_updated_at': '2026-03-22T10:05:00Z',
+              'created_at': '2026-03-22T10:00:00Z',
             },
-            'created_at': '2026-03-22T10:00:00Z',
-          }
-        ];
+          ];
 
-        return ResponseBody.fromString(
-          jsonEncode(data),
-          200,
-          headers: {
-            Headers.contentTypeHeader: [Headers.jsonContentType],
-          },
+          return ResponseBody.fromString(
+            jsonEncode(data),
+            200,
+            headers: {
+              Headers.contentTypeHeader: [Headers.jsonContentType],
+            },
+          );
+        });
+
+        final rooms = await repository.listRooms(
+          search: 'Anime',
+          roomType: 'public',
         );
-      });
-
-      final rooms = await repository.listRooms(search: 'Anime', roomType: 'public');
-      expect(rooms.length, 1);
-      final room = rooms.first;
-      expect(room.roomId, 'room-101');
-      expect(room.name, 'Anime Night');
-      expect(room.participantCount, 5);
-      expect(room.watchState.isPlaying, isTrue);
-      expect(room.watchState.positionSeconds, 45.2);
-    });
+        expect(rooms.length, 1);
+        final room = rooms.first;
+        expect(room.roomId, 'room-101');
+        expect(room.name, 'Anime Night');
+        expect(room.participantCount, 5);
+        expect(room.watchState.isPlaying, isTrue);
+        expect(room.watchState.positionSeconds, 45.2);
+      },
+    );
 
     test('getRoom fetches single room details', () async {
       dio.httpClientAdapter = _MockAdapter((options) {
@@ -194,7 +201,10 @@ void main() {
         );
       });
 
-      final room = await repository.joinRoom('room-777', passcode: 'secret1234');
+      final room = await repository.joinRoom(
+        'room-777',
+        passcode: 'secret1234',
+      );
       expect(room.roomId, 'room-777');
       expect(room.participantCount, 3);
     });
@@ -215,43 +225,46 @@ void main() {
       expect(success, isTrue);
     });
 
-    test('syncPlayback sends sync commands and returns updated watch state', () async {
-      dio.httpClientAdapter = _MockAdapter((options) {
-        expect(options.path, '/api/v1/rooms/room-101/sync');
-        final reqData = options.data as Map<String, dynamic>;
-        expect(reqData['action'], 'play');
-        expect(reqData['position_seconds'], 60.5);
+    test(
+      'syncPlayback sends sync commands and returns updated watch state',
+      () async {
+        dio.httpClientAdapter = _MockAdapter((options) {
+          expect(options.path, '/api/v1/rooms/room-101/sync');
+          final reqData = options.data as Map<String, dynamic>;
+          expect(reqData['action'], 'play');
+          expect(reqData['position_seconds'], 60.5);
 
-        final data = {
-          'media_url': 'https://cdn.example.com/video.mp4',
-          'media_title': 'Cyberpunk Reel',
-          'media_type': 'native',
-          'state': 'playing',
-          'position_seconds': 60.5,
-          'playback_rate': 1.0,
-          'last_updated_at': '2026-03-22T12:00:00Z',
-          'updated_by_user_id': 'self',
-        };
+          final data = {
+            'media_url': 'https://cdn.example.com/video.mp4',
+            'media_title': 'Cyberpunk Reel',
+            'media_type': 'native',
+            'state': 'playing',
+            'position_seconds': 60.5,
+            'playback_rate': 1.0,
+            'last_updated_at': '2026-03-22T12:00:00Z',
+            'updated_by_user_id': 'self',
+          };
 
-        return ResponseBody.fromString(
-          jsonEncode(data),
-          200,
-          headers: {
-            Headers.contentTypeHeader: [Headers.jsonContentType],
-          },
+          return ResponseBody.fromString(
+            jsonEncode(data),
+            200,
+            headers: {
+              Headers.contentTypeHeader: [Headers.jsonContentType],
+            },
+          );
+        });
+
+        final watchState = await repository.syncPlayback(
+          'room-101',
+          action: 'play',
+          positionSeconds: 60.5,
         );
-      });
 
-      final watchState = await repository.syncPlayback(
-        'room-101',
-        action: 'play',
-        positionSeconds: 60.5,
-      );
-
-      expect(watchState.isPlaying, isTrue);
-      expect(watchState.positionSeconds, 60.5);
-      expect(watchState.mediaTitle, 'Cyberpunk Reel');
-    });
+        expect(watchState.isPlaying, isTrue);
+        expect(watchState.positionSeconds, 60.5);
+        expect(watchState.mediaTitle, 'Cyberpunk Reel');
+      },
+    );
 
     test('getChatHistory fetches chat messages', () async {
       dio.httpClientAdapter = _MockAdapter((options) {
@@ -278,7 +291,7 @@ void main() {
             'created_at': '2026-03-22T12:01:05Z',
             'is_system': false,
             'is_assistant': true,
-          }
+          },
         ];
 
         return ResponseBody.fromString(
@@ -327,7 +340,8 @@ void main() {
 
         final data = {
           'room_id': 'room-101',
-          'summary': 'The group watched the premiere and discussed visual effects.',
+          'summary':
+              'The group watched the premiere and discussed visual effects.',
           'highlights': [
             'Alice praised the sound design at 00:45',
             'Bob noticed the hidden easter egg at 01:20',

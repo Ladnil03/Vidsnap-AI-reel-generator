@@ -17,7 +17,8 @@ void main() {
         createTestWidget(
           const AppEmptyState(
             title: 'No Reels Yet',
-            description: 'Start creating or following creators to see content here.',
+            description:
+                'Start creating or following creators to see content here.',
           ),
         ),
       );
@@ -29,7 +30,9 @@ void main() {
       );
     });
 
-    testWidgets('invokes onAction callback when action button is tapped', (tester) async {
+    testWidgets('invokes onAction callback when action button is tapped', (
+      tester,
+    ) async {
       var actionFired = false;
 
       await tester.pumpWidget(

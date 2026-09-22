@@ -21,7 +21,7 @@ class _FakeTokenStorage extends TokenStorage {
 class _FakeAuthRepository extends AuthRepository {
   final User mockUser;
   _FakeAuthRepository(this.mockUser)
-      : super(dio: Dio(), tokenStorage: _FakeTokenStorage());
+    : super(dio: Dio(), tokenStorage: _FakeTokenStorage());
 
   @override
   Future<User> getMe() async => mockUser;
@@ -128,27 +128,28 @@ void main() {
           profileRepositoryProvider.overrideWithValue(fakeProfileRepo),
           authStateProvider.overrideWith((ref) => authNotifier),
         ],
-        child: const MaterialApp(
-          home: ProfileScreen(),
-        ),
+        child: const MaterialApp(home: ProfileScreen()),
       );
     }
 
-    testWidgets('renders profile details, stats, role badge, and published reels tab', (tester) async {
-      await tester.pumpWidget(createWidget());
-      await tester.pumpAndSettle();
+    testWidgets(
+      'renders profile details, stats, role badge, and published reels tab',
+      (tester) async {
+        await tester.pumpWidget(createWidget());
+        await tester.pumpAndSettle();
 
-      expect(find.text('My Profile'), findsOneWidget);
-      expect(find.text('Alex Creator'), findsOneWidget);
-      expect(find.text('alex@vidsnap.ai'), findsOneWidget);
-      expect(find.text('Mobile dev & video enthusiast'), findsOneWidget);
-      expect(find.text('Creator 🎨'), findsOneWidget);
+        expect(find.text('My Profile'), findsOneWidget);
+        expect(find.text('Alex Creator'), findsOneWidget);
+        expect(find.text('alex@vidsnap.ai'), findsOneWidget);
+        expect(find.text('Mobile dev & video enthusiast'), findsOneWidget);
+        expect(find.text('Creator 🎨'), findsOneWidget);
 
-      // Stats
-      expect(find.text('1500'), findsOneWidget); // Followers
-      expect(find.text('300'), findsOneWidget); // Following
-      expect(find.text('1200'), findsOneWidget); // Reel view count
-    });
+        // Stats
+        expect(find.text('1500'), findsOneWidget); // Followers
+        expect(find.text('300'), findsOneWidget); // Following
+        expect(find.text('1200'), findsOneWidget); // Reel view count
+      },
+    );
 
     testWidgets('switching to Saved tab renders saved reels', (tester) async {
       await tester.pumpWidget(createWidget());
@@ -163,7 +164,9 @@ void main() {
       expect(find.text('850'), findsOneWidget); // Saved video view count
     });
 
-    testWidgets('tapping Edit Profile opens edit profile bottom sheet', (tester) async {
+    testWidgets('tapping Edit Profile opens edit profile bottom sheet', (
+      tester,
+    ) async {
       await tester.pumpWidget(createWidget());
       await tester.pumpAndSettle();
 
@@ -173,7 +176,10 @@ void main() {
       await tester.tap(editButton);
       await tester.pumpAndSettle();
 
-      expect(find.text('Edit Profile'), findsNWidgets(2)); // Button & Sheet title
+      expect(
+        find.text('Edit Profile'),
+        findsNWidgets(2),
+      ); // Button & Sheet title
       expect(find.text('Save Changes'), findsOneWidget);
     });
   });

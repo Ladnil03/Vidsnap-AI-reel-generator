@@ -16,10 +16,7 @@ class FeedRepository {
     int limit = 10,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'tab': tab.value,
-        'limit': limit,
-      };
+      final queryParams = <String, dynamic>{'tab': tab.value, 'limit': limit};
       if (cursor != null && cursor.isNotEmpty) {
         queryParams['cursor'] = cursor;
       }
@@ -43,13 +40,20 @@ class FeedRepository {
     }
   }
 
-  Future<Map<String, dynamic>> toggleLike(String videoId, {required bool currentlyLiked}) async {
+  Future<Map<String, dynamic>> toggleLike(
+    String videoId, {
+    required bool currentlyLiked,
+  }) async {
     try {
       final Response<Map<String, dynamic>> response;
       if (currentlyLiked) {
-        response = await dio.delete<Map<String, dynamic>>('/api/v1/content/videos/$videoId/like');
+        response = await dio.delete<Map<String, dynamic>>(
+          '/api/v1/content/videos/$videoId/like',
+        );
       } else {
-        response = await dio.post<Map<String, dynamic>>('/api/v1/content/videos/$videoId/like');
+        response = await dio.post<Map<String, dynamic>>(
+          '/api/v1/content/videos/$videoId/like',
+        );
       }
       return response.data ?? <String, dynamic>{};
     } on DioException catch (e) {
@@ -59,13 +63,20 @@ class FeedRepository {
     }
   }
 
-  Future<Map<String, dynamic>> toggleSave(String videoId, {required bool currentlySaved}) async {
+  Future<Map<String, dynamic>> toggleSave(
+    String videoId, {
+    required bool currentlySaved,
+  }) async {
     try {
       final Response<Map<String, dynamic>> response;
       if (currentlySaved) {
-        response = await dio.delete<Map<String, dynamic>>('/api/v1/content/videos/$videoId/save');
+        response = await dio.delete<Map<String, dynamic>>(
+          '/api/v1/content/videos/$videoId/save',
+        );
       } else {
-        response = await dio.post<Map<String, dynamic>>('/api/v1/content/videos/$videoId/save');
+        response = await dio.post<Map<String, dynamic>>(
+          '/api/v1/content/videos/$videoId/save',
+        );
       }
       return response.data ?? <String, dynamic>{};
     } on DioException catch (e) {
@@ -75,14 +86,15 @@ class FeedRepository {
     }
   }
 
-  Future<List<CommentModel>> getComments(String videoId, {int skip = 0, int limit = 50}) async {
+  Future<List<CommentModel>> getComments(
+    String videoId, {
+    int skip = 0,
+    int limit = 50,
+  }) async {
     try {
       final response = await dio.get<List<dynamic>>(
         '/api/v1/content/videos/$videoId/comments',
-        queryParameters: <String, dynamic>{
-          'skip': skip,
-          'limit': limit,
-        },
+        queryParameters: <String, dynamic>{'skip': skip, 'limit': limit},
       );
       final rawList = response.data ?? const <dynamic>[];
       return rawList
@@ -109,7 +121,9 @@ class FeedRepository {
     }
   }
 
-  Future<WatchProgressModel> recordWatchProgress(WatchProgressRequestModel request) async {
+  Future<WatchProgressModel> recordWatchProgress(
+    WatchProgressRequestModel request,
+  ) async {
     try {
       final response = await dio.post<Map<String, dynamic>>(
         '/api/v1/feed/watch-progress',

@@ -84,7 +84,10 @@ class CompanionNotifier extends Notifier<CompanionState> {
     try {
       await _repo.setMood(mood: mood);
     } catch (e) {
-      state = state.copyWith(activeMood: previousMood, errorMessage: 'Failed to update mood');
+      state = state.copyWith(
+        activeMood: previousMood,
+        errorMessage: 'Failed to update mood',
+      );
     }
   }
 

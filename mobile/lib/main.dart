@@ -30,9 +30,7 @@ Future<void> main() async {
 
   runApp(
     ProviderScope(
-      overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-      ],
+      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
       child: const VidSnapApp(),
     ),
   );
@@ -63,9 +61,7 @@ class VidSnapApp extends ConsumerWidget {
       ],
       builder: (context, child) {
         return GlobalErrorBoundary(
-          child: ConnectivityBanner(
-            child: child ?? const SizedBox.shrink(),
-          ),
+          child: ConnectivityBanner(child: child ?? const SizedBox.shrink()),
         );
       },
       routerConfig: router,

@@ -7,7 +7,9 @@ void main() {
   Widget createTestWidget(Widget child) {
     return MaterialApp(
       theme: AppTheme.lightTheme,
-      home: Scaffold(body: Padding(padding: const EdgeInsets.all(16.0), child: child)),
+      home: Scaffold(
+        body: Padding(padding: const EdgeInsets.all(16.0), child: child),
+      ),
     );
   }
 
@@ -32,7 +34,9 @@ void main() {
       expect(controller.text, equals('test@example.com'));
     });
 
-    testWidgets('renders error text when errorText is provided', (tester) async {
+    testWidgets('renders error text when errorText is provided', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         createTestWidget(
           const AppTextField(

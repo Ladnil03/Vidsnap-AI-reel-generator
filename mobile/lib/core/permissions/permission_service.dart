@@ -2,19 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vidsnap_ai/core/telemetry/telemetry_service.dart';
 
-enum AppPermission {
-  camera,
-  microphone,
-  photos,
-  storage,
-}
+enum AppPermission { camera, microphone, photos, storage }
 
-enum AppPermissionState {
-  granted,
-  denied,
-  permanentlyDenied,
-  restricted,
-}
+enum AppPermissionState { granted, denied, permanentlyDenied, restricted }
 
 @immutable
 class PermissionMetadata {
@@ -38,29 +28,25 @@ class PermissionService {
     AppPermission.camera: PermissionMetadata(
       permission: AppPermission.camera,
       title: 'Camera Access',
-      rationale:
-          'VidSnap.AI requires camera access so you can shoot vertical reels, live stream, and capture moments directly within the app.',
+      rationale: 'VidSnap.AI requires camera access so you can shoot vertical reels, live stream, and capture moments directly within the app.',
       icon: Icons.videocam_rounded,
     ),
     AppPermission.microphone: PermissionMetadata(
       permission: AppPermission.microphone,
       title: 'Microphone Access',
-      rationale:
-          'VidSnap.AI requires microphone access to record audio with your video reels and enable voice participation in Watch Together party rooms.',
+      rationale: 'VidSnap.AI requires microphone access to record audio with your video reels and enable voice participation in Watch Together party rooms.',
       icon: Icons.mic_rounded,
     ),
     AppPermission.photos: PermissionMetadata(
       permission: AppPermission.photos,
       title: 'Photo & Video Library',
-      rationale:
-          'VidSnap.AI requires media library access so you can select saved videos from your gallery, import clips, and upload your profile avatar.',
+      rationale: 'VidSnap.AI requires media library access so you can select saved videos from your gallery, import clips, and upload your profile avatar.',
       icon: Icons.photo_library_rounded,
     ),
     AppPermission.storage: PermissionMetadata(
       permission: AppPermission.storage,
       title: 'Storage Access',
-      rationale:
-          'VidSnap.AI requires local storage permissions to save video reel drafts offline and cache playback chunks for zero-buffering.',
+      rationale: 'VidSnap.AI requires local storage permissions to save video reel drafts offline and cache playback chunks for zero-buffering.',
       icon: Icons.folder_rounded,
     ),
   };
@@ -120,10 +106,7 @@ class PermissionService {
     return AppPermissionState.granted;
   }
 
-  Widget _buildRationaleDialog(
-    BuildContext context,
-    AppPermission permission,
-  ) {
+  Widget _buildRationaleDialog(BuildContext context, AppPermission permission) {
     final meta = metadata[permission]!;
     final theme = Theme.of(context);
 

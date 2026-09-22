@@ -1,18 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:vidsnap_ai/core/theme/app_colors.dart';
 
-enum AppButtonVariant {
-  primary,
-  secondary,
-  ghost,
-  danger,
-}
+enum AppButtonVariant { primary, secondary, ghost, danger }
 
-enum AppButtonSize {
-  sm,
-  md,
-  lg,
-}
+enum AppButtonSize { sm, md, lg }
 
 class AppButton extends StatelessWidget {
   const AppButton({
@@ -62,7 +53,9 @@ class AppButton extends StatelessWidget {
         backgroundColor = Colors.transparent;
         foregroundColor = isDark ? AppColors.sage300 : AppColors.forest700;
         borderSide = BorderSide(
-          color: isDark ? AppColors.borderDarkSubtle : AppColors.borderLightMedium,
+          color: isDark
+              ? AppColors.borderDarkSubtle
+              : AppColors.borderLightMedium,
           width: 1.0,
         );
         break;
@@ -154,10 +147,7 @@ class AppButton extends StatelessWidget {
             child: InkWell(
               onTap: (isDisabled || isLoading) ? null : onPressed,
               borderRadius: BorderRadius.circular(AppRadii.sm),
-              child: Padding(
-                padding: padding,
-                child: buttonContent,
-              ),
+              child: Padding(padding: padding, child: buttonContent),
             ),
           ),
         ),

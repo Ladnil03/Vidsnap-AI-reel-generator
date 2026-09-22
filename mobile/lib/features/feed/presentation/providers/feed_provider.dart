@@ -74,10 +74,7 @@ class FeedNotifier extends Notifier<FeedState> {
         cursor: items.isNotEmpty ? items.last.videoId : null,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
@@ -112,7 +109,9 @@ class FeedNotifier extends Notifier<FeedState> {
       );
 
       final existingIds = state.items.map((e) => e.videoId).toSet();
-      final newUnique = moreItems.where((e) => !existingIds.contains(e.videoId)).toList();
+      final newUnique = moreItems
+          .where((e) => !existingIds.contains(e.videoId))
+          .toList();
 
       state = state.copyWith(
         items: <FeedItemModel>[...state.items, ...newUnique],
@@ -130,11 +129,16 @@ class FeedNotifier extends Notifier<FeedState> {
 
     final original = state.items[index];
     final newLiked = !original.hasLiked;
-    final newCount = newLiked ? original.likesCount + 1 : (original.likesCount > 0 ? original.likesCount - 1 : 0);
+    final newCount = newLiked
+        ? original.likesCount + 1
+        : (original.likesCount > 0 ? original.likesCount - 1 : 0);
 
     // Optimistic update
     final updatedList = List<FeedItemModel>.from(state.items);
-    updatedList[index] = original.copyWith(hasLiked: newLiked, likesCount: newCount);
+    updatedList[index] = original.copyWith(
+      hasLiked: newLiked,
+      likesCount: newCount,
+    );
     state = state.copyWith(items: updatedList);
 
     try {
@@ -153,11 +157,16 @@ class FeedNotifier extends Notifier<FeedState> {
 
     final original = state.items[index];
     final newSaved = !original.hasSaved;
-    final newCount = newSaved ? original.savesCount + 1 : (original.savesCount > 0 ? original.savesCount - 1 : 0);
+    final newCount = newSaved
+        ? original.savesCount + 1
+        : (original.savesCount > 0 ? original.savesCount - 1 : 0);
 
     // Optimistic update
     final updatedList = List<FeedItemModel>.from(state.items);
-    updatedList[index] = original.copyWith(hasSaved: newSaved, savesCount: newCount);
+    updatedList[index] = original.copyWith(
+      hasSaved: newSaved,
+      savesCount: newCount,
+    );
     state = state.copyWith(items: updatedList);
 
     try {
@@ -171,4 +180,6 @@ class FeedNotifier extends Notifier<FeedState> {
   }
 }
 
-final feedProvider = NotifierProvider<FeedNotifier, FeedState>(FeedNotifier.new);
+final feedProvider = NotifierProvider<FeedNotifier, FeedState>(
+  FeedNotifier.new,
+);

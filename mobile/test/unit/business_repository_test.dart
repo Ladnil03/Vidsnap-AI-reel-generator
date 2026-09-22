@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vidsnap_ai/features/business/data/business_repository.dart';
@@ -93,7 +94,7 @@ void main() {
             'target_creators_count': 5,
             'applications_count': 3,
             'status': 'active',
-          }
+          },
         ];
 
         return ResponseBody.fromString(
@@ -149,42 +150,45 @@ void main() {
       expect(campaign.title, 'Summer Beats');
     });
 
-    test('applyToCampaign submits creator pitch with brand safety report', () async {
-      dio.httpClientAdapter = _MockAdapter((options) {
-        expect(options.path, '/api/v1/business/campaigns/camp-1/apply');
-        expect(options.method, 'POST');
+    test(
+      'applyToCampaign submits creator pitch with brand safety report',
+      () async {
+        dio.httpClientAdapter = _MockAdapter((options) {
+          expect(options.path, '/api/v1/business/campaigns/camp-1/apply');
+          expect(options.method, 'POST');
 
-        final data = {
-          'application_id': 'app-101',
-          'campaign_id': 'camp-1',
-          'creator_name': 'Dev Creator',
-          'creator_handle': 'dev_creator',
-          'pitch': 'High-retention reel unboxing and battery test',
-          'brand_safety': {
-            'score': 95,
-            'is_brand_safe': true,
-            'recommendation': 'Safe to accept',
-          },
-          'status': 'applied',
-        };
+          final data = {
+            'application_id': 'app-101',
+            'campaign_id': 'camp-1',
+            'creator_name': 'Dev Creator',
+            'creator_handle': 'dev_creator',
+            'pitch': 'High-retention reel unboxing and battery test',
+            'brand_safety': {
+              'score': 95,
+              'is_brand_safe': true,
+              'recommendation': 'Safe to accept',
+            },
+            'status': 'applied',
+          };
 
-        return ResponseBody.fromString(
-          jsonEncode(data),
-          200,
-          headers: {
-            Headers.contentTypeHeader: [Headers.jsonContentType],
-          },
+          return ResponseBody.fromString(
+            jsonEncode(data),
+            200,
+            headers: {
+              Headers.contentTypeHeader: [Headers.jsonContentType],
+            },
+          );
+        });
+
+        final application = await repository.applyToCampaign(
+          campaignId: 'camp-1',
+          pitch: 'High-retention reel unboxing and battery test',
         );
-      });
-
-      final application = await repository.applyToCampaign(
-        campaignId: 'camp-1',
-        pitch: 'High-retention reel unboxing and battery test',
-      );
-      expect(application.applicationId, 'app-101');
-      expect(application.brandSafetyScore, 95);
-      expect(application.isBrandSafe, isTrue);
-    });
+        expect(application.applicationId, 'app-101');
+        expect(application.brandSafetyScore, 95);
+        expect(application.isBrandSafe, isTrue);
+      },
+    );
   });
 }
 

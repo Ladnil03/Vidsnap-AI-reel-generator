@@ -7,10 +7,7 @@ import 'package:vidsnap_ai/features/profile/domain/profile_models.dart';
 import 'package:vidsnap_ai/features/profile/presentation/providers/profile_provider.dart';
 
 class EditProfileSheet extends ConsumerStatefulWidget {
-  const EditProfileSheet({
-    super.key,
-    required this.initialProfile,
-  });
+  const EditProfileSheet({super.key, required this.initialProfile});
 
   final UserProfileModel initialProfile;
 

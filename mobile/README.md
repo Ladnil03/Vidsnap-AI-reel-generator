@@ -1,56 +1,104 @@
-# VidSnap.AI — Mobile Client Architecture (Expo React Native)
+# VidSnap.AI Mobile (Flutter)
 
-**Target Runtime**: iOS 16+, Android 12+, Tablet (iPadOS & Android Tablets)  
-**Framework**: Expo SDK 52 / React Native 0.76+ (TypeScript)  
-**Status**: Mobile Blueprint & Scaffolding  
+Modern, high-performance Flutter mobile application for **VidSnap.AI** (AI-personalized vertical short video platform).
 
 ---
 
-## 1. Architecture Overview
+## 1. Prerequisites
 
-The VidSnap.AI mobile client is designed to deliver 100% feature parity with the Next.js web application while leveraging native device capabilities:
-- Hardware-accelerated H.264 vertical video rendering with low-latency pre-buffering.
-- Native LiveKit WebRTC audio/video watch party integration.
-- Offline reel caching for low-bandwidth / intermittent connectivity (India-first data saver).
-- Push notifications via Firebase Cloud Messaging (FCM) and Apple Push Notification service (APNs).
+- **Flutter SDK**: `>= 3.47.0` (Dart `>= 3.13.0`)
+- **Android Studio** / **Xcode** (for physical/simulator targets)
+- **FastAPI Backend**: Running at `http://localhost:8000` (or local network IP / staging URL)
 
+---
+
+## 2. Environment Configuration (`--dart-define`)
+
+All API endpoints and environment settings are dynamically injected at compile/run time via `--dart-define`. **Never hardcode secrets or backend URLs.**
+
+| Variable | Default (Local) | Description | Example Values |
+|---|---|---|---|
+| `API_BASE_URL` | `http://10.0.2.2:8000` | Backend API root (`10.0.2.2` for Android Emulator, `http://localhost:8000` for iOS simulator) | `https://api.staging.vidsnap.ai`, `https://api.vidsnap.ai` |
+| `ENVIRONMENT` | `local` | Environment name | `local`, `staging`, `production` |
+
+---
+
+## 3. Running the App
+
+### Android Emulator (Local)
+```bash
+flutter run -d android --dart-define=API_BASE_URL=http://10.0.2.2:8000 --dart-define=ENVIRONMENT=local
 ```
+
+### iOS Simulator (Local)
+```bash
+flutter run -d ios --dart-define=API_BASE_URL=http://localhost:8000 --dart-define=ENVIRONMENT=local
+```
+
+### Staging Environment
+```bash
+flutter run --dart-define=API_BASE_URL=https://api.staging.vidsnap.ai --dart-define=ENVIRONMENT=staging
+```
+
+### Production Release Build
+```bash
+# Android App Bundle (.aab)
+flutter build appbundle --release --dart-define=API_BASE_URL=https://api.vidsnap.ai --dart-define=ENVIRONMENT=production
+
+# iOS Archive (.ipa)
+flutter build ipa --release --dart-define=API_BASE_URL=https://api.vidsnap.ai --dart-define=ENVIRONMENT=production
+```
+
+---
+
+## 4. Code Quality & Testing
+
+All PRs and commits must pass static analysis and unit/widget tests:
+
+```bash
+# Format check
+dart format --output=none --set-exit-if-changed .
+
+# Strict static analysis
+flutter analyze --fatal-infos --fatal-warnings
+
+# Test suite with coverage
+flutter test --coverage
+```
+
+---
+
+## 5. Architecture & Project Layout
+
+Feature-first structure aligning with backend domain modules:
+
+```text
 mobile/
-├── app.json                  # Expo project manifest & scheme routing
-├── package.json              # Typed mobile dependencies
-├── src/
-│   ├── components/           # ReelPlayer, WatchPartyRoom, MoodSelector, QuestsWidget
-│   ├── navigation/           # Expo Router tab layout matching web navigation
-│   ├── screens/
-│   │   ├── FeedScreen.tsx    # Snap-scroll 9:16 vertical player with gesture responder
-│   │   ├── ExploreScreen.tsx # Multi-source discovery search
-│   │   ├── StudioScreen.tsx  # Camera capture, local trim, direct-to-R2 upload
-│   │   ├── RoomsScreen.tsx   # LiveKit WebRTC watch together & voice lounge
-│   │   ├── CompanionScreen.tsx # Floating AI co-pilot and mood selector
-│   │   └── RewardsScreen.tsx # Streak flame tracker, XP level card, quests
-│   └── services/             # API client sharing schemas with Next.js web app
+├── .github/workflows/mobile-ci.yml   # CI automation pipeline
+├── analysis_options.yaml             # Strict static linting configuration
+├── pubspec.yaml                      # Dependencies & asset declarations
+├── test/                             # Unit, widget, and integration tests
+└── lib/
+    ├── main.dart                     # App entrypoint (ProviderScope)
+    ├── core/
+    │   ├── config/                   # EnvConfig (--dart-define loader)
+    │   ├── l10n/                     # Localization & ARB files
+    │   ├── network/                  # Dio client, auth interceptor, refresh queue
+    │   ├── router/                   # GoRouter with auth redirect guards
+    │   ├── storage/                  # FlutterSecureStorage & SharedPreferences
+    │   ├── theme/                    # Paper (Light) & Forest (Dark) ThemeData from tokens
+    │   ├── utils/                    # Common formatters, validators
+    │   └── widgets/                  # Design system primitives (buttons, cards, empty state)
+    └── features/
+        ├── auth/                     # Login, register, OTP verification, password reset
+        ├── feed/                     # Snap vertical PageView, video player, watch metrics
+        ├── create/                   # Camera capture, gallery picker, trim, direct upload
+        ├── rooms/                    # Watch Together rooms, WebSocket sync, LiveKit WebRTC
+        ├── companion/                # AI Companion streaming chat
+        ├── gamification/             # XP/streak/badges display & levels
+        ├── profile/                  # User/creator profiles & reel grid
+        ├── creator/                  # Creator studio & fl_chart analytics
+        ├── business/                 # Collab marketplace & brand campaigns (RBAC-gated)
+        ├── discovery/                # Explore search, tags, multi-source attribution
+        └── notifications/            # In-app notifications & FCM listener
 ```
-
----
-
-## 2. Core Mobile Subsystems
-
-### 2.1 Snap-Scrolling Reels Engine
-- Built using `expo-video` or `react-native-pager-view` with virtualized `FlatList` (`windowSize=3`, `maxToRenderPerBatch=2`).
-- **Pre-buffering**: Pre-fetches the next 2 reels in background storage via `expo-file-system` to achieve <500ms video playback transition on 4G connections.
-- **Debounced View Tracking**: Automatically emits `POST /api/v1/feed/watch-progress` after a 3-second continuous viewing window.
-
-### 2.2 Watch Together Rooms (LiveKit WebRTC)
-- Implements `@livekit/react-native` and `@livekit/react-native-webrtc`.
-- Room state synchronization using the existing FastAPI WebSocket gateway (`/api/v1/rooms/ws/{room_id}`).
-- Spatial audio and low-latency group chat.
-
-### 2.3 Direct-to-Cloudinary Mobile Video Upload
-- Client-side pre-compression via `ffmpeg-kit-react-native` (720x1280 H.264, max 50MB).
-- Direct signed upload to Cloudinary; zero server proxy bottleneck.
-
-### 2.4 Deep Linking Schema
-Registered URL scheme: `vidsnap://`
-- `vidsnap://feed/:id` -> Opens specific reel in modal.
-- `vidsnap://room/:id` -> 1-tap join for watch parties.
-- `vidsnap://collabs/:id` -> Creator collaboration brief.

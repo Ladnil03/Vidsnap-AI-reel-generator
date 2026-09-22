@@ -1,0 +1,44 @@
+name: Mobile CI Pipeline
+
+on:
+  push:
+    branches: [ main, backend/dev ]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+  pull_request:
+    branches: [ main, backend/dev ]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+
+jobs:
+  flutter-ci:
+    name: Flutter Lint, Analyze & Test
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze code (strict lints)
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Run unit & widget tests
+        run: flutter test --coverage

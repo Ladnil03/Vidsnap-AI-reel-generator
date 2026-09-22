@@ -1,6 +1,6 @@
 # VidSnap.AI Mobile Progress (Flutter)
 
-## Status: M6 Completed -> Awaiting M7 Go
+## Status: M7 Completed -> Awaiting M8 Go
 
 | Slice | Name | Status | Notes |
 |---|---|---|---|
@@ -11,25 +11,30 @@
 | M4 | Create | DONE | Camera & gallery video picker, headline & description metadata, AI viral hook & hashtag generator, visibility selector, offline drafts persistence, multipart upload with progress bar. 56 tests passing. |
 | M5 | Social & Realtime | DONE | Watch Together party rooms lobby, passcode modal, LiveKit WebRTC credentials, WebSocket playback sync, live chat, AI Room Assistant recap, and Communities discovery. 83 tests passing. |
 | M6 | AI & Engagement | DONE | AI Companion streaming chat with mood selector & embedded reels, gamification dashboard with levels, streaks, daily quests, badge showcase & leaderboard. 102 tests passing. |
-| M7 | Profile & Dashboards | NEXT | User & creator profile, creator studio dashboard, business campaigns (RBAC gated). |
-| M8 | Polish & Store Readiness | PENDING | Icons/splash, deep links, permissions, Crashlytics, release configs. |
+| M7 | Profile & Dashboards | DONE | User & creator profile, creator studio analytics/copilot, business sponsorship briefs & collab pitches. 125 tests passing. |
+| M8 | Polish & Store Readiness | NEXT | Icons/splash, deep links, permissions, Crashlytics, release configs. |
 
-## Slice M6 Handoff
+## Slice M7 Handoff
 - **Done**:
   - Domain models:
-    - `MoodType`, `MoodStateModel`, `CompanionMessageModel`, `CompanionChatResponseModel` in `mobile/lib/features/companion/domain/companion_models.dart`.
-    - `UserLevelModel`, `StreakStateModel`, `UserChallengeModel`, `UserBadgeModel`, `LeaderboardEntryModel`, `LeaderboardResponseModel`, `AwardXPResponseModel`, `GamificationProfileModel` in `mobile/lib/features/gamification/domain/gamification_models.dart`.
+    - `UserProfileModel`, `UpdateProfileInput` in `mobile/lib/features/profile/domain/profile_models.dart`.
+    - `VerificationStatus`, `CreatorProfileModel`, `CreatorAnalyticsModel`, `CreatorCopilotHook`, `CreatorCopilotResponseModel`, `VerificationApplicationModel` in `mobile/lib/features/creator/domain/creator_models.dart`.
+    - `CampaignStatus`, `BusinessProfileModel`, `CampaignModel`, `CollabApplicationModel`, `CreateCampaignInput`, `CreateBusinessProfileInput` in `mobile/lib/features/business/domain/business_models.dart`.
   - Data & Repositories:
-    - `CompanionRepository`: chat with personal AI companion, get/clear conversation history, read & update active user mood preferences.
-    - `GamificationRepository`: get aggregated gamification profile, dynamic level calculation, daily check-in streak record (`+25 XP`), freeze token safeguard shield, daily & weekly quest challenges with claim reward, badge achievement catalog, and Redis ZSET global leaderboard.
+    - `ProfileRepository`: get user/my profile with aggregated reels, update profile (display name and bio), list published reels and saved reels.
+    - `CreatorRepository`: get creator profile, update bio/niche/socials, fetch 30-day KPI analytics (impressions, views, watch time, completion rate, mood affinity), Creator Copilot AI strategy generator (viral score, hooks, optimal posting time), and submit verification badge application.
+    - `BusinessRepository`: get/create verified brand profile, list campaign briefs with category filtering, create sponsorship brief, submit creator collab pitch with automated brand-safety screening, and fetch candidate applications.
   - State Management:
-    - `CompanionNotifier` (Riverpod `Notifier`) managing mood state, conversation stream, optimistic message addition, quick suggested action chips, and error recovery.
-    - `GamificationNotifier` (Riverpod `Notifier`) managing user level progress, streak status, daily check-in execution, quest reward claiming, freeze shield consumption, and achievement badges.
+    - `ProfileNotifier` (Riverpod `Notifier`) managing profile view, edit profile bottom sheet, tab switching between My Reels and Saved.
+    - `CreatorNotifier` (Riverpod `Notifier`) managing creator profile, analytics retrieval, AI Copilot hook generation, and verification application submission.
+    - `BusinessNotifier` (Riverpod `Notifier`) managing collab marketplace feed, category filtering, campaign creation, and proposal pitches.
   - UI Presentation:
-    - `CompanionChatScreen`: top mood selector filter chips (`⚡ Energized`, `🌿 Chill`, `🎯 Focused`, `🔍 Curious`, `🌧️ Melancholic`, `✨ Inspired`, `😂 Humorous`), message bubbles with AI provenance labels, embedded recommendation reel cards with tap-to-play, quick prompt suggestions carousel, thinking indicator, and clear history dialog.
-    - `GamificationDashboardScreen`: user level progression card with gradient level badge and percentage progress bar, daily streak counter with freeze shields count and daily check-in button, active daily & weekly quests with progress bars and claim buttons, achievement badges showcase grid with unlock modal, and global XP leaderboard ranking.
-    - Navigation: added `/companion` and `/gamification` routes to `app_router.dart`, linked from Profile screen, and added floating AI companion launcher in `FeedScreen`.
-  - Test suite: **102/102 tests passing** (19 new unit and widget tests covering companion repository, gamification repository, companion chat screen, and gamification dashboard screen).
-- **Quality**: `flutter analyze` clean (0 issues), `flutter test` green (102/102 tests passing).
-- **Next**: Slice M7: Profile & Dashboards (User & creator profile, creator studio analytics/dashboard, business campaigns with RBAC gating).
+    - `ProfileScreen`: user header, avatar with initials, role badges (`Creator 🎨`, `Brand 💼`, `Member ✨`), stats strip (reels, followers, following, tokens remaining), action hub buttons (Edit Profile, Creator Studio, Collab Marketplace), tabs for "My Reels" and "Saved", and responsive 9:16 video grid.
+    - `EditProfileSheet`: bottom modal sheet for editing display name and bio.
+    - `CreatorDashboardScreen`: RBAC-gated dashboard (non-creators see unlock CTA with one-tap activation; creators see full analytics KPI grid, audience mood affinity distribution, Creator Copilot AI prompt & viral hook generator, and verification badge modal).
+    - `BusinessMarketplaceScreen`: category filter chips, sponsorship brief cards with budget & perk badges, collaboration pitch proposal modal with brand-safety disclaimer, and post campaign brief dialog.
+    - Routes added in `app_router.dart`: `/creator/dashboard` and `/business/campaigns`. Connected `/profile` to `ProfileScreen`.
+  - Test suite: **125/125 tests passing** (23 new unit and widget tests covering profile repository, creator repository, business repository, profile screen, creator dashboard screen, and business marketplace screen).
+- **Quality**: `flutter analyze` clean (0 issues), `flutter test` green (125/125 tests passing).
+- **Next**: Slice M8: Polish & Store Readiness (App launcher icons, splash screen, universal deep linking, system permissions handler, offline error boundaries, release build configurations).
 - **Blockers / Backend Dependencies**: None.

@@ -142,9 +142,9 @@ void main() {
       await tester.tap(find.text('Profile'));
       await tester.pumpAndSettle();
 
-      expect(find.text('My Profile'), findsOneWidget);
-      expect(find.textContaining('Welcome, Restored User!'), findsOneWidget);
-      expect(find.text('Credits: 15 tokens'), findsOneWidget);
+      expect(find.text('Restored User'), findsWidgets);
+      expect(find.text('restored@vidsnap.ai'), findsOneWidget);
+      expect(find.text('Creator 🎨'), findsOneWidget);
     });
   });
 }

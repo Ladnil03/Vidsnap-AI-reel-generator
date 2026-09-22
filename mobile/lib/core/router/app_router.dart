@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vidsnap_ai/core/router/auth_state_provider.dart';
-import 'package:vidsnap_ai/core/widgets/app_button.dart';
 import 'package:vidsnap_ai/core/widgets/main_scaffold.dart';
 import 'package:vidsnap_ai/features/auth/presentation/login_screen.dart';
 import 'package:vidsnap_ai/features/auth/presentation/register_screen.dart';
 import 'package:vidsnap_ai/features/auth/presentation/verify_email_screen.dart';
+import 'package:vidsnap_ai/features/business/presentation/business_marketplace_screen.dart';
 import 'package:vidsnap_ai/features/companion/presentation/companion_chat_screen.dart';
 import 'package:vidsnap_ai/features/create/presentation/create_screen.dart';
+import 'package:vidsnap_ai/features/creator/presentation/creator_dashboard_screen.dart';
 import 'package:vidsnap_ai/features/discovery/presentation/explore_screen.dart';
 import 'package:vidsnap_ai/features/feed/presentation/feed_screen.dart';
 import 'package:vidsnap_ai/features/gamification/presentation/gamification_dashboard_screen.dart';
+import 'package:vidsnap_ai/features/profile/presentation/profile_screen.dart';
 import 'package:vidsnap_ai/features/rooms/presentation/active_room_screen.dart';
 import 'package:vidsnap_ai/features/rooms/presentation/rooms_lobby_screen.dart';
 
@@ -79,6 +81,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/gamification',
         builder: (context, state) => const GamificationDashboardScreen(),
       ),
+      GoRoute(
+        path: '/creator/dashboard',
+        builder: (context, state) => const CreatorDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/business/campaigns',
+        builder: (context, state) => const BusinessMarketplaceScreen(),
+      ),
       ShellRoute(
         builder: (context, state, child) {
           final location = state.matchedLocation;
@@ -115,60 +125,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/profile',
-            builder: (context, state) => Consumer(
-              builder: (context, ref, child) {
-                final user = ref.watch(authStateProvider).currentUser;
-                return Scaffold(
-                  appBar: AppBar(
-                    title: const Text('My Profile'),
-                    actions: <Widget>[
-                      IconButton(
-                        icon: const Icon(Icons.logout),
-                        tooltip: 'Log Out',
-                        onPressed: () => ref.read(authStateProvider).logout(),
-                      ),
-                    ],
-                  ),
-                  body: Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Text(
-                            'Welcome, ${user?.name.isNotEmpty == true ? user!.name : 'Creator'}!',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text('Credits: ${user?.tokensRemaining ?? 0} tokens'),
-                          const SizedBox(height: 24),
-                          AppButton(
-                            label: 'Achievements & Streaks 🔥',
-                            variant: AppButtonVariant.primary,
-                            onPressed: () => context.push('/gamification'),
-                          ),
-                          const SizedBox(height: 12),
-                          AppButton(
-                            label: 'AI Companion 🤖',
-                            variant: AppButtonVariant.secondary,
-                            onPressed: () => context.push('/companion'),
-                          ),
-                          const SizedBox(height: 24),
-                          AppButton(
-                            label: 'Log Out',
-                            variant: AppButtonVariant.ghost,
-                            onPressed: () => ref.read(authStateProvider).logout(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+            builder: (context, state) => const ProfileScreen(),
           ),
         ],
       ),

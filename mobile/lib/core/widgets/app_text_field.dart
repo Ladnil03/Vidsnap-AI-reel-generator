@@ -17,6 +17,7 @@ class AppTextField extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.enabled = true,
+    this.maxLines = 1,
     this.semanticLabel,
   });
 
@@ -33,6 +34,7 @@ class AppTextField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final bool enabled;
+  final int maxLines;
   final String? semanticLabel;
 
   @override
@@ -60,6 +62,7 @@ class AppTextField extends StatelessWidget {
           TextField(
             controller: controller,
             obscureText: isPassword,
+            maxLines: isPassword ? 1 : maxLines,
             keyboardType: keyboardType,
             textInputAction: textInputAction,
             enabled: enabled,

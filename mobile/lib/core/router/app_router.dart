@@ -7,6 +7,7 @@ import 'package:vidsnap_ai/core/widgets/main_scaffold.dart';
 import 'package:vidsnap_ai/features/auth/presentation/login_screen.dart';
 import 'package:vidsnap_ai/features/auth/presentation/register_screen.dart';
 import 'package:vidsnap_ai/features/auth/presentation/verify_email_screen.dart';
+import 'package:vidsnap_ai/features/create/presentation/create_screen.dart';
 import 'package:vidsnap_ai/features/discovery/presentation/explore_screen.dart';
 import 'package:vidsnap_ai/features/feed/presentation/feed_screen.dart';
 
@@ -94,9 +95,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/create',
-            builder: (context, state) => const Scaffold(
-              body: Center(child: Text('Create Reel (M4 Slice)')),
-            ),
+            builder: (context, state) => const CreateScreen(),
           ),
           GoRoute(
             path: '/rooms',

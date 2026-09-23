@@ -57,8 +57,6 @@ async def _start_embedded_worker() -> None:
         "-m",
         "arq",
         "backend.workers.media_worker.WorkerSettings",
-        stdout=asyncio.subprocess.DEVNULL,
-        stderr=asyncio.subprocess.STDOUT,
     )
 
 

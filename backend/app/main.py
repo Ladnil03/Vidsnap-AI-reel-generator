@@ -3,8 +3,10 @@ FastAPI Application Factory for VidSnap AI.
 Initializes lifespan, routes, CORS middleware, security headers, and health endpoints.
 """
 
+import asyncio
 import logging
 import secrets
+import sys
 import time
 import uuid
 from collections.abc import AsyncGenerator
@@ -41,6 +43,34 @@ from backend.app.social.routes import router as social_router
 setup_logging(debug=settings.debug)
 logger = logging.getLogger("app.main")
 
+_worker_process: asyncio.subprocess.Process | None = None
+
+
+async def _start_embedded_worker() -> None:
+    """Run the ARQ media worker as a subprocess of the web service (free tier workaround)."""
+    global _worker_process
+    if settings.environment != "production" or _worker_process is not None:
+        return
+    logger.info("Starting embedded media worker subprocess...")
+    _worker_process = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "arq",
+        "backend.workers.media_worker.WorkerSettings",
+        stdout=asyncio.subprocess.DEVNULL,
+        stderr=asyncio.subprocess.STDOUT,
+    )
+
+
+async def _stop_embedded_worker() -> None:
+    global _worker_process
+    if _worker_process is None:
+        return
+    _worker_process.terminate()
+    await _worker_process.wait()
+    _worker_process = None
+    logger.info("Embedded media worker stopped.")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -53,10 +83,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # 2. Connect Redis
     await connect_redis()
 
+    # 3. Run media worker in-process (no free background worker tier on Render)
+    await _start_embedded_worker()
+
     logger.info("Application startup complete. Ready to receive requests.")
     yield
 
     # Shutdown
+    await _stop_embedded_worker()
     logger.info("Initiating graceful shutdown...")
     await disconnect_redis()
     await disconnect_db()

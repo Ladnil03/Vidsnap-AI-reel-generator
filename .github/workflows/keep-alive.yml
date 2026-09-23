@@ -1,0 +1,23 @@
+name: Keep Render Alive
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # every 10 minutes
+  workflow_dispatch:          # allows manual trigger for testing
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render backend
+        run: |
+          URL="${{ secrets.RENDER_URL }}"
+          if [ -z "$URL" ]; then
+            URL="https://vidsnap-backend-qj8j.onrender.com"
+          fi
+          # Strip trailing slash if present
+          URL="${URL%/}"
+          echo "Pinging ${URL}/health ..."
+          curl --fail -s -L --max-time 30 "${URL}/health" || curl --fail -s -L --max-time 30 "${URL}/health/live" || curl --fail -s -L --max-time 30 "${URL}/"
+          echo ""
+          echo "Successfully pinged at $(date)"

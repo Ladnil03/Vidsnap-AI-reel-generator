@@ -194,6 +194,8 @@ legacy_jobs_router = reel_studio_router
 # ==============================================================================
 
 
+@app.get("/health", tags=["Health"], include_in_schema=True)
+@app.get("/healthz", tags=["Health"], include_in_schema=False)
 @app.get("/health/live", tags=["Health"])
 async def liveness_probe() -> dict[str, str]:
     """Liveness probe: verifies process is alive."""

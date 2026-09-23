@@ -3,12 +3,12 @@ class EnvConfig {
 
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8000',
+    defaultValue: 'https://vidsnap-backend-qj8j.onrender.com',
   );
 
   static const String environment = String.fromEnvironment(
     'ENVIRONMENT',
-    defaultValue: 'local',
+    defaultValue: 'production',
   );
 
   static bool get isProduction => environment.toLowerCase() == 'production';

@@ -44,3 +44,32 @@ async def test_hsts_header_in_production_only(async_client: AsyncClient):
         assert resp_prod.status_code == 200
         assert "Strict-Transport-Security" in resp_prod.headers
         assert "max-age=31536000" in resp_prod.headers["Strict-Transport-Security"]
+
+
+def test_frontend_next_config_csp_directives():
+    """Verify Next.js frontend CSP declares all external sources in the correct directives."""
+    from pathlib import Path
+
+    next_config_path = Path(__file__).resolve().parents[2] / "frontend" / "next.config.ts"
+    assert next_config_path.exists(), f"next.config.ts not found at {next_config_path}"
+
+    content = next_config_path.read_text(encoding="utf-8")
+
+    # Assert directive presence
+    assert "frame-src" in content
+    assert "img-src" in content
+    assert "media-src" in content
+    assert "frame-ancestors 'none'" in content
+
+    # Assert Pixabay CDN coverage
+    assert "https://cdn.pixabay.com" in content
+    assert "https://i.vimeocdn.com" in content
+
+    # Assert YouTube placement: must be in frame-src, NOT media-src
+    assert "https://www.youtube.com" in content
+    assert "https://www.youtube-nocookie.com" in content
+    # media-src must not contain youtube.com
+    lines = content.splitlines()
+    media_src_line = next((line for line in lines if "media-src" in line), "")
+    assert "youtube.com" not in media_src_line
+

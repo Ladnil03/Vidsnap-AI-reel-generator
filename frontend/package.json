@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "lint:colors": "node scripts/check-colors.mjs",
-    "lint:contrast": "node scripts/check-contrast.mjs"
+    "lint:contrast": "node scripts/check-contrast.mjs",
+    "check:csp": "node scripts/check-csp.mjs"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",

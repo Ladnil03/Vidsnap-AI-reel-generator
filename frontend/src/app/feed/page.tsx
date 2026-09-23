@@ -311,22 +311,41 @@ export default function FeedPage() {
             const isFollowed = followingMap[video.user_id] || false;
             const isExpanded = expandedCaption[video.video_id] || false;
 
+            const isIframe =
+              video.player_type === 'iframe' ||
+              video.source === 'youtube_shorts' ||
+              Boolean(video.video_url?.includes('youtube.com')) ||
+              Boolean(video.video_url?.includes('youtube-nocookie.com')) ||
+              Boolean(video.embed_url?.includes('youtube.com')) ||
+              Boolean(video.embed_url?.includes('youtube-nocookie.com'));
+
             return (
               <div key={video.video_id} data-index={idx} className={styles.reelSlide}>
                 {/* Video Player Element */}
-                <video
-                  ref={(el) => {
-                    videoRefs.current[idx] = el;
-                  }}
-                  src={video.video_url}
-                  poster={video.thumbnail_url}
-                  loop
-                  muted={muted}
-                  playsInline
-                  className={styles.videoElement}
-                  onClick={togglePlayCurrent}
-                  onTimeUpdate={isCurrent ? handleTimeUpdate : undefined}
-                />
+                {isIframe ? (
+                  <iframe
+                    src={video.embed_url || video.video_url}
+                    title={video.title}
+                    className={styles.videoElement}
+                    style={{ border: 'none' }}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    ref={(el) => {
+                      videoRefs.current[idx] = el;
+                    }}
+                    src={video.video_url}
+                    poster={video.thumbnail_url}
+                    loop
+                    muted={muted}
+                    playsInline
+                    className={styles.videoElement}
+                    onClick={togglePlayCurrent}
+                    onTimeUpdate={isCurrent ? handleTimeUpdate : undefined}
+                  />
+                )}
 
                 {/* Top Overlay Controls */}
                 <div className={styles.topOverlay}>

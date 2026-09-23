@@ -408,12 +408,25 @@ export default function ExplorePage() {
             }}
           >
             {previewItem.embed_url ? (
-              <video
-                src={previewItem.embed_url}
-                controls
-                autoPlay
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              />
+              previewItem.player_type === 'iframe' ||
+              previewItem.source === 'youtube_shorts' ||
+              previewItem.embed_url.includes('youtube.com') ||
+              previewItem.embed_url.includes('youtube-nocookie.com') ? (
+                <iframe
+                  src={previewItem.embed_url}
+                  title={previewItem.title}
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <video
+                  src={previewItem.embed_url}
+                  controls
+                  autoPlay
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              )
             ) : (
               <p style={{ color: 'var(--player-text-muted)' }}>Video playback preview</p>
             )}
